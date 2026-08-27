@@ -51,6 +51,22 @@ go test ./...
 
 搜索「鲨笼绝境」应合并为 **1 条**（多资源站 variants）。
 
+## 管理后台 API
+
+需设置 `ADMIN_USERNAME` 与 `ADMIN_PASSWORD` 后启用 `/api/v1/admin/*`：
+
+| 路径 | 说明 |
+|------|------|
+| `POST /admin/login` | 管理员登录 |
+| `GET/POST/PUT/DELETE /admin/sources` | 资源站 CRUD |
+| `POST /admin/sources/:id/test` | 连通性测试 |
+| `GET /admin/users` | 用户列表 |
+| `GET /admin/system/status` | 系统状态 |
+| `POST /admin/system/cache/clear` | 清空分类缓存 |
+| `GET /admin/system/logs` | 请求日志 |
+
+前端：[`apps/admin`](../../apps/admin/)（:3001）
+
 ## OpenAPI
 
 契约文件：`packages/openapi/openapi.yaml`  

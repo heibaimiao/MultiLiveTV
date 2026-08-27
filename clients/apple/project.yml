@@ -17,6 +17,8 @@ targets:
       - path: MultiLiveTV
         excludes:
           - "**/Info-*.plist"
+    resources:
+      - path: MultiLiveTV/Resources
     settings:
       PRODUCT_NAME: MultiLiveTV
       PRODUCT_BUNDLE_IDENTIFIER: com.heibaimiao.multilivetv
@@ -30,8 +32,36 @@ targets:
       - path: MultiLiveTV
         excludes:
           - "**/Info-*.plist"
+    resources:
+      - path: MultiLiveTV/Resources
     settings:
       PRODUCT_NAME: MultiLiveTV
       PRODUCT_BUNDLE_IDENTIFIER: com.heibaimiao.multilivetv.tv
       INFOPLIST_FILE: MultiLiveTV/Info-tvOS.plist
       CODE_SIGN_STYLE: Automatic
+
+schemes:
+  MultiLiveTV-tvOS:
+    build:
+      targets:
+        MultiLiveTV-tvOS: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+  MultiLiveTV-iOS:
+    build:
+      targets:
+        MultiLiveTV-iOS: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

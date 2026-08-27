@@ -27,6 +27,18 @@ func NewCache() *Cache {
 	return &Cache{items: make(map[int]cacheEntry)}
 }
 
+func (c *Cache) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.items = make(map[int]cacheEntry)
+}
+
+func (c *Cache) Count() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.items)
+}
+
 func (c *Cache) Get(store *config.SourceStore, sourceID int) (model.CategoryTree, error) {
 	c.mu.RLock()
 	entry, ok := c.items[sourceID]

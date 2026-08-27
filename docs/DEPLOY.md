@@ -58,6 +58,22 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build api
 
 在 Xcode 中将 `APIConfig.releaseBaseURL` 改为 `https://your-domain/api/v1`。
 
+## 管理后台
+
+独立服务 `apps/admin`，默认端口 **3001**。
+
+```bash
+# 开发
+ADMIN_USERNAME=admin ADMIN_PASSWORD=your-pass go run ./cmd/server  # apps/api-go
+cd apps/admin && npm run dev
+
+# Docker
+docker compose up --build
+# http://localhost:3001
+```
+
+**安全建议**：生产环境将 3001 限制在内网/VPN，或单独域名 + IP 白名单 + HTTPS。管理 API 路径：`/api/v1/admin/*`。
+
 ## 备份
 
 定期备份 Postgres volume `pgdata`：

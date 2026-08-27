@@ -5,10 +5,12 @@ struct Source: Codable, Identifiable, Hashable {
     let name: String
     let url: String
     let flag: Int
+    let jxUrl: String?
     let vipOnly: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, name, url, flag
+        case jxUrl = "jx_url"
         case vipOnly = "vip_only"
     }
 }
@@ -25,6 +27,8 @@ struct VodItem: Codable, Identifiable, Hashable {
     let vodName: String
     let vodPic: String
     let vodRemarks: String?
+    let vodBlurb: String?
+    let vodContent: String?
     let typeName: String?
     let variants: [VodVariant]?
     let primarySourceId: Int?
@@ -34,6 +38,8 @@ struct VodItem: Codable, Identifiable, Hashable {
         case vodName = "vod_name"
         case vodPic = "vod_pic"
         case vodRemarks = "vod_remarks"
+        case vodBlurb = "vod_blurb"
+        case vodContent = "vod_content"
         case typeName = "type_name"
         case variants
         case primarySourceId
@@ -42,6 +48,38 @@ struct VodItem: Codable, Identifiable, Hashable {
     var resolvedSourceId: Int {
         primarySourceId ?? variants?.first?.sourceId ?? 33
     }
+
+    var displayBlurb: String? {
+        let text = (vodContent?.isEmpty == false ? vodContent : vodBlurb) ?? ""
+        return text.isEmpty ? nil : text
+    }
+
+    var displayRemarks: String? {
+        VodDisplayFormatter.formatRemarks(vodRemarks)
+    }
+
+    init(
+        vodId: String,
+        vodName: String,
+        vodPic: String,
+        vodRemarks: String? = nil,
+        vodBlurb: String? = nil,
+        vodContent: String? = nil,
+        typeName: String? = nil,
+        variants: [VodVariant]? = nil,
+        primarySourceId: Int? = nil
+    ) {
+        self.vodId = vodId
+        self.vodName = vodName
+        self.vodPic = vodPic
+        self.vodRemarks = vodRemarks
+        self.vodBlurb = vodBlurb
+        self.vodContent = vodContent
+        self.typeName = typeName
+        self.variants = variants
+        self.primarySourceId = primarySourceId
+    }
+
 }
 
 struct CategoryDef: Codable, Identifiable, Hashable {
@@ -102,46 +140,3 @@ struct ParseResponse: Codable {
     let parsed: Bool
 }
 
-struct TokenPair: Codable {
-    let accessToken: String
-    let refreshToken: String
-    let expiresIn: Int
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
-        case expiresIn = "expires_in"
-    }
-}
-
-struct Favorite: Codable, Identifiable {
-    let id: String
-    let mergeKey: String
-    let vodName: String
-    let primarySourceId: Int
-    let primaryVodId: String
-    let poster: String?
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case mergeKey = "merge_key"
-        case vodName = "vod_name"
-        case primarySourceId = "primary_source_id"
-        case primaryVodId = "primary_vod_id"
-        case poster
-    }
-}
-
-struct WatchProgress: Codable, Identifiable {
-    let id: String
-    let progressKey: String
-    let positionSec: Double
-    let durationSec: Double
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case progressKey = "progress_key"
-        case positionSec = "position_sec"
-        case durationSec = "duration_sec"
-    }
-}

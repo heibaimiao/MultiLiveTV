@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct HomeView: View {
-    @EnvironmentObject private var api: APIClient
-    @State private var categories: [CategoryDef] = []
+    @EnvironmentObject private var vod: VodService
+    @State private var categoryTree = CategoryTree.empty
     @State private var selectedTypeId: Int?
     @State private var pool: [VodItem] = []
     @State private var displayCount = 0
@@ -11,57 +11,60 @@ struct HomeView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedItem: VodItem?
-    @State private var detail: DetailResponse?
     @FocusState private var focusedId: String?
+
+    private var activeParentId: Int? {
+        CategoryTreeBuilder.parentTypeId(tree: categoryTree, typeId: selectedTypeId)
+    }
+
+    private var secondaryCategories: [CategoryDef] {
+        guard let parentId = activeParentId else { return [] }
+        return categoryTree.childrenByParent[parentId] ?? []
+    }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                categoryBar
+                CategoryTabs(
+                    primary: categoryTree.primary,
+                    secondary: secondaryCategories,
+                    activeTypeId: selectedTypeId,
+                    activeParentId: activeParentId,
+                    pending: isLoading,
+                    onSelect: selectCategory
+                )
                 content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .navigationTitle("MultiLiveTV")
+            .screenBackground()
+            .navigationTitle(selectedTypeId == nil ? "MultiLiveTV" : CategoryTreeBuilder.label(tree: categoryTree, typeId: selectedTypeId))
+            .navigationDestination(item: $selectedItem) { item in
+                DetailView(item: item)
+                    .environmentObject(vod)
+            }
             .task { await bootstrap() }
-            .sheet(item: $selectedItem) { item in
-                DetailView(item: item, detail: detail, onAppear: {
-                    Task { await loadDetail(for: item) }
-                })
-            }
         }
     }
 
-    private var categoryBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                categoryChip(label: "全部", typeId: nil)
-                ForEach(categories) { cat in
-                    categoryChip(label: cat.label, typeId: cat.typeId)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-        }
-    }
-
-    private func categoryChip(label: String, typeId: Int?) -> some View {
-        let selected = selectedTypeId == typeId
-        return Button(label) {
-            selectedTypeId = typeId
-            Task { await reload() }
-        }
-        .buttonStyle(.bordered)
-        .tint(selected ? .accentColor : .secondary)
+    private func selectCategory(_ typeId: Int?) {
+        guard typeId != selectedTypeId || errorMessage != nil else { return }
+        selectedTypeId = typeId
+        Task { await reload() }
     }
 
     @ViewBuilder
     private var content: some View {
         if isLoading && pool.isEmpty {
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let errorMessage {
-            Text(errorMessage).foregroundStyle(.red).padding()
+            AppLoadingView()
+        } else if let errorMessage, pool.isEmpty {
+            AppErrorView(message: errorMessage) {
+                Task { await reload() }
+            }
+        } else if pool.isEmpty {
+            AppEmptyStateView(title: "暂无内容", subtitle: "请检查网络连接")
         } else {
             #if os(tvOS)
-            tvGrid
+            tvShelves
             #else
             ipadGrid
             #endif
@@ -69,33 +72,73 @@ struct HomeView: View {
     }
 
     #if os(tvOS)
-    private var tvGrid: some View {
+    private var heroItem: VodItem? {
+        if let focusedId, let item = pool.first(where: { $0.id == focusedId }) {
+            return item
+        }
+        return pool.first
+    }
+
+    private var shelves: [(title: String, items: [VodItem])] {
+        let items = visibleItems
+        let chunkSize = 8
+        var result: [(String, [VodItem])] = []
+        for (index, start) in stride(from: 0, to: items.count, by: chunkSize).enumerated() {
+            let end = min(start + chunkSize, items.count)
+            let chunk = Array(items[start..<end])
+            let title = index == 0 ? "热门推荐" : "更多精彩内容"
+            result.append((title, chunk))
+        }
+        return result
+    }
+
+    private var tvShelves: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 32)], spacing: 32) {
-                ForEach(visibleItems) { item in
-                    VodCard(item: item, isFocused: focusedId == item.id) {
-                        selectedItem = item
-                    }
-                    .focused($focusedId, equals: item.id)
+            VStack(alignment: .leading, spacing: TVDesign.shelfSpacing) {
+                if let heroItem {
+                    HeroBanner(item: heroItem)
+                        .padding(.top, 8)
+                }
+
+                ForEach(Array(shelves.enumerated()), id: \.offset) { _, shelf in
+                    VodShelf(
+                        title: shelf.title,
+                        items: shelf.items,
+                        focusedId: $focusedId,
+                        onSelect: { selectedItem = $0 }
+                    )
+                }
+
+                if canLoadMore {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
+                        .onAppear { Task { await loadMore() } }
                 }
             }
-            .padding(48)
-            if canLoadMore {
-                ProgressView().onAppear { Task { await loadMore() } }
-            }
+            .padding(.bottom, TVDesign.screenPadding)
         }
     }
     #else
     private var ipadGrid: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 16, alignment: .top)],
+                alignment: .leading,
+                spacing: 16
+            ) {
                 ForEach(visibleItems) { item in
                     VodCard(item: item) { selectedItem = item }
+                        .frame(maxWidth: .infinity, alignment: .top)
                 }
             }
             .padding()
+
             if canLoadMore {
-                ProgressView().frame(maxWidth: .infinity).onAppear { Task { await loadMore() } }
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .onAppear { Task { await loadMore() } }
             }
         }
     }
@@ -111,8 +154,8 @@ struct HomeView: View {
 
     private func bootstrap() async {
         do {
-            let types = try await api.fetchTypes()
-            categories = types.categories
+            let types = try await vod.fetchTypes()
+            categoryTree = CategoryTreeBuilder.build(from: types.categories)
             await reload()
         } catch {
             errorMessage = error.localizedDescription
@@ -124,6 +167,7 @@ struct HomeView: View {
         displayCount = 0
         apiPage = 1
         pageCount = 1
+        errorMessage = nil
         await fetchPage(isFirst: true)
     }
 
@@ -141,7 +185,7 @@ struct HomeView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let resp = try await api.fetchList(page: apiPage, typeId: selectedTypeId)
+            let resp = try await vod.fetchList(page: apiPage, typeId: selectedTypeId)
             pageCount = max(resp.pagecount, 1)
             pool = HomeFeed.mergeIntoPool(pool: pool, incoming: resp.list, isFirstBatch: isFirst)
             if isFirst {
@@ -149,14 +193,6 @@ struct HomeView: View {
             } else {
                 displayCount = HomeFeed.nextDisplayCount(current: displayCount, poolLength: pool.count)
             }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func loadDetail(for item: VodItem) async {
-        do {
-            detail = try await api.detail(sourceId: item.resolvedSourceId, vodId: item.vodId)
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -7,6 +7,7 @@ MacCMS 多源聚合点播 — **Go 后端 + Apple TV / iPad 原生客户端**。
 ```
 clients/apple/     SwiftUI（tvOS + iPadOS）
 apps/api-go/       Gin + PostgreSQL + JWT
+apps/admin/        管理后台（:3001）
 packages/openapi/  API 契约
 web/               已归档的 Next.js 网页（冻结）
 ```
@@ -19,16 +20,17 @@ web/               已归档的 Next.js 网页（冻结）
 # 仅 VOD（无需数据库）
 cd apps/api-go && go run ./cmd/server
 
-# 完整栈（API + Postgres + Auth）
+# 完整栈（API + Postgres + Auth + Admin）
 docker compose up --build
 ```
 
 API：`http://localhost:8080`  
+管理后台：`http://localhost:3001`（默认账号 `admin` / `admin`）  
 Smoke 测试：`apps/api-go/scripts/smoke-test.sh`
 
 ### Apple 客户端
 
-见 [`clients/apple/README.md`](clients/apple/README.md)。
+见 [`clients/apple/README.md`](clients/apple/README.md)。App **内嵌 MacCMS 聚合**，无需启动 Go API 即可浏览与播放。
 
 ```bash
 cd clients/apple

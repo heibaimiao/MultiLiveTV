@@ -13,7 +13,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # 生产不暴露 5432 到公网
 
   api:
     build: ./apps/api-go
@@ -26,9 +25,25 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-multilivetv}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multilivetv}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       SOURCES_PATH: config/sources.json
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      ADMIN_CORS_ORIGIN: ${ADMIN_CORS_ORIGIN:-http://localhost:3001}
+    volumes:
+      - ./apps/api-go/config/sources.json:/app/config/sources.json
     depends_on:
       postgres:
         condition: service_healthy
+
+  admin:
+    build:
+      context: ./apps/admin
+      args:
+        VITE_API_BASE_URL: /api/v1
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-3001}:80"
+    depends_on:
+      - api
 
 volumes:
   pgdata:

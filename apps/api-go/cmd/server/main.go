@@ -1,10 +1,3 @@
-// Package main MultiLiveTV API server.
-//
-//	@title			MultiLiveTV API
-//	@version		1.0
-//	@description	VOD aggregation API for MultiLiveTV native clients
-//	@host			localhost:8080
-//	@BasePath		/api/v1
 package main
 
 import (
@@ -18,6 +11,7 @@ import (
 	"github.com/heibaimiao/multilivetv/api-go/internal/handler"
 	"github.com/heibaimiao/multilivetv/api-go/internal/middleware"
 	"github.com/heibaimiao/multilivetv/api-go/internal/repository"
+	"github.com/heibaimiao/multilivetv/api-go/internal/service/admin"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/auth"
 )
 
@@ -34,8 +28,11 @@ func main() {
 		log.Fatalf("database: %v", err)
 	}
 
+	requestLog := middleware.NewRequestLogBuffer(200)
+
 	r := gin.Default()
-	r.Use(middleware.CORS())
+	r.Use(middleware.CORSWithOrigin(cfg.AdminCORSOrigin))
+	r.Use(middleware.RequestLogger(requestLog))
 
 	h := handler.New(sources)
 
@@ -72,6 +69,38 @@ func main() {
 		} else {
 			log.Println("DATABASE_URL not set — auth routes disabled")
 		}
+
+		if cfg.AdminEnabled() {
+			adminSvc := admin.NewService(cfg.AdminUsername, cfg.AdminPassword, cfg.AdminJWTSecret)
+			adminH := &handler.AdminHandler{
+				Auth:       adminSvc,
+				Sources:    sources,
+				Category:   h.Category,
+				DB:         db,
+				RequestLog: requestLog,
+			}
+			adminGroup := v1.Group("/admin")
+			adminGroup.POST("/login", adminH.Login)
+			protected := adminGroup.Group("")
+			protected.Use(middleware.AdminJWT(adminSvc))
+			{
+				protected.GET("/sources", adminH.ListSources)
+				protected.POST("/sources", adminH.CreateSource)
+				protected.PUT("/sources/:id", adminH.UpdateSource)
+				protected.DELETE("/sources/:id", adminH.DeleteSource)
+				protected.POST("/sources/:id/test", adminH.TestSource)
+
+				protected.GET("/users", adminH.ListUsers)
+				protected.GET("/users/stats", adminH.UserStats)
+				protected.DELETE("/users/:id", adminH.DeleteUser)
+
+				protected.GET("/system/status", adminH.SystemStatus)
+				protected.POST("/system/cache/clear", adminH.ClearCache)
+				protected.GET("/system/logs", adminH.ListLogs)
+			}
+		} else {
+			log.Println("ADMIN_USERNAME/ADMIN_PASSWORD not set — admin routes disabled")
+		}
 	}
 
 	r.GET("/health", handler.Health(db))
@@ -84,7 +113,6 @@ func main() {
 	}
 }
 
-// resolve working directory for sources in dev
 func init() {
 	if _, err := os.Stat("config/sources.json"); err != nil {
 		_ = os.Chdir("apps/api-go")
