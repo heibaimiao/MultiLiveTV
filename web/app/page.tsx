@@ -5,7 +5,9 @@ import {
   parseLegacyCategory,
 } from "@/lib/categories";
 import { getCachedCategoryTree } from "@/lib/categoryCache";
+import { mergeIntoPool } from "@/lib/homeFeed";
 import type { CategoryTree } from "@/lib/categoryTree";
+import type { MergedVodItem } from "@/lib/types";
 import { getEnabledSources, getDefaultSource } from "@/lib/sources";
 import { redirect } from "next/navigation";
 
@@ -33,7 +35,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const sources = getEnabledSources();
   const defaultSource = getDefaultSource();
 
-  let items: Awaited<ReturnType<typeof fetchVodListByType>>["list"] = [];
+  let initialPool: MergedVodItem[] = [];
   let pageCount = 1;
   let categoryTree: CategoryTree = EMPTY_TREE;
   let activeSource = defaultSource;
@@ -46,7 +48,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         categoryTree = tree;
       }
       if (data.list?.length) {
-        items = data.list;
+        initialPool = mergeIntoPool(
+          [],
+          data.list.map((item) => ({
+            ...item,
+            sourceId: source.id,
+            sourceName: source.name,
+          })),
+          true
+        );
         pageCount = data.pagecount ?? 1;
         activeSource = source;
         break;
@@ -67,7 +77,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <HomePageClient
       initialTypeId={typeId}
-      initialItems={items}
+      initialPool={initialPool}
       initialPageCount={pageCount}
       categoryTree={categoryTree}
       sourceId={activeSource.id}

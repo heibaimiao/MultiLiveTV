@@ -1,75 +1,62 @@
-# VOD Web
+# MultiLiveTV
 
-MacCMS 采集 API 聚合点播网站，基于 Next.js 全栈构建。
+MacCMS 多源聚合点播 — **Go 后端 + Apple TV / iPad 原生客户端**。
 
-## 功能
+## 架构
 
-- 首页展示最新影片
-- 多源关键词搜索
-- 影片详情、多线路、多集数播放
-- 播放地址自动解析（jx_url）
-- 播放进度本地记忆（localStorage）
-- 资源源本地 JSON 配置
-
-## 技术栈
-
-- **Next.js 15** (App Router)
-- **TypeScript**
-- **Tailwind CSS 4**
-- **ArtPlayer + hls.js** 播放器
-- **axios** 请求 MacCMS 采集 API
+```
+clients/apple/     SwiftUI（tvOS + iPadOS）
+apps/api-go/       Gin + PostgreSQL + JWT
+packages/openapi/  API 契约
+web/               已归档的 Next.js 网页（冻结）
+```
 
 ## 快速开始
 
+### Go API
+
 ```bash
-npm install
-npm run dev
+# 仅 VOD（无需数据库）
+cd apps/api-go && go run ./cmd/server
+
+# 完整栈（API + Postgres + Auth）
+docker compose up --build
 ```
 
-访问 http://localhost:3000
+API：`http://localhost:8080`  
+Smoke 测试：`apps/api-go/scripts/smoke-test.sh`
 
-## 配置资源源
+### Apple 客户端
 
-编辑 [`config/sources.json`](config/sources.json)：
+见 [`clients/apple/README.md`](clients/apple/README.md)。
 
-```json
-{
-  "id": 1,
-  "name": "光速",
-  "url": "https://api.guangsuapi.com/api.php/provide/vod/",
-  "flag": 0,
-  "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
-  "vip_only": false
-}
+```bash
+cd clients/apple
+xcodegen generate   # 需安装 XcodeGen
+open MultiLiveTV.xcodeproj
 ```
 
-| 字段 | 说明 |
-|------|------|
-| `flag` | `0` 启用，`-1` 禁用 |
-| `url` | MacCMS 采集 API 根地址 |
-| `jx_url` | 播放解析接口（可选） |
-
-## API 接口
+## API 路由
 
 | 路径 | 说明 |
 |------|------|
-| `GET /api/sources` | 可用资源源列表 |
-| `GET /api/vod/list?sourceId=&pg=` | 影片列表 |
-| `GET /api/vod/detail?sourceId=&ids=` | 影片详情 |
-| `GET /api/vod/search?wd=` | 搜索（多源聚合） |
-| `GET /api/play/parse?sourceId=&url=` | 解析播放地址 |
+| `GET /api/v1/vod/list` | 分类列表 |
+| `GET /api/v1/vod/search` | 跨源搜索（合并） |
+| `GET /api/v1/vod/detail` | 合并详情 + 线路 |
+| `GET /api/v1/play/parse` | 播放地址解析 |
+| `POST /api/v1/auth/login` | 登录（需 DATABASE_URL） |
+| `GET /api/v1/user/favorites` | 收藏（JWT） |
 
-## 目录结构
+完整契约：[`packages/openapi/openapi.yaml`](packages/openapi/openapi.yaml)
 
-```
-app/           # 页面与 API Routes
-components/    # UI 组件
-lib/           # MacCMS 客户端、解析器
-config/        # 资源源配置
-public/        # 静态资源
-```
+## 配置资源站
+
+编辑 [`apps/api-go/config/sources.json`](apps/api-go/config/sources.json)（`flag: 0` 启用）。
+
+## 部署
+
+见 [`docs/DEPLOY.md`](docs/DEPLOY.md)。
 
 ## 说明
 
-- 第三方采集站可能不稳定，需自行维护 `config/sources.json`
-- 仅供个人学习研究使用
+仅供个人学习研究使用。第三方采集站可能不稳定，需自行维护源配置。

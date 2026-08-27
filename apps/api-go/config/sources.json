@@ -1,0 +1,114 @@
+[
+  {
+    "id": 33,
+    "name": "无忧",
+    "url": "https://www.wyvod.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 125,
+    "name": "猫眼",
+    "url": "https://api.maoyanapi.top/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 143,
+    "name": "虎牙",
+    "url": "https://www.huyaapi.com/api.php/provide/vod/at/json",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 146,
+    "name": "影剧",
+    "url": "https://caiji.maotaizy.cc/api.php/provide/vod/at/josn/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 157,
+    "name": "光速",
+    "url": "https://api.guangsuapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 158,
+    "name": "魔都",
+    "url": "https://www.mdzyapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 159,
+    "name": "非凡",
+    "url": "http://api.ffzyapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 160,
+    "name": "量子",
+    "url": "https://cj.lziapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 161,
+    "name": "暴风",
+    "url": "https://bfzyapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 162,
+    "name": "极速",
+    "url": "https://jszyapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 163,
+    "name": "速播",
+    "url": "https://subocaiji.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 164,
+    "name": "红牛",
+    "url": "https://www.hongniuzy2.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 165,
+    "name": "无尽",
+    "url": "https://api.wujinapi.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  },
+  {
+    "id": 166,
+    "name": "索尼",
+    "url": "https://suonizy.com/api.php/provide/vod/",
+    "flag": 0,
+    "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "vip_only": false
+  }
+]

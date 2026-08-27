@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: multilivetv
+      POSTGRES_PASSWORD: multilivetv
+      POSTGRES_DB: multilivetv
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U multilivetv"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./apps/api-go
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://multilivetv:multilivetv@postgres:5432/multilivetv?sslmode=disable
+      JWT_SECRET: change-me-in-production
+      SOURCES_PATH: config/sources.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

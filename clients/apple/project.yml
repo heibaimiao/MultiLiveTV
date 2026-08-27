@@ -1,0 +1,37 @@
+name: MultiLiveTV
+options:
+  bundleIdPrefix: com.heibaimiao
+  deploymentTarget:
+    iOS: "17.0"
+    tvOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+targets:
+  MultiLiveTV-iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: MultiLiveTV
+        excludes:
+          - "**/Info-*.plist"
+    settings:
+      PRODUCT_NAME: MultiLiveTV
+      PRODUCT_BUNDLE_IDENTIFIER: com.heibaimiao.multilivetv
+      TARGETED_DEVICE_FAMILY: "2"
+      INFOPLIST_FILE: MultiLiveTV/Info-iOS.plist
+      CODE_SIGN_STYLE: Automatic
+  MultiLiveTV-tvOS:
+    type: application
+    platform: tvOS
+    sources:
+      - path: MultiLiveTV
+        excludes:
+          - "**/Info-*.plist"
+    settings:
+      PRODUCT_NAME: MultiLiveTV
+      PRODUCT_BUNDLE_IDENTIFIER: com.heibaimiao.multilivetv.tv
+      INFOPLIST_FILE: MultiLiveTV/Info-tvOS.plist
+      CODE_SIGN_STYLE: Automatic

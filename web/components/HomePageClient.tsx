@@ -8,13 +8,20 @@ import {
   getCategoryLabel,
   getParentTypeId,
 } from "@/lib/categoryTree";
+import {
+  canLoadMoreFromPool,
+  getInitialDisplayCount,
+  getNextDisplayCount,
+  getVisibleItems,
+  HOME_INITIAL_DISPLAY,
+  mergeIntoPool,
+} from "@/lib/homeFeed";
 import type { CategoryTree } from "@/lib/categoryTree";
-import type { MergedVodItem, VodItem } from "@/lib/types";
-import { mergeVodItems } from "@/lib/vodMerge";
+import type { MergedVodItem } from "@/lib/types";
 
 interface HomePageClientProps {
   initialTypeId: number | null;
-  initialItems: Array<VodItem | MergedVodItem>;
+  initialPool: MergedVodItem[];
   initialPageCount?: number;
   categoryTree: CategoryTree;
   sourceId: number;
@@ -43,7 +50,7 @@ function MovieGridSkeleton() {
 
 export default function HomePageClient({
   initialTypeId,
-  initialItems,
+  initialPool = [],
   initialPageCount = 1,
   categoryTree,
   sourceId,
@@ -52,8 +59,11 @@ export default function HomePageClient({
 }: HomePageClientProps) {
   const router = useRouter();
   const [typeId, setTypeId] = useState(initialTypeId);
-  const [items, setItems] = useState(initialItems);
-  const [page, setPage] = useState(1);
+  const [pool, setPool] = useState(initialPool);
+  const [displayCount, setDisplayCount] = useState(
+    getInitialDisplayCount(initialPool.length)
+  );
+  const [apiPage, setApiPage] = useState(1);
   const [pageCount, setPageCount] = useState(initialPageCount);
   const [activeSourceId, setActiveSourceId] = useState(sourceId);
   const [activeSourceName, setActiveSourceName] = useState(sourceName);
@@ -61,16 +71,27 @@ export default function HomePageClient({
   const [isPending, startTransition] = useTransition();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const requestId = useRef(0);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const loadingMoreRef = useRef(false);
+
+  const visibleItems = getVisibleItems(pool, displayCount);
+  const hasMore = canLoadMoreFromPool(
+    displayCount,
+    pool.length,
+    apiPage,
+    pageCount
+  );
 
   useEffect(() => {
     setTypeId(initialTypeId);
-    setItems(initialItems);
-    setPage(1);
+    setPool(initialPool ?? []);
+    setDisplayCount(getInitialDisplayCount((initialPool ?? []).length));
+    setApiPage(1);
     setPageCount(initialPageCount);
     setActiveSourceId(sourceId);
     setActiveSourceName(sourceName);
     setError(null);
-  }, [initialTypeId, initialItems, initialPageCount, sourceId, sourceName]);
+  }, [initialTypeId, initialPool, initialPageCount, sourceId, sourceName]);
 
   const activeParentId = getParentTypeId(categoryTree, typeId);
   const secondary =
@@ -88,42 +109,14 @@ export default function HomePageClient({
     []
   );
 
-  const mergeItems = useCallback(
-    (
-      prev: Array<VodItem | MergedVodItem>,
-      next: Array<VodItem | MergedVodItem>
-    ) => {
-      const flatten = (items: Array<VodItem | MergedVodItem>) =>
-        items.flatMap((item) => {
-          if ("variants" in item && item.variants.length > 0) {
-            return item.variants.map((variant) => ({
-              ...item,
-              vod_id: variant.vodId,
-              sourceId: variant.sourceId,
-              sourceName: variant.sourceName,
-            }));
-          }
-
-          return [
-            {
-              ...item,
-              sourceId: activeSourceId,
-              sourceName: activeSourceName,
-            },
-          ];
-        });
-
-      return mergeVodItems([...flatten(prev), ...flatten(next)]);
-    },
-    [activeSourceId, activeSourceName]
-  );
-
   const loadType = useCallback(
     async (nextTypeId: number | null) => {
       const currentRequest = ++requestId.current;
       setTypeId(nextTypeId);
       setError(null);
-      setPage(1);
+      setPool([]);
+      setDisplayCount(0);
+      setApiPage(1);
 
       router.replace(nextTypeId ? `/?t=${nextTypeId}` : "/", { scroll: false });
 
@@ -133,15 +126,23 @@ export default function HomePageClient({
         const data = await response.json();
         if (currentRequest !== requestId.current) return;
 
-        const list = data.list ?? [];
+        const incoming = (data.list ?? []).map((item: MergedVodItem) => ({
+          ...item,
+          sourceId: data.source?.id,
+          sourceName: data.source?.name,
+        }));
+        const nextPool = mergeIntoPool([], incoming, true);
+
         if (data.source?.id) {
           setActiveSourceId(data.source.id);
           setActiveSourceName(data.source.name);
         }
-        setItems(list);
-        setPage(data.page ?? 1);
+        setPool(nextPool);
+        setDisplayCount(getInitialDisplayCount(nextPool.length));
+        setApiPage(data.page ?? 1);
         setPageCount(data.pagecount ?? 1);
-        if (!list.length) {
+
+        if (!nextPool.length) {
           setError(
             nextTypeId === null
               ? "暂无内容，请稍后重试"
@@ -151,7 +152,8 @@ export default function HomePageClient({
       } catch {
         if (currentRequest !== requestId.current) return;
         setError("加载失败，请稍后重试");
-        setItems([]);
+        setPool([]);
+        setDisplayCount(0);
         setPageCount(1);
       }
     },
@@ -159,35 +161,69 @@ export default function HomePageClient({
   );
 
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || page >= pageCount) return;
+    if (loadingMoreRef.current) return;
 
-    const nextPage = page + 1;
+    if (displayCount < pool.length) {
+      setDisplayCount((current) => getNextDisplayCount(current, pool.length));
+      return;
+    }
+
+    if (apiPage >= pageCount) return;
+
+    loadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     try {
+      const nextPage = apiPage + 1;
       const response = await fetch(
         buildListUrl(typeId, nextPage, activeSourceId)
       );
       if (!response.ok) throw new Error("加载失败");
       const data = await response.json();
-      const list = data.list ?? [];
-      setItems((prev) => mergeItems(prev, list));
-      setPage(data.page ?? nextPage);
+      const incoming = (data.list ?? []).map((item: MergedVodItem) => ({
+        ...item,
+        sourceId: data.source?.id ?? activeSourceId,
+        sourceName: data.source?.name ?? activeSourceName,
+      }));
+
+      const nextPool = mergeIntoPool(pool, incoming, false);
+      setPool(nextPool);
+      setDisplayCount((current) => getNextDisplayCount(current, nextPool.length));
+      setApiPage(data.page ?? nextPage);
       setPageCount(data.pagecount ?? pageCount);
     } catch {
       setError("加载更多失败，请稍后重试");
     } finally {
+      loadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
   }, [
     activeSourceId,
+    activeSourceName,
+    apiPage,
     buildListUrl,
-    isLoadingMore,
-    mergeItems,
-    page,
+    displayCount,
     pageCount,
+    pool,
     typeId,
   ]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "240px 0px" }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
 
   const handleSelect = (nextTypeId: number | null) => {
     if (nextTypeId === typeId && !error) return;
@@ -204,7 +240,11 @@ export default function HomePageClient({
             {typeId === null ? "最新影片" : getCategoryLabel(categoryTree, typeId)}
           </h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            当前源：{activeSourceName} · 共 {sourceCount} 个可用源
+            当前源：{activeSourceName} · 共 {sourceCount} 个可用源 · 已显示{" "}
+            {visibleItems.length}
+            {pool.length > visibleItems.length
+              ? ` / 已缓存 ${pool.length}`
+              : ""}
           </p>
         </div>
       </div>
@@ -227,21 +267,25 @@ export default function HomePageClient({
       ) : (
         <div className="space-y-8">
           <MovieGrid
-            items={items}
+            items={visibleItems}
             sourceId={activeSourceId}
             sourceName={activeSourceName}
           />
-          {page < pageCount ? (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => void loadMore()}
-                disabled={isLoadingMore}
-                className="rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-2.5 text-sm text-[var(--foreground)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isLoadingMore ? "加载中..." : `加载更多（${page}/${pageCount}）`}
-              </button>
+          {hasMore ? (
+            <div
+              ref={loadMoreRef}
+              className="flex justify-center py-6 text-sm text-[var(--muted)]"
+            >
+              {isLoadingMore
+                ? "加载中..."
+                : displayCount < pool.length
+                  ? "继续下滑加载更多"
+                  : "下滑加载更多"}
             </div>
+          ) : pool.length > HOME_INITIAL_DISPLAY ? (
+            <p className="pb-6 text-center text-sm text-[var(--muted)]">
+              已加载全部内容
+            </p>
           ) : null}
         </div>
       )}

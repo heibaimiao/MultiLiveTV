@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: MultiLiveTV API
+  version: 1.0.0
+  description: VOD aggregation API for Apple TV / iPad / Android clients
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+paths:
+  /sources:
+    get:
+      summary: List enabled VOD sources
+      tags: [VOD]
+      responses:
+        "200":
+          description: OK
+  /vod/list:
+    get:
+      summary: VOD list by category
+      tags: [VOD]
+      parameters:
+        - name: sourceId
+          in: query
+          schema: { type: integer }
+        - name: pg
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: t
+          in: query
+          description: Category type id
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+  /vod/detail:
+    get:
+      summary: Merged VOD detail with play sources
+      tags: [VOD]
+      parameters:
+        - name: sourceId
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: ids
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /vod/search:
+    get:
+      summary: Cross-source search with merge
+      tags: [VOD]
+      parameters:
+        - name: wd
+          in: query
+          required: true
+          schema: { type: string }
+        - name: sourceId
+          in: query
+          schema: { type: integer }
+        - name: pg
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: OK
+  /vod/types:
+    get:
+      summary: Category list for a source
+      tags: [VOD]
+      parameters:
+        - name: sourceId
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+  /vod/pic:
+    get:
+      summary: Poster URL for a VOD
+      tags: [VOD]
+      parameters:
+        - name: sourceId
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: ids
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /play/parse:
+    get:
+      summary: Parse play URL via jx_url
+      tags: [Play]
+      parameters:
+        - name: sourceId
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: url
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/register:
+    post:
+      summary: Register user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+      responses:
+        "201":
+          description: Created
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200":
+          description: OK
+  /user/favorites:
+    get:
+      summary: List favorites
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Add favorite
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Created
+    delete:
+      summary: Remove favorite
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: merge_key
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /user/progress:
+    get:
+      summary: Get watch progress
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    put:
+      summary: Update watch progress
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

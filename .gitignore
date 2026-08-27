@@ -1,5 +1,6 @@
 # dependencies
 node_modules/
+web/node_modules/
 .pnp
 .pnp.js
 
@@ -19,6 +20,8 @@ dist/
 *.pem
 .idea/
 *.iml
+*.xcuserstate
+**/xcuserdata/
 
 # debug
 npm-debug.log*
