@@ -1,4 +1,3 @@
-import { normalizeTypeName } from "./categoryTree";
 import { fetchVodDetail, searchVod } from "./maccms";
 import { mergePlaySourcesFromVods } from "./parser";
 import { getEnabledSources } from "./sources";
@@ -25,10 +24,9 @@ export function normalizeVodTitle(name?: string): string {
 export function buildVodMergeKey(
   item: Pick<VodItem, "vod_name" | "type_name" | "vod_year">
 ): string {
-  const title = normalizeVodTitle(item.vod_name);
-  const type = normalizeTypeName(item.type_name ?? "");
-  const year = (item.vod_year ?? "").trim();
-  return `${title}|${type}|${year}`;
+  // 跨资源站时 type_name / vod_year 常不一致（如动作片 vs 恐怖片），
+  // 仅按片名合并；季数差异通常已体现在片名中（如「第二季」）。
+  return normalizeVodTitle(item.vod_name);
 }
 
 function countPlayLines(item: VodItem): number {
