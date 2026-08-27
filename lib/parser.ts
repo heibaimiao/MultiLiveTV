@@ -1,4 +1,4 @@
-import type { Source, PlaySource, Episode, ParseResult } from "./types";
+import type { Source, PlaySource, Episode, ParseResult, VodItem } from "./types";
 import { formatPlaySourceName } from "./playSourceNames";
 
 const DEFAULT_HEADERS = {
@@ -6,14 +6,27 @@ const DEFAULT_HEADERS = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 };
 
+function splitPlayFrom(vodPlayFrom: string): string[] {
+  if (!vodPlayFrom) return [];
+  if (vodPlayFrom.includes("$$$")) {
+    return vodPlayFrom.split("$$$").filter(Boolean);
+  }
+  if (vodPlayFrom.includes(",")) {
+    return vodPlayFrom.split(",").filter(Boolean);
+  }
+  return [vodPlayFrom];
+}
+
 export function parsePlayUrl(vodPlayFrom: string, vodPlayUrl: string): PlaySource[] {
   if (!vodPlayFrom || !vodPlayUrl) return [];
 
-  const fromList = vodPlayFrom.split("$$$");
-  const urlList = vodPlayUrl.split("$$$");
+  const fromList = splitPlayFrom(vodPlayFrom);
+  const urlList = vodPlayUrl.includes("$$$")
+    ? vodPlayUrl.split("$$$")
+    : [vodPlayUrl];
 
   return fromList.map((name, index) => {
-    const rawEpisodes = urlList[index] ?? "";
+    const rawEpisodes = urlList[index] ?? urlList[0] ?? "";
     const episodes: Episode[] = rawEpisodes
       .split("#")
       .filter(Boolean)
@@ -34,6 +47,31 @@ export function parsePlayUrl(vodPlayFrom: string, vodPlayUrl: string): PlaySourc
       episodes,
     };
   });
+}
+
+export function mergePlaySourcesFromVods(
+  entries: Array<{ source: Source; vod: VodItem }>
+): PlaySource[] {
+  const merged = new Map<string, PlaySource>();
+
+  for (const { source, vod } of entries) {
+    const parsed = parsePlayUrl(vod.vod_play_from ?? "", vod.vod_play_url ?? "");
+    for (const line of parsed) {
+      const key = `${source.id}:${line.key}`;
+      const name = `${source.name} · ${line.name}`;
+      const existing = merged.get(key);
+      if (!existing || line.episodes.length > existing.episodes.length) {
+        merged.set(key, {
+          ...line,
+          key,
+          name,
+          sourceId: source.id,
+        });
+      }
+    }
+  }
+
+  return Array.from(merged.values());
 }
 
 export async function parsePlayAddress(

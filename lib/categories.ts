@@ -8,6 +8,7 @@ import {
   type CategoryDef,
   type CategoryTree,
 } from "./categoryTree";
+import { mergeVodItems } from "./vodMerge";
 import type { Source, VodItem, VodType } from "./types";
 
 export type { CategoryDef, CategoryTree };
@@ -67,14 +68,14 @@ export function parseLegacyCategory(value?: string | null): number | null {
   return LEGACY_CATEGORY_TYPE[value] ?? null;
 }
 
-function dedupeItems(items: VodItem[]): VodItem[] {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    const key = String(item.vod_id);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function mergeListItems(source: Source, items: VodItem[]) {
+  return mergeVodItems(
+    items.map((item) => ({
+      ...item,
+      sourceId: source.id,
+      sourceName: source.name,
+    }))
+  );
 }
 
 export async function fetchVodListByType(
@@ -84,12 +85,19 @@ export async function fetchVodListByType(
   knownTypes?: VodType[]
 ) {
   if (typeId === null) {
-    return fetchVodList(source, page);
+    const data = await fetchVodList(source, page);
+    return {
+      ...data,
+      list: mergeListItems(source, data.list ?? []),
+    };
   }
 
   const direct = await fetchVodList(source, page, typeId);
   if (direct.list?.length || (direct.total ?? 0) > 0) {
-    return direct;
+    return {
+      ...direct,
+      list: mergeListItems(source, direct.list ?? []),
+    };
   }
 
   const types = knownTypes ?? (await fetchVodTypes(source));
@@ -98,26 +106,24 @@ export async function fetchVodListByType(
     return direct;
   }
 
-  const targetCount = 24;
   const results = await Promise.all(
     childIds.map((childId) => fetchVodList(source, page, childId))
   );
 
-  const merged: VodItem[] = [];
-  for (const data of results) {
-    merged.push(...(data.list ?? []));
-    if (merged.length >= targetCount) break;
-  }
-
-  const list = dedupeItems(merged).slice(0, targetCount);
+  const list = mergeListItems(
+    source,
+    results.flatMap((data) => data.list ?? [])
+  );
+  const pagecount = Math.max(...results.map((data) => data.pagecount ?? 1), 1);
+  const total = results.reduce((sum, data) => sum + (data.total ?? 0), 0);
 
   return {
     code: 1,
     msg: "ok",
     page,
-    pagecount: 1,
-    limit: String(targetCount),
-    total: list.length,
+    pagecount,
+    limit: String(list.length),
+    total,
     list,
   };
 }

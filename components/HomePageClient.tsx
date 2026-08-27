@@ -9,11 +9,13 @@ import {
   getParentTypeId,
 } from "@/lib/categoryTree";
 import type { CategoryTree } from "@/lib/categoryTree";
-import type { VodItem } from "@/lib/types";
+import type { MergedVodItem, VodItem } from "@/lib/types";
+import { mergeVodItems } from "@/lib/vodMerge";
 
 interface HomePageClientProps {
   initialTypeId: number | null;
-  initialItems: VodItem[];
+  initialItems: Array<VodItem | MergedVodItem>;
+  initialPageCount?: number;
   categoryTree: CategoryTree;
   sourceId: number;
   sourceName: string;
@@ -42,6 +44,7 @@ function MovieGridSkeleton() {
 export default function HomePageClient({
   initialTypeId,
   initialItems,
+  initialPageCount = 1,
   categoryTree,
   sourceId,
   sourceName,
@@ -50,19 +53,24 @@ export default function HomePageClient({
   const router = useRouter();
   const [typeId, setTypeId] = useState(initialTypeId);
   const [items, setItems] = useState(initialItems);
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(initialPageCount);
   const [activeSourceId, setActiveSourceId] = useState(sourceId);
   const [activeSourceName, setActiveSourceName] = useState(sourceName);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const requestId = useRef(0);
 
   useEffect(() => {
     setTypeId(initialTypeId);
     setItems(initialItems);
+    setPage(1);
+    setPageCount(initialPageCount);
     setActiveSourceId(sourceId);
     setActiveSourceName(sourceName);
     setError(null);
-  }, [initialTypeId, initialItems, sourceId, sourceName]);
+  }, [initialTypeId, initialItems, initialPageCount, sourceId, sourceName]);
 
   const activeParentId = getParentTypeId(categoryTree, typeId);
   const secondary =
@@ -70,21 +78,57 @@ export default function HomePageClient({
       ? categoryTree.childrenByParent[activeParentId] ?? []
       : [];
 
+  const buildListUrl = useCallback(
+    (nextTypeId: number | null, nextPage: number, nextSourceId?: number) => {
+      const params = new URLSearchParams({ pg: String(nextPage) });
+      if (nextTypeId !== null) params.set("t", String(nextTypeId));
+      if (nextSourceId) params.set("sourceId", String(nextSourceId));
+      return `/api/vod/list?${params.toString()}`;
+    },
+    []
+  );
+
+  const mergeItems = useCallback(
+    (
+      prev: Array<VodItem | MergedVodItem>,
+      next: Array<VodItem | MergedVodItem>
+    ) => {
+      const flatten = (items: Array<VodItem | MergedVodItem>) =>
+        items.flatMap((item) => {
+          if ("variants" in item && item.variants.length > 0) {
+            return item.variants.map((variant) => ({
+              ...item,
+              vod_id: variant.vodId,
+              sourceId: variant.sourceId,
+              sourceName: variant.sourceName,
+            }));
+          }
+
+          return [
+            {
+              ...item,
+              sourceId: activeSourceId,
+              sourceName: activeSourceName,
+            },
+          ];
+        });
+
+      return mergeVodItems([...flatten(prev), ...flatten(next)]);
+    },
+    [activeSourceId, activeSourceName]
+  );
+
   const loadType = useCallback(
     async (nextTypeId: number | null) => {
       const currentRequest = ++requestId.current;
       setTypeId(nextTypeId);
       setError(null);
-
-      const url =
-        nextTypeId === null
-          ? `/api/vod/list?pg=1`
-          : `/api/vod/list?pg=1&t=${nextTypeId}`;
+      setPage(1);
 
       router.replace(nextTypeId ? `/?t=${nextTypeId}` : "/", { scroll: false });
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(buildListUrl(nextTypeId, 1));
         if (!response.ok) throw new Error("加载失败");
         const data = await response.json();
         if (currentRequest !== requestId.current) return;
@@ -95,6 +139,8 @@ export default function HomePageClient({
           setActiveSourceName(data.source.name);
         }
         setItems(list);
+        setPage(data.page ?? 1);
+        setPageCount(data.pagecount ?? 1);
         if (!list.length) {
           setError(
             nextTypeId === null
@@ -106,10 +152,42 @@ export default function HomePageClient({
         if (currentRequest !== requestId.current) return;
         setError("加载失败，请稍后重试");
         setItems([]);
+        setPageCount(1);
       }
     },
-    [categoryTree, router]
+    [buildListUrl, categoryTree, router]
   );
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || page >= pageCount) return;
+
+    const nextPage = page + 1;
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(
+        buildListUrl(typeId, nextPage, activeSourceId)
+      );
+      if (!response.ok) throw new Error("加载失败");
+      const data = await response.json();
+      const list = data.list ?? [];
+      setItems((prev) => mergeItems(prev, list));
+      setPage(data.page ?? nextPage);
+      setPageCount(data.pagecount ?? pageCount);
+    } catch {
+      setError("加载更多失败，请稍后重试");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [
+    activeSourceId,
+    buildListUrl,
+    isLoadingMore,
+    mergeItems,
+    page,
+    pageCount,
+    typeId,
+  ]);
 
   const handleSelect = (nextTypeId: number | null) => {
     if (nextTypeId === typeId && !error) return;
@@ -147,11 +225,25 @@ export default function HomePageClient({
           {error}
         </div>
       ) : (
-        <MovieGrid
-          items={items}
-          sourceId={activeSourceId}
-          sourceName={activeSourceName}
-        />
+        <div className="space-y-8">
+          <MovieGrid
+            items={items}
+            sourceId={activeSourceId}
+            sourceName={activeSourceName}
+          />
+          {page < pageCount ? (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => void loadMore()}
+                disabled={isLoadingMore}
+                className="rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-2.5 text-sm text-[var(--foreground)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoadingMore ? "加载中..." : `加载更多（${page}/${pageCount}）`}
+              </button>
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );

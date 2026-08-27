@@ -1,7 +1,6 @@
 import Link from "next/link";
 import VodDetailClient from "@/components/VodDetailClient";
-import { fetchVodDetail } from "@/lib/maccms";
-import { parsePlayUrl } from "@/lib/parser";
+import { fetchMergedVodDetail } from "@/lib/vodMerge";
 import { getSourceById } from "@/lib/sources";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +39,8 @@ export default async function VodPage({ params, searchParams }: VodPageProps) {
   }
 
   try {
-    const data = await fetchVodDetail(source, id);
-    const vod = data.list?.[0];
-
-    if (!vod) {
+    const merged = await fetchMergedVodDetail(source, id);
+    if (!merged) {
       return (
         <div className="space-y-4">
           <p className="text-[var(--muted)]">影片不存在</p>
@@ -54,17 +51,13 @@ export default async function VodPage({ params, searchParams }: VodPageProps) {
       );
     }
 
-    const playSources = parsePlayUrl(
-      vod.vod_play_from ?? "",
-      vod.vod_play_url ?? ""
-    );
-
     return (
       <VodDetailClient
-        vod={vod}
-        playSources={playSources}
-        sourceId={source.id}
+        vod={merged.vod}
+        playSources={merged.playSources}
+        sourceId={merged.primarySourceId}
         sourceName={source.name}
+        variants={merged.variants}
       />
     );
   } catch {

@@ -34,6 +34,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const defaultSource = getDefaultSource();
 
   let items: Awaited<ReturnType<typeof fetchVodListByType>>["list"] = [];
+  let pageCount = 1;
   let categoryTree: CategoryTree = EMPTY_TREE;
   let activeSource = defaultSource;
 
@@ -46,6 +47,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       }
       if (data.list?.length) {
         items = data.list;
+        pageCount = data.pagecount ?? 1;
         activeSource = source;
         break;
       }
@@ -66,6 +68,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <HomePageClient
       initialTypeId={typeId}
       initialItems={items}
+      initialPageCount={pageCount}
       categoryTree={categoryTree}
       sourceId={activeSource.id}
       sourceName={activeSource.name}

@@ -5,16 +5,38 @@ import Link from "next/link";
 import Image from "next/image";
 import { fetchAndCachePic, getCachedPic } from "@/lib/vodPicCache";
 import { normalizeTypeName } from "@/lib/categories";
-import type { VodItem } from "@/lib/types";
+import {
+  getPrimaryVariant,
+  getVariantSourceNames,
+} from "@/lib/vodMerge";
+import type { MergedVodItem, VodItem } from "@/lib/types";
 
 interface MovieCardProps {
-  item: VodItem;
-  sourceId: number;
+  item: VodItem | MergedVodItem;
+  sourceId?: number;
   sourceName?: string;
 }
 
-export default function MovieCard({ item, sourceId, sourceName }: MovieCardProps) {
+function isMergedVodItem(item: VodItem | MergedVodItem): item is MergedVodItem {
+  return "variants" in item && Array.isArray(item.variants);
+}
+
+export default function MovieCard({
+  item,
+  sourceId,
+  sourceName,
+}: MovieCardProps) {
   const [pic, setPic] = useState("/placeholder.svg");
+  const merged = isMergedVodItem(item) ? item : null;
+  const primaryVariant = merged ? getPrimaryVariant(merged) : null;
+  const linkSourceId =
+    primaryVariant?.sourceId ?? merged?.primarySourceId ?? sourceId ?? 0;
+  const linkVodId = primaryVariant?.vodId ?? item.vod_id;
+  const sourceLabels = merged
+    ? getVariantSourceNames(merged)
+    : sourceName
+      ? [sourceName]
+      : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -25,13 +47,13 @@ export default function MovieCard({ item, sourceId, sourceName }: MovieCardProps
         return;
       }
 
-      const cached = getCachedPic(sourceId, item.vod_id);
+      const cached = getCachedPic(linkSourceId, linkVodId);
       if (cached) {
         setPic(cached);
         return;
       }
 
-      const url = await fetchAndCachePic(sourceId, item.vod_id);
+      const url = await fetchAndCachePic(linkSourceId, linkVodId);
       if (!cancelled && url) {
         setPic(url);
       }
@@ -41,11 +63,11 @@ export default function MovieCard({ item, sourceId, sourceName }: MovieCardProps
     return () => {
       cancelled = true;
     };
-  }, [item.vod_pic, item.vod_id, sourceId]);
+  }, [item.vod_pic, linkSourceId, linkVodId]);
 
   return (
     <Link
-      href={`/vod/${item.vod_id}?source=${sourceId}`}
+      href={`/vod/${linkVodId}?source=${linkSourceId}`}
       className="group block overflow-hidden rounded-xl bg-[var(--card)] transition hover:bg-[var(--card-hover)]"
     >
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
@@ -63,11 +85,20 @@ export default function MovieCard({ item, sourceId, sourceName }: MovieCardProps
             {item.vod_remarks}
           </span>
         )}
+        {sourceLabels.length > 1 && (
+          <span className="absolute left-2 top-2 rounded bg-[var(--accent)]/90 px-2 py-0.5 text-xs text-white">
+            {sourceLabels.length} 个源
+          </span>
+        )}
       </div>
       <div className="p-3">
         <h3 className="line-clamp-2 text-sm font-medium">{item.vod_name}</h3>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          {[sourceName, item.type_name && normalizeTypeName(item.type_name), item.vod_year]
+          {[
+            sourceLabels.length > 0 ? sourceLabels.join(" · ") : sourceName,
+            item.type_name && normalizeTypeName(item.type_name),
+            item.vod_year,
+          ]
             .filter(Boolean)
             .join(" · ")}
         </p>

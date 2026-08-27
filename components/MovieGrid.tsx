@@ -1,13 +1,18 @@
 import MovieCard from "./MovieCard";
-import type { VodItem } from "@/lib/types";
+import { buildVodMergeKey } from "@/lib/vodMerge";
+import type { MergedVodItem, VodItem } from "@/lib/types";
 
 interface MovieGridProps {
-  items: VodItem[];
-  sourceId: number;
+  items: Array<VodItem | MergedVodItem>;
+  sourceId?: number;
   sourceName?: string;
 }
 
-export default function MovieGrid({ items, sourceId, sourceName }: MovieGridProps) {
+export default function MovieGrid({
+  items,
+  sourceId,
+  sourceName,
+}: MovieGridProps) {
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--border)] p-12 text-center text-[var(--muted)]">
@@ -20,7 +25,7 @@ export default function MovieGrid({ items, sourceId, sourceName }: MovieGridProp
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {items.map((item) => (
         <MovieCard
-          key={`${sourceId}-${item.vod_id}`}
+          key={buildVodMergeKey(item)}
           item={item}
           sourceId={sourceId}
           sourceName={sourceName}

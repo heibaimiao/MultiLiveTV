@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import EpisodeList from "@/components/EpisodeList";
 import SourceTabs from "@/components/SourceTabs";
-import type { PlaySource, VodItem } from "@/lib/types";
+import { getVariantSourceNames } from "@/lib/vodMerge";
+import type { PlaySource, VodItem, VodVariant } from "@/lib/types";
 import { setCachedPic } from "@/lib/vodPicCache";
 
 const VideoPlayer = dynamic(() => import("@/components/VideoPlayer"), {
@@ -22,6 +23,7 @@ interface VodDetailClientProps {
   playSources: PlaySource[];
   sourceId: number;
   sourceName: string;
+  variants?: VodVariant[];
 }
 
 export default function VodDetailClient({
@@ -29,6 +31,7 @@ export default function VodDetailClient({
   playSources,
   sourceId,
   sourceName,
+  variants = [],
 }: VodDetailClientProps) {
   const [sourceIndex, setSourceIndex] = useState(0);
   const [episodeIndex, setEpisodeIndex] = useState(0);
@@ -38,10 +41,15 @@ export default function VodDetailClient({
 
   const currentSource = playSources[sourceIndex];
   const currentEpisode = currentSource?.episodes[episodeIndex];
+  const parseSourceId = currentSource?.sourceId ?? sourceId;
+  const availableSources = variants.length
+    ? getVariantSourceNames({ ...vod, variants, primarySourceId: sourceId })
+    : [sourceName];
 
   const storageKey = useMemo(
-    () => `vod-progress-${sourceId}-${vod.vod_id}-${sourceIndex}-${episodeIndex}`,
-    [sourceId, vod.vod_id, sourceIndex, episodeIndex]
+    () =>
+      `vod-progress-${parseSourceId}-${vod.vod_id}-${currentSource?.key ?? sourceIndex}-${episodeIndex}`,
+    [parseSourceId, vod.vod_id, currentSource?.key, sourceIndex, episodeIndex]
   );
 
   useEffect(() => {
@@ -64,7 +72,7 @@ export default function VodDetailClient({
 
       try {
         const res = await fetch(
-          `/api/play/parse?sourceId=${sourceId}&url=${encodeURIComponent(currentEpisode.url)}`
+          `/api/play/parse?sourceId=${parseSourceId}&url=${encodeURIComponent(currentEpisode.url)}`
         );
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "解析失败");
@@ -85,7 +93,7 @@ export default function VodDetailClient({
       setPlayUrl("");
       setLoading(false);
     };
-  }, [currentEpisode?.url, sourceId]);
+  }, [currentEpisode?.url, parseSourceId]);
 
   return (
     <div className="space-y-6">
@@ -104,7 +112,7 @@ export default function VodDetailClient({
         <div className="space-y-3">
           <h1 className="text-2xl font-bold">{vod.vod_name}</h1>
           <p className="text-sm text-[var(--muted)]">
-            {[sourceName, vod.vod_year, vod.vod_area, vod.type_name]
+            {[availableSources.join(" · "), vod.vod_year, vod.vod_area, vod.type_name]
               .filter(Boolean)
               .join(" · ")}
           </p>

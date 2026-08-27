@@ -39,6 +39,18 @@ export interface PlaySource {
   name: string;
   key: string;
   episodes: Episode[];
+  sourceId?: number;
+}
+
+export interface VodVariant {
+  sourceId: number;
+  sourceName: string;
+  vodId: string;
+}
+
+export interface MergedVodItem extends VodItem {
+  variants: VodVariant[];
+  primarySourceId: number;
 }
 
 export interface MacCmsListResponse {
@@ -62,6 +74,11 @@ export interface SearchResultItem extends VodItem {
   sourceId: number;
   sourceName: string;
 }
+
+export type MergeableVodItem = VodItem & {
+  sourceId?: number;
+  sourceName?: string;
+};
 
 export interface ParseResult {
   url: string;

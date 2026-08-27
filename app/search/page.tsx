@@ -1,7 +1,7 @@
 import MovieGrid from "@/components/MovieGrid";
 import { searchVod } from "@/lib/maccms";
 import { getEnabledSources } from "@/lib/sources";
-import type { SearchResultItem, VodItem } from "@/lib/types";
+import { mergeVodItems } from "@/lib/vodMerge";
 
 export const dynamic = "force-dynamic";
 
@@ -13,35 +13,26 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { wd } = await searchParams;
   const keyword = wd?.trim() ?? "";
 
-  let results: SearchResultItem[] = [];
+  let results = mergeVodItems([]);
 
   if (keyword) {
     const sources = getEnabledSources();
     const settled = await Promise.allSettled(
       sources.map(async (source) => {
         const data = await searchVod(source, keyword);
-        return (data.list ?? []).map(
-          (item): SearchResultItem => ({
-            ...item,
-            sourceId: source.id,
-            sourceName: source.name,
-          })
-        );
+        return (data.list ?? []).map((item) => ({
+          ...item,
+          sourceId: source.id,
+          sourceName: source.name,
+        }));
       })
     );
-    results = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  }
 
-  const grouped = results.reduce<Record<number, { name: string; items: VodItem[] }>>(
-    (acc, item) => {
-      if (!acc[item.sourceId]) {
-        acc[item.sourceId] = { name: item.sourceName, items: [] };
-      }
-      acc[item.sourceId].items.push(item);
-      return acc;
-    },
-    {}
-  );
+    const rawList = settled.flatMap((result) =>
+      result.status === "fulfilled" ? result.value : []
+    );
+    results = mergeVodItems(rawList);
+  }
 
   return (
     <div className="space-y-8">
@@ -49,7 +40,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <h1 className="text-2xl font-bold">搜索</h1>
         {keyword && (
           <p className="mt-1 text-sm text-[var(--muted)]">
-            关键词「{keyword}」共找到 {results.length} 条结果
+            关键词「{keyword}」共找到 {results.length} 条结果（已跨源合并）
           </p>
         )}
       </div>
@@ -62,16 +53,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <p className="text-[var(--muted)]">未找到相关影片</p>
       )}
 
-      {Object.entries(grouped).map(([sourceId, group]) => (
-        <section key={sourceId} className="space-y-4">
-          <h2 className="text-lg font-semibold">{group.name}</h2>
-          <MovieGrid
-            items={group.items}
-            sourceId={Number(sourceId)}
-            sourceName={group.name}
-          />
-        </section>
-      ))}
+      {results.length > 0 && (
+        <MovieGrid items={results} />
+      )}
     </div>
   );
 }

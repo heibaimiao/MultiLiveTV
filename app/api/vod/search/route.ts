@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchVod } from "@/lib/maccms";
 import { getEnabledSources, getSourceById } from "@/lib/sources";
-import type { SearchResultItem } from "@/lib/types";
+import { mergeVodItems } from "@/lib/vodMerge";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -24,22 +24,22 @@ export async function GET(request: NextRequest) {
   const results = await Promise.allSettled(
     sources.map(async (source) => {
       const data = await searchVod(source!, keyword, page);
-      return (data.list ?? []).map(
-        (item): SearchResultItem => ({
-          ...item,
-          sourceId: source!.id,
-          sourceName: source!.name,
-        })
-      );
+      return (data.list ?? []).map((item) => ({
+        ...item,
+        sourceId: source!.id,
+        sourceName: source!.name,
+      }));
     })
   );
 
-  const list: SearchResultItem[] = results.flatMap((result) =>
+  const rawList = results.flatMap((result) =>
     result.status === "fulfilled" ? result.value : []
   );
+  const list = mergeVodItems(rawList);
 
   return NextResponse.json({
     keyword,
+    merged: true,
     total: list.length,
     list,
   });

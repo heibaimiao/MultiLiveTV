@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchVodDetail } from "@/lib/maccms";
-import { parsePlayUrl } from "@/lib/parser";
+import { fetchMergedVodDetail } from "@/lib/vodMerge";
 import { getSourceById } from "@/lib/sources";
 
 export async function GET(request: NextRequest) {
@@ -21,21 +20,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await fetchVodDetail(source, ids);
-    const vod = data.list?.[0];
-    if (!vod) {
+    const merged = await fetchMergedVodDetail(source, ids);
+    if (!merged) {
       return NextResponse.json({ error: "Vod not found" }, { status: 404 });
     }
 
-    const playSources = parsePlayUrl(
-      vod.vod_play_from ?? "",
-      vod.vod_play_url ?? ""
-    );
-
     return NextResponse.json({
       source: { id: source.id, name: source.name },
-      vod,
-      playSources,
+      vod: merged.vod,
+      playSources: merged.playSources,
+      variants: merged.variants,
+      merged: true,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch detail";
