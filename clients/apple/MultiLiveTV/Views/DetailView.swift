@@ -40,7 +40,7 @@ struct DetailView: View {
                 .environmentObject(downloads)
         }
         .sheet(isPresented: $showDownloadPicker) {
-            if let detail, let playSource = downloadableSource(detail) {
+            if let detail, let playSource = currentPlaySource(detail) {
                 DownloadEpisodePicker(
                     vod: detail.vod,
                     playSource: playSource,
@@ -91,6 +91,10 @@ struct DetailView: View {
                         if let typeName = vod.typeName, !typeName.isEmpty {
                             MetaChip(text: typeName)
                         }
+                        let year = HomeFeed.normalizeYear(vod.vodYear)
+                        if !year.isEmpty {
+                            MetaChip(text: year)
+                        }
                         if let remarks = vod.displayRemarks {
                             MetaChip(text: remarks)
                         }
@@ -127,17 +131,15 @@ struct DetailView: View {
                             .focused($focusedAction, equals: "play")
                         }
 
-                        if downloadableSource(detail) != nil {
-                            CinemaActionButton(
-                                title: "下载",
-                                systemImage: "arrow.down.circle",
-                                kind: .secondary,
-                                isFocused: focusedAction == "download"
-                            ) {
-                                showDownloadPicker = true
-                            }
-                            .focused($focusedAction, equals: "download")
+                        CinemaActionButton(
+                            title: "下载",
+                            systemImage: "arrow.down.circle",
+                            kind: .secondary,
+                            isFocused: focusedAction == "download"
+                        ) {
+                            showDownloadPicker = true
                         }
+                        .focused($focusedAction, equals: "download")
                     }
                     .padding(.top, 4)
                     .tvFocusSection()
@@ -148,7 +150,7 @@ struct DetailView: View {
         }
         .frame(height: headerHeight)
         #if os(tvOS)
-        .defaultFocus($focusedAction, currentPlaySource(detail)?.episodes.first == nil ? "download" : "play")
+        .defaultFocus($focusedAction, "play")
         #endif
     }
 
@@ -313,7 +315,6 @@ struct DetailView: View {
             applyDetail(merged, resetSelection: false)
             isLoading = false
         } catch {
-            guard !Task.isCancelled, !RequestGeneration.isCancellation(error) else { return }
             if detail == nil {
                 errorMessage = RequestFailure.userFacingMessage(for: error)
             }
@@ -339,11 +340,6 @@ struct DetailView: View {
     private func currentPlaySource(_ detail: DetailResponse) -> PlaySource? {
         guard selectedSourceIndex < detail.playSources.count else { return nil }
         return detail.playSources[selectedSourceIndex]
-    }
-
-    private func downloadableSource(_ detail: DetailResponse) -> PlaySource? {
-        guard let playSource = currentPlaySource(detail), !playSource.episodes.isEmpty else { return nil }
-        return playSource
     }
 
     private func downloadRecord(detail: DetailResponse, episode: Episode) -> DownloadRecord? {

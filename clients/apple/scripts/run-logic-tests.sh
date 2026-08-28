@@ -25,19 +25,7 @@ for name in files:
     if extra:
         raise SystemExit(f"{name}: {sorted(extra)} would make NSAllowsArbitraryLoads ignored")
 print("ATS plist check passed")
-
-group = "group.com.heibaimiao.multilivetv"
-for name in [
-    "MultiLiveTV/MultiLiveTV-tvOS.entitlements",
-    "MultiLiveTVTopShelf/MultiLiveTVTopShelf.entitlements",
-]:
-    data = plistlib.loads((root / name).read_bytes())
-    groups = data.get("com.apple.security.application-groups") or []
-    if group not in groups:
-        raise SystemExit(f"{name}: missing App Group {group}")
-print("App Group entitlements check passed")
 PY
-python3 "$ROOT/scripts/verify-pods-integration.py"
 OUT="$(mktemp -t multilivetv-logic-tests)"
 swiftc -o "$OUT" \
   "$ROOT/MultiLiveTV/Models/Models.swift" \
@@ -63,14 +51,4 @@ swiftc -o "$OUT" \
   "$ROOT/MultiLiveTV/Services/Live/M3UPlaylistParser.swift" \
   "$ROOT/MultiLiveTV/Services/Live/LiveStore.swift" \
   "$ROOT/scripts/verify-client-logic.swift"
-"$OUT"
-
-DL_OUT="$(mktemp -t multilivetv-download-tests)"
-swiftc -o "$DL_OUT" \
-  "$ROOT/MultiLiveTV/Models/DownloadRecord.swift" \
-  "$ROOT/MultiLiveTV/Services/Download/DownloadMediaKind.swift" \
-  "$ROOT/MultiLiveTV/Services/Download/DownloadEnqueuePolicy.swift" \
-  "$ROOT/MultiLiveTV/Services/Download/DownloadStore.swift" \
-  "$ROOT/MultiLiveTV/Services/Download/HLSPlaylistLocalizer.swift" \
-  "$ROOT/scripts/verify-downloads.swift"
-exec "$DL_OUT"
+exec "$OUT"

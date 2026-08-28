@@ -98,14 +98,11 @@ struct VodPosterView: View {
         do {
             if let pic = try await vod.fetchVodPic(sourceId: sourceId, vodId: vodId),
                let url = RemoteMediaURL.parse(pic) {
-                guard !Task.isCancelled else { return }
                 resolvedURL = url
             } else {
-                guard !Task.isCancelled else { return }
                 didFail = true
             }
         } catch {
-            guard !Task.isCancelled, !RequestGeneration.isCancellation(error) else { return }
             didFail = true
         }
     }

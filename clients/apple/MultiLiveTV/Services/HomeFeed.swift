@@ -28,8 +28,24 @@ enum HomeFeed {
             .replacingOccurrences(of: "[·・:：\\-—_]", with: "", options: .regularExpression)
     }
 
+    static func normalizeYear(_ year: String?) -> String {
+        guard let year else { return "" }
+        let trimmed = year.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let match = trimmed.range(of: #"\d{4}"#, options: .regularExpression) else {
+            return ""
+        }
+        return String(trimmed[match])
+    }
+
     static func mergeKey(for item: VodItem) -> String {
-        normalizeTitle(item.vodName)
+        mergeKey(title: item.vodName, year: item.vodYear)
+    }
+
+    static func mergeKey(title: String, year: String?) -> String {
+        let normalized = normalizeTitle(title)
+        let year = normalizeYear(year)
+        if year.isEmpty { return normalized }
+        return "\(normalized)|\(year)"
     }
 
     static func initialDisplayCount(poolLength: Int) -> Int {

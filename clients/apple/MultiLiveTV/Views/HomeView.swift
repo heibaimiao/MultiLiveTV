@@ -5,7 +5,6 @@ import TVServices
 
 struct HomeView: View {
     @EnvironmentObject private var vod: VodService
-    @EnvironmentObject private var downloads: DownloadManager
     @EnvironmentObject private var deepLink: DeepLinkRouter
     @State private var categoryTree: CategoryTree
     @State private var selectedTypeId: Int?
@@ -103,13 +102,11 @@ struct HomeView: View {
             .navigationDestination(item: $selectedItem) { item in
                 DetailView(item: item)
                     .environmentObject(vod)
-                    .environmentObject(downloads)
             }
             #if os(tvOS)
             .navigationDestination(isPresented: $showSearch) {
                 SearchContent()
                     .environmentObject(vod)
-                    .environmentObject(downloads)
             }
             #endif
             .task {
@@ -178,28 +175,16 @@ struct HomeView: View {
         loadGeneration += 1
         loadTask?.cancel()
         errorMessage = nil
-        let cached = feedCache.snapshot(for: typeId)
-        let plan = HomeFeed.categorySwitchPlan(hasCachedSnapshot: cached != nil)
-        if let snapshot = cached {
+        if let snapshot = feedCache.snapshot(for: typeId) {
             applySnapshot(snapshot)
         } else {
-            if plan.showLoading {
-                isLoading = true
-            }
             pool = []
             displayCount = 0
             apiPage = 1
             pageCount = 1
         }
         let generation = loadGeneration
-        loadTask = Task {
-            await fetchPage(
-                page: 1,
-                isFirst: true,
-                preserveLoadedPages: plan.preserveLoadedPages,
-                generation: generation
-            )
-        }
+        loadTask = Task { await fetchPage(page: 1, isFirst: true, generation: generation) }
     }
 
     @ViewBuilder
@@ -209,12 +194,10 @@ struct HomeView: View {
             PosterSkeletonGrid()
         case .error(let message):
             AppErrorView(message: message) {
-                Task { await refreshCurrent() }
+                Task { await reload() }
             }
-            .iPadFillScrollRefreshable { await refreshCurrent() }
         case .empty:
             AppEmptyStateView(title: "暂无内容", subtitle: "请检查网络连接")
-                .iPadFillScrollRefreshable { await refreshCurrent() }
         case .content:
             #if os(tvOS)
             tvShelves
@@ -348,7 +331,6 @@ struct HomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 28)
         }
-        .iPadRefreshable { await refreshCurrent() }
     }
     #endif
 
@@ -438,25 +420,16 @@ struct HomeView: View {
         #endif
     }
 
-    private func refreshCurrent() async {
+    private func reload() async {
         loadGeneration += 1
         loadTask?.cancel()
         let generation = loadGeneration
+        pool = []
+        displayCount = 0
+        apiPage = 1
+        pageCount = 1
         errorMessage = nil
-        let plan = HomeFeed.pullRefreshPlan(hasContent: !pool.isEmpty)
-        if plan.showLoading {
-            pool = []
-            displayCount = 0
-            apiPage = 1
-            pageCount = 1
-        }
-        isLoading = true
-        await startFetch(
-            page: 1,
-            isFirst: true,
-            preserveLoadedPages: plan.preserveLoadedPages,
-            generation: generation
-        )
+        await startFetch(page: 1, isFirst: true, generation: generation)
     }
 
     #if !os(tvOS)
@@ -478,26 +451,16 @@ struct HomeView: View {
     }
     #endif
 
-    private func startFetch(page: Int, isFirst: Bool, preserveLoadedPages: Bool = false, generation: Int) async {
-        loadTask?.cancel()
-        let task = Task {
-            await fetchPage(
-                page: page,
-                isFirst: isFirst,
-                preserveLoadedPages: preserveLoadedPages,
-                generation: generation
-            )
-        }
+    private func startFetch(page: Int, isFirst: Bool, generation: Int) async {
+        let task = Task { await fetchPage(page: page, isFirst: isFirst, generation: generation) }
         loadTask = task
         await task.value
     }
 
-    private func fetchPage(page: Int, isFirst: Bool, preserveLoadedPages: Bool = false, generation: Int) async {
+    private func fetchPage(page: Int, isFirst: Bool, generation: Int) async {
         let typeId = selectedTypeId
         let childTypeIds = knownChildTypeIds
-        if !preserveLoadedPages || pool.isEmpty {
-            isLoading = true
-        }
+        isLoading = true
         defer {
             if generation == loadGeneration {
                 isLoading = false
@@ -511,32 +474,18 @@ struct HomeView: View {
                 knownChildTypeIds: childTypeIds
             )
             guard !Task.isCancelled, generation == loadGeneration else { return }
+            apiPage = page
             pageCount = max(resp.pagecount, 1)
             let incoming = CategoryMatch.filter(resp.list, selectedTypeId: typeId, tree: categoryTree)
             if isFirst {
-                if preserveLoadedPages {
-                    pool = HomeFeed.refreshFirstPage(pool: pool, incoming: incoming)
-                    #if os(tvOS)
-                    displayCount = HomeFeed.clampedDisplayCount(
-                        current: displayCount,
-                        poolLength: HomeFeed.allItems(pool).count
-                    )
-                    persistTopShelf(from: pool)
-                    #else
-                    displayCount = HomeFeed.clampedDisplayCount(current: displayCount, poolLength: pool.count)
-                    #endif
-                } else {
-                    apiPage = page
-                    pool = HomeFeed.replaceFirstPage(pool: pool, incoming: incoming)
-                    #if os(tvOS)
-                    displayCount = HomeFeed.initialAllDisplayCount(allLength: HomeFeed.allItems(pool).count)
-                    persistTopShelf(from: pool)
-                    #else
-                    displayCount = HomeFeed.initialDisplayCount(poolLength: pool.count)
-                    #endif
-                }
+                pool = HomeFeed.replaceFirstPage(pool: pool, incoming: incoming)
+                #if os(tvOS)
+                displayCount = HomeFeed.initialAllDisplayCount(allLength: HomeFeed.allItems(pool).count)
+                persistTopShelf(from: pool)
+                #else
+                displayCount = HomeFeed.initialDisplayCount(poolLength: pool.count)
+                #endif
             } else {
-                apiPage = page
                 pool = HomeFeed.mergeIntoPool(pool: pool, incoming: incoming, isFirstBatch: false)
                 #if os(tvOS)
                 displayCount = HomeFeed.nextAllDisplayCount(
@@ -550,7 +499,6 @@ struct HomeView: View {
             feedCache.save(currentSnapshot(), typeId: typeId)
         } catch {
             guard !Task.isCancelled, generation == loadGeneration else { return }
-            if RequestGeneration.isCancellation(error) { return }
             errorMessage = RequestFailure.userFacingMessage(for: error)
         }
     }

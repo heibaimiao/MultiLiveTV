@@ -72,10 +72,43 @@ enum PlaybackSupport {
         if ATSPolicy.isFailureMessage(underlying) {
             return "当前线路是明文 HTTP，系统禁止播放。请换 HTTPS 线路重试。"
         }
+        if MediaTLSPolicy.isFailureMessage(underlying) {
+            return "当前线路 HTTPS 证书无效或已过期，播放失败。请换线路重试。"
+        }
+        if let mapped = mappedSystemPlaybackFailure(underlying) {
+            return mapped
+        }
         if isDirectMediaURL(url) || RemoteMediaURL.parse(url) != nil {
-            return underlying ?? "播放失败，请换线路重试"
+            if let underlying, !looksLikeSystemPlaybackFailure(underlying) {
+                return underlying
+            }
+            return "播放失败，请换线路重试"
         }
         return "当前线路为网页链接，App 无法直接播放。请换带 m3u8 的线路（如猫眼、无忧、影剧）。"
+    }
+
+    static func mappedSystemPlaybackFailure(_ message: String?) -> String? {
+        guard let message, looksLikeSystemPlaybackFailure(message) else { return nil }
+        let lower = message.lowercased()
+        if lower.contains("cannot decode") {
+            return "当前线路编码无法播放，请换线路重试"
+        }
+        if lower.contains("coremedia") || lower.contains("http 602") || lower.contains("unhandled") {
+            return "当前线路无法拉取节目分片，请换线路重试"
+        }
+        return "播放失败，请换线路重试"
+    }
+
+    static func looksLikeSystemPlaybackFailure(_ message: String) -> Bool {
+        let lower = message.lowercased()
+        return lower.contains("cannot decode")
+            || lower.contains("coremediaerrordomain")
+            || lower.contains("http 602")
+            || lower.contains("couldn't be completed")
+            || lower.contains("couldn’t be completed")
+            || lower.contains("the operation ")
+            || lower.contains("nsurlerror")
+            || lower.contains("errordomain")
     }
 }
 
@@ -115,5 +148,79 @@ enum RequestGeneration {
         }
         let nsError = error as NSError
         return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+    }
+}
+
+enum MediaTLSPolicy {
+    enum ChallengeAction: Equatable {
+        case performDefaultHandling
+        case useCredential
+    }
+
+    static func isUntrustedCertificate(_ error: Error) -> Bool {
+        if isUntrustedCertificateCode((error as? URLError)?.code) {
+            return true
+        }
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain,
+           isUntrustedCertificateCode(URLError.Code(rawValue: nsError.code)) {
+            return true
+        }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+            return isUntrustedCertificate(underlying)
+        }
+        return nsError.domain == (kCFErrorDomainCFNetwork as String) && nsError.code == -9814
+    }
+
+    static func isFailureMessage(_ message: String?) -> Bool {
+        guard let message else { return false }
+        let lower = message.lowercased()
+        return lower.contains("certificate for this server is invalid")
+            || (lower.contains("certificate") && lower.contains("expired"))
+            || (lower.contains("ssl") && lower.contains("trust"))
+    }
+
+    static func challengeAction(
+        method: String,
+        hasServerTrust: Bool,
+        allowInvalidCertificates: Bool
+    ) -> ChallengeAction {
+        guard method == NSURLAuthenticationMethodServerTrust, hasServerTrust else {
+            return .performDefaultHandling
+        }
+        return allowInvalidCertificates ? .useCredential : .performDefaultHandling
+    }
+
+    static func resolve(
+        _ challenge: URLAuthenticationChallenge,
+        allowInvalidCertificates: Bool,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let action = challengeAction(
+            method: challenge.protectionSpace.authenticationMethod,
+            hasServerTrust: challenge.protectionSpace.serverTrust != nil,
+            allowInvalidCertificates: allowInvalidCertificates
+        )
+        switch action {
+        case .useCredential:
+            if let trust = challenge.protectionSpace.serverTrust {
+                completionHandler(.useCredential, URLCredential(trust: trust))
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
+        case .performDefaultHandling:
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+
+    private static func isUntrustedCertificateCode(_ code: URLError.Code?) -> Bool {
+        switch code {
+        case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate,
+             .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid, .clientCertificateRejected,
+             .clientCertificateRequired:
+            true
+        default:
+            false
+        }
     }
 }

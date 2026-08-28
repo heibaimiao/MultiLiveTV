@@ -72,8 +72,8 @@ struct VodCard: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, minHeight: layout == .grid ? 40 : 0, alignment: .topLeading)
 
-            if layout == .grid, let typeName = item.typeName, !typeName.isEmpty {
-                Text(typeName)
+            if layout == .grid, let genre = item.displayGenreLine {
+                Text(genre)
                     .font(.caption)
                     .foregroundStyle(AppTheme.textTertiary)
                     .lineLimit(1)

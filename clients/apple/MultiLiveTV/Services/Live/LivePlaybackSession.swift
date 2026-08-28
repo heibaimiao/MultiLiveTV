@@ -19,6 +19,7 @@ final class LivePlaybackSession: ObservableObject {
     private var playbackGeneration = 0
     private var isActive = false
     private var didBecomeReady = false
+    private var forceVLC = false
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -43,11 +44,13 @@ final class LivePlaybackSession: ObservableObject {
         self.channel = channel
         LiveWatchMemory.save(channel.id, to: defaults)
         streamIndex = 0
+        forceVLC = false
         await startPlayback()
     }
 
     func retry() async {
         streamIndex = 0
+        forceVLC = false
         await startPlayback()
     }
 
@@ -69,6 +72,7 @@ final class LivePlaybackSession: ObservableObject {
             return
         }
         streamIndex = next
+        forceVLC = false
         await startPlayback()
     }
 
@@ -86,7 +90,7 @@ final class LivePlaybackSession: ObservableObject {
 
         isStarting = true
         let stream = channel.streams[streamIndex]
-        let raw = stream.url
+        let raw = LivePlayback.stripSourceTag(stream.url)
         guard let playbackURL = RemoteMediaURL.parse(raw) else {
             await failOverOrStop(
                 message: PlaybackSupport.userFacingError(for: raw, underlying: nil),
@@ -96,21 +100,30 @@ final class LivePlaybackSession: ObservableObject {
         }
 
         let probeHeaders = LivePlayback.playerHeaders(kodi: stream.headers, cookieHeader: nil)
+        if forceVLC || LivePlayback.prefersVLC(for: raw) {
+            guard VLCLivePlayer.isAvailable else {
+                await failOverOrStop(message: VLCLivePlayer.unavailableMessage, generation: generation)
+                return
+            }
+            attachVLCPlayer(url: playbackURL, headers: probeHeaders, raw: raw, generation: generation)
+            return
+        }
+
         let probed = await probePlaylist(url: playbackURL, headers: probeHeaders, generation: generation)
         guard LivePlayback.shouldApplyFailure(eventGeneration: generation, currentGeneration: playbackGeneration) else {
             return
         }
         let headers = LivePlayback.playerHeaders(kodi: stream.headers, cookieHeader: probed.cookie)
-        switch probed.decision {
-        case .playable:
+        switch LivePlayback.renderer(decision: probed.decision, relaxedTLS: probed.relaxedTLS) {
+        case .avPlayer:
             attachAVPlayer(url: playbackURL, headers: headers, raw: raw, generation: generation)
-        case .flv:
+        case .vlc:
             guard VLCLivePlayer.isAvailable else {
                 await failOverOrStop(message: VLCLivePlayer.unavailableMessage, generation: generation)
                 return
             }
             attachVLCPlayer(url: playbackURL, headers: headers, raw: raw, generation: generation)
-        case .retry, .reject:
+        case nil:
             await failOverOrStop(
                 message: PlaybackSupport.userFacingError(for: raw, underlying: nil),
                 generation: generation
@@ -223,17 +236,41 @@ final class LivePlaybackSession: ObservableObject {
         url: URL,
         headers: [String: String],
         generation: Int
-    ) async -> (decision: HLSPlaylistProbe.Decision, cookie: String?) {
+    ) async -> (decision: HLSPlaylistProbe.Decision, cookie: String?, relaxedTLS: Bool) {
+        let strict = await runProbeLoop(
+            url: url,
+            headers: headers,
+            generation: generation,
+            allowInvalidCertificates: false
+        )
+        if Self.isPlayableProbe(strict.decision) {
+            return (strict.decision, strict.cookie, false)
+        }
+        guard strict.certificateFailure else {
+            return (.reject, nil, false)
+        }
+        let relaxed = await runProbeLoop(
+            url: url,
+            headers: headers,
+            generation: generation,
+            allowInvalidCertificates: true
+        )
+        return (relaxed.decision, relaxed.cookie, true)
+    }
+
+    private func runProbeLoop(
+        url: URL,
+        headers: [String: String],
+        generation: Int,
+        allowInvalidCertificates: Bool
+    ) async -> (decision: HLSPlaylistProbe.Decision, cookie: String?, certificateFailure: Bool) {
         var attempt = 0
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = NetworkConfig.requestTimeout
-        config.timeoutIntervalForResource = NetworkConfig.requestTimeout
-        let session = URLSession(configuration: config)
-        defer { session.invalidateAndCancel() }
+        let session = LiveMediaSession(allowInvalidCertificates: allowInvalidCertificates)
+        defer { session.invalidate() }
 
         while true {
             guard LivePlayback.shouldApplyFailure(eventGeneration: generation, currentGeneration: playbackGeneration) else {
-                return (.reject, nil)
+                return (.reject, nil, false)
             }
             var request = URLRequest(url: url)
             request.timeoutInterval = NetworkConfig.requestTimeout
@@ -259,20 +296,33 @@ final class LivePlaybackSession: ObservableObject {
                     pendingAttempt: attempt
                 )
                 switch decision {
-                case .playable, .flv:
+                case .playable, .flv, .mpegts:
                     return (
                         decision,
-                        LivePlayback.cookieHeader(from: response, storage: session.configuration.httpCookieStorage)
+                        LivePlayback.cookieHeader(from: response, storage: session.cookieStorage),
+                        false
                     )
                 case .retry:
                     attempt += 1
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
                 case .reject:
-                    return (.reject, nil)
+                    return (.reject, nil, false)
                 }
             } catch {
-                return (.reject, nil)
+                if MediaTLSPolicy.isUntrustedCertificate(error) {
+                    return (.reject, nil, true)
+                }
+                return (.reject, nil, false)
             }
+        }
+    }
+
+    private static func isPlayableProbe(_ decision: HLSPlaylistProbe.Decision) -> Bool {
+        switch decision {
+        case .playable, .flv, .mpegts:
+            true
+        case .retry, .reject:
+            false
         }
     }
 
@@ -280,6 +330,13 @@ final class LivePlaybackSession: ObservableObject {
         guard isActive, LivePlayback.shouldApplyFailure(eventGeneration: generation, currentGeneration: playbackGeneration) else {
             return
         }
+        if player != nil,
+           LivePlayback.shouldRetryWithVLC(alreadyUsedVLC: forceVLC, vlcAvailable: VLCLivePlayer.isAvailable) {
+            forceVLC = true
+            await startPlayback()
+            return
+        }
+        forceVLC = false
         let count = channel?.streams.count ?? 0
         if let next = LivePlayback.nextURLIndex(after: streamIndex, count: count) {
             streamIndex = next
@@ -305,5 +362,57 @@ final class LivePlaybackSession: ObservableObject {
         player = nil
         vlcPlayer?.stop()
         vlcPlayer = nil
+    }
+}
+
+/// 仅用于直播探测：可选接受过期/不受信任的媒体 CDN 证书。点播 API、封面下载不走这里。
+final class LiveMediaSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
+    let allowInvalidCertificates: Bool
+    private var session: URLSession!
+
+    init(allowInvalidCertificates: Bool) {
+        self.allowInvalidCertificates = allowInvalidCertificates
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = NetworkConfig.requestTimeout
+        config.timeoutIntervalForResource = NetworkConfig.requestTimeout
+        super.init()
+        session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+    }
+
+    var cookieStorage: HTTPCookieStorage? {
+        session.configuration.httpCookieStorage
+    }
+
+    func invalidate() {
+        session.invalidateAndCancel()
+    }
+
+    func bytes(for request: URLRequest) async throws -> (URLSession.AsyncBytes, URLResponse) {
+        try await session.bytes(for: request)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        MediaTLSPolicy.resolve(
+            challenge,
+            allowInvalidCertificates: allowInvalidCertificates,
+            completionHandler: completionHandler
+        )
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        MediaTLSPolicy.resolve(
+            challenge,
+            allowInvalidCertificates: allowInvalidCertificates,
+            completionHandler: completionHandler
+        )
     }
 }

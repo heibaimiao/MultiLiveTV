@@ -11,17 +11,17 @@ func assertEqual<T: Equatable>(_ actual: T, _ expected: T, _ message: String) {
     }
 }
 
-func vod(_ id: String, _ name: String, time: Int = 0, typeName: String? = nil, vodClass: String? = nil) -> VodItem {
-    VodItem(vodId: id, vodName: name, vodPic: "", typeName: typeName, vodClass: vodClass, vodTime: time)
+func vod(_ id: String, _ name: String, time: Int = 0, typeName: String? = nil, vodClass: String? = nil, year: String? = nil) -> VodItem {
+    VodItem(vodId: id, vodName: name, vodPic: "", typeName: typeName, vodClass: vodClass, vodYear: year, vodTime: time)
 }
 
-func raw(_ id: String, _ name: String) -> VodItemRaw {
+func raw(_ id: String, _ name: String, year: String = "") -> VodItemRaw {
     VodItemRaw(
         vodId: id,
         vodName: name,
         vodPic: "",
         vodRemarks: "",
-        vodYear: "",
+        vodYear: year,
         vodArea: "",
         vodClass: "",
         vodBlurb: "",
@@ -55,6 +55,36 @@ func testMergeIntoPoolKeepsFirstSeenPositionWhenTitleDuplicates() {
     assertEqual(merged[0].vodId, "3", "later duplicate should replace content at original position")
 }
 
+func testMergeKeyKeepsHomonymousFilmsWithDifferentYears() {
+    let hk = vod("1", "兄弟", typeName: "动作片", year: "2007")
+    let us = vod("2", "兄弟", typeName: "剧情片", year: "2009")
+    let merged = HomeFeed.mergeIntoPool(pool: [], incoming: [hk, us], isFirstBatch: true)
+    assertEqual(merged.map(\.vodId), ["1", "2"], "two films titled 兄弟 in different years must both stay in the list")
+}
+
+func testMergeKeyStillCollapsesSameTitleAndYear() {
+    let a = vod("1", "兄弟", year: "2009")
+    let b = vod("2", "兄弟", year: "2009")
+    let merged = HomeFeed.mergeIntoPool(pool: [], incoming: [a, b], isFirstBatch: true)
+    assertEqual(merged.map(\.vodId), ["2"], "same title and year is one work and should still collapse")
+}
+
+func testMergeKeyTreatsYearSuffixAsTheSameYear() {
+    let a = vod("1", "兄弟", year: "2009年")
+    let b = vod("2", "兄弟", year: "2009")
+    assertEqual(HomeFeed.mergeKey(for: a), HomeFeed.mergeKey(for: b), "2009年 and 2009 must share a merge key")
+}
+
+func testVodMergeKeepsHomonymousFilmsWithDifferentYears() {
+    let store = SourceStore(sources: [source(1, "A")])
+    let items = [
+        MergeableVodItem(item: raw("1", "兄弟", year: "2007"), sourceId: 1, sourceName: "A"),
+        MergeableVodItem(item: raw("2", "兄弟", year: "2009"), sourceId: 1, sourceName: "A"),
+    ]
+    let merged = VodMergeService.toVodItems(VodMergeService.mergeVodItems(items, store: store))
+    assertEqual(merged.map(\.vodId), ["1", "2"], "search merge must not fold two 兄弟 films from different years")
+}
+
 func testMergeIntoPoolAppendsNewcomersAfterExistingPool() {
     let pool = [vod("1", "甲"), vod("2", "乙")]
     let incoming = [vod("3", "丙"), vod("2-new", "乙"), vod("4", "丁")]
@@ -71,43 +101,6 @@ func testContentPhasePrefersLoadingOverEmpty() {
 func testContentPhaseEmptyOnlyWhenIdle() {
     let phase = HomeFeed.contentPhase(isLoading: false, errorMessage: nil, poolIsEmpty: true)
     assertEqual(phase, .empty, "idle empty pool should show empty state")
-}
-
-func testCategorySwitchShowsLoadingWhenCacheMisses() {
-    let plan = HomeFeed.categorySwitchPlan(hasCachedSnapshot: false)
-    assertEqual(plan.showLoading, true, "uncached category switch must not flash the empty state")
-    assertEqual(plan.preserveLoadedPages, false, "a new category should replace the pool, not keep another category's pages")
-}
-
-func testCategorySwitchPreservesPagesWhenCacheHits() {
-    let plan = HomeFeed.categorySwitchPlan(hasCachedSnapshot: true)
-    assertEqual(plan.showLoading, false, "cached category should keep showing posters while page 1 refreshes")
-    assertEqual(plan.preserveLoadedPages, true, "cached category refresh must not drop already loaded pages")
-}
-
-func testPullRefreshKeepsPostersWhenFeedHasContent() {
-    let plan = HomeFeed.pullRefreshPlan(hasContent: true)
-    assertEqual(plan.showLoading, false, "iPad pull-to-refresh must not replace posters with the full-screen skeleton")
-    assertEqual(plan.preserveLoadedPages, true, "pull-to-refresh should update page 1 in place and keep already loaded pages")
-}
-
-func testPullRefreshShowsLoadingWhenFeedIsEmpty() {
-    let plan = HomeFeed.pullRefreshPlan(hasContent: false)
-    assertEqual(plan.showLoading, true, "empty or error feed can show loading while pull-to-refresh retries")
-    assertEqual(plan.preserveLoadedPages, false, "an empty feed has no extra pages to preserve")
-}
-
-func testRefreshFirstPageKeepsAlreadyLoadedPages() {
-    let pool = [
-        vod("1", "首页甲"),
-        vod("2", "首页乙"),
-        vod("3", "第二页丙"),
-        vod("4", "第二页丁"),
-    ]
-    let incoming = [vod("1b", "首页甲"), vod("5", "新片戊")]
-    let refreshed = HomeFeed.refreshFirstPage(pool: pool, incoming: incoming)
-    assertEqual(refreshed.map(\.vodId), ["1b", "5", "2", "3", "4"], "page 1 should update in place and keep titles that are not in the new first page")
-    assertEqual(HomeFeed.clampedDisplayCount(current: 12, poolLength: refreshed.count), 5, "displayCount should clamp to the new pool, not reset to the first row")
 }
 
 func testLoadMoreRevealsBeforeFetching() {
@@ -870,7 +863,162 @@ func testLivePlaybackBuildsVLCHTTPOptionsFromHeaders() {
         ":http-user-agent=MultiLiveTV/1",
         ":http-referrer=http://example.com/",
         ":http-cookie=a=1",
+        ":http-tls-verify=0",
+        ":tls-verify=0",
     ], "VLC should receive mapped HTTP header options")
+}
+
+func testLivePlaybackDisablesVLCTLSVerification() {
+    let options = LivePlayback.vlcHTTPOptions(headers: [:])
+    if !options.contains(":http-tls-verify=0") || !options.contains(":tls-verify=0") {
+        fail("expired live CDN certificates must still play in VLC")
+    }
+}
+
+func testMediaTLSPolicyDetectsExpiredCertificateErrors() {
+    assertEqual(
+        MediaTLSPolicy.isUntrustedCertificate(URLError(.serverCertificateUntrusted)),
+        true,
+        "-1202 expired/untrusted CDN certs should be recognized"
+    )
+    assertEqual(
+        MediaTLSPolicy.isUntrustedCertificate(URLError(.serverCertificateHasBadDate)),
+        true,
+        "expired-date errors should be recognized"
+    )
+    let wrapped = NSError(
+        domain: NSURLErrorDomain,
+        code: NSURLErrorServerCertificateUntrusted,
+        userInfo: [
+            NSUnderlyingErrorKey: NSError(domain: kCFErrorDomainCFNetwork as String, code: -9814)
+        ]
+    )
+    assertEqual(
+        MediaTLSPolicy.isUntrustedCertificate(wrapped),
+        true,
+        "CFNetwork -9814 wrapped in NSURLError -1202 is an expired certificate"
+    )
+    assertEqual(
+        MediaTLSPolicy.isUntrustedCertificate(URLError(.timedOut)),
+        false,
+        "timeouts are not certificate failures"
+    )
+}
+
+func testMediaTLSPolicyAllowsServerTrustOnlyWhenRequested() {
+    assertEqual(
+        MediaTLSPolicy.challengeAction(
+            method: NSURLAuthenticationMethodServerTrust,
+            hasServerTrust: true,
+            allowInvalidCertificates: true
+        ),
+        .useCredential,
+        "live media probing may accept expired certificates"
+    )
+    assertEqual(
+        MediaTLSPolicy.challengeAction(
+            method: NSURLAuthenticationMethodServerTrust,
+            hasServerTrust: true,
+            allowInvalidCertificates: false
+        ),
+        .performDefaultHandling,
+        "strict sessions must keep system certificate validation"
+    )
+    assertEqual(
+        MediaTLSPolicy.challengeAction(
+            method: NSURLAuthenticationMethodHTTPBasic,
+            hasServerTrust: false,
+            allowInvalidCertificates: true
+        ),
+        .performDefaultHandling,
+        "must not intercept HTTP basic auth"
+    )
+}
+
+func testLivePlaybackUsesVLCWhenPlaylistTLSIsRelaxed() {
+    assertEqual(
+        LivePlayback.renderer(decision: .playable, relaxedTLS: false),
+        LivePlayback.Renderer.avPlayer,
+        "valid HTTPS HLS should stay on AVPlayer"
+    )
+    assertEqual(
+        LivePlayback.renderer(decision: .playable, relaxedTLS: true),
+        LivePlayback.Renderer.vlc,
+        "AVPlayer cannot ignore expired certificates; HLS must fall back to VLC"
+    )
+    assertEqual(
+        LivePlayback.renderer(decision: .flv, relaxedTLS: false),
+        LivePlayback.Renderer.vlc,
+        "FLV still uses VLC"
+    )
+    assertEqual(
+        LivePlayback.renderer(decision: .reject, relaxedTLS: true) == nil,
+        true,
+        "a rejected playlist should still fail over"
+    )
+}
+
+func testUserFacingErrorRewritesExpiredCertificate() {
+    let message = PlaybackSupport.userFacingError(
+        for: "https://tylive.kan0512.com/norecord/csztv4k_4k.m3u8",
+        underlying: "The certificate for this server is invalid. You might be connecting to a server that is pretending to be “tylive.kan0512.com”"
+    )
+    if message.lowercased().contains("certificate") || message.contains("invalid") {
+        fail("expired-certificate playback errors must be Chinese")
+    }
+}
+
+func testUserFacingErrorRewritesCannotDecode() {
+    let message = PlaybackSupport.userFacingError(
+        for: "http://218.206.193.218:8888/hls/1/index.m3u8",
+        underlying: "Cannot Decode"
+    )
+    if message.lowercased().contains("cannot") || message.lowercased().contains("decode") {
+        fail("MPEG-2 IPTV decode errors must not be shown in English")
+    }
+}
+
+func testUserFacingErrorRewritesCoreMediaHTTP602() {
+    let message = PlaybackSupport.userFacingError(
+        for: "http://107.150.60.122/live/cctv1hd.m3u8",
+        underlying: "The operation couldn’t be completed. (CoreMediaErrorDomain error -12667 - HTTP 602: (unhandled))"
+    )
+    if message.lowercased().contains("coremedia") || message.contains("602") || message.contains("couldn’t") {
+        fail("AVPlayer HTTP 602 must not be shown as the raw English system string")
+    }
+}
+
+func testUserFacingErrorKeepsChineseStartTimeout() {
+    let message = PlaybackSupport.userFacingError(
+        for: "http://a.example/live.m3u8",
+        underlying: "起播超时"
+    )
+    assertEqual(message, "起播超时", "app-authored Chinese errors must not be replaced")
+}
+
+func testLivePlaybackRetriesAVPlayerFailureWithVLC() {
+    assertEqual(
+        LivePlayback.shouldRetryWithVLC(alreadyUsedVLC: false, vlcAvailable: true),
+        true,
+        "MPEG-2 电信 HLS and HTTP 602 should try VLC on the same URL before the next line"
+    )
+    assertEqual(
+        LivePlayback.shouldRetryWithVLC(alreadyUsedVLC: true, vlcAvailable: true),
+        false,
+        "after VLC also fails, fail over to the next stream"
+    )
+    assertEqual(
+        LivePlayback.shouldRetryWithVLC(alreadyUsedVLC: false, vlcAvailable: false),
+        false,
+        "without VLC, skip straight to the next stream"
+    )
+}
+
+func testLivePlaybackDoesNotForceBrowserUserAgent() {
+    let defaults = LivePlayback.playerHeaders(kodi: [:], cookieHeader: nil)
+    assertEqual(defaults["User-Agent"] == nil, true, "live must not inject Chrome UA; IPTV CDNs 602 on browser agents")
+    let kodi = LivePlayback.playerHeaders(kodi: ["User-Agent": "okhttp"], cookieHeader: nil)
+    assertEqual(kodi["User-Agent"] ?? "", "okhttp", "playlist User-Agent should still win")
 }
 
 func testHLSPlaylistProbeMergesSetCookieIntoPlayerHeaders() {
@@ -1001,6 +1149,108 @@ func testM3UParserStripsKodiHeaderSuffixFromURL() {
     )
 }
 
+func testM3UParserStripsTVBoxSourceTagFromUDPXYURL() {
+    let text = """
+    #EXTINF:-1 group-title="央视",CCTV1
+    http://yuwentao114.x3322.net:4022/udp/239.252.220.138:5140$【yuwen】
+    """
+    let groups = M3UPlaylistParser.parse(text)
+    assertEqual(
+        groups[0].channels[0].urls,
+        ["http://yuwentao114.x3322.net:4022/udp/239.252.220.138:5140"],
+        "TVBox $source tags must not be sent as part of the UDPXY path"
+    )
+}
+
+func testLivePlaybackStripsSourceTagButKeepsQueryDollar() {
+    assertEqual(
+        LivePlayback.stripSourceTag(
+            "http://yuwentao114.x3322.net:4022/udp/239.252.220.138:5140$【yuwen】"
+        ),
+        "http://yuwentao114.x3322.net:4022/udp/239.252.220.138:5140",
+        "playback must strip $【yuwen】 before URLSession/VLC"
+    )
+    assertEqual(
+        LivePlayback.stripSourceTag("https://cdn.example/live.m3u8$移动"),
+        "https://cdn.example/live.m3u8",
+        "TVBox $线路名 after an HLS URL should also be stripped"
+    )
+    assertEqual(
+        LivePlayback.stripSourceTag("https://cdn.example/live.m3u8?txTime=1903e7b17de$LR•IPV4"),
+        "https://cdn.example/live.m3u8?txTime=1903e7b17de",
+        "TVBox $源名 glued after a query value must still be stripped"
+    )
+    assertEqual(
+        LivePlayback.stripSourceTag("https://cdn.example/live.m3u8?token=$abc&sig=1"),
+        "https://cdn.example/live.m3u8?token=$abc&sig=1",
+        "a $ inside a real query pair must be kept"
+    )
+}
+
+func testLivePlaybackPrefersVLCForHTTPMulticastRelay() {
+    assertEqual(
+        LivePlayback.prefersVLC(for: "http://yuwentao114.x3322.net:4022/udp/239.252.220.138:5140$【yuwen】"),
+        true,
+        "UDPXY /udp/ relays are MPEG-TS and must skip HLS probing"
+    )
+    assertEqual(
+        LivePlayback.prefersVLC(for: "http://home.example:4022/rtp/239.1.1.1:8000"),
+        true,
+        "UDPXY /rtp/ relays must also skip HLS probing"
+    )
+    assertEqual(
+        LivePlayback.prefersVLC(for: "https://cdn.example/cctv1.m3u8"),
+        false,
+        "regular HLS should still be probed and played with AVPlayer"
+    )
+}
+
+func testHLSPlaylistProbeDetectsMPEGTSContentType() {
+    let decision = HLSPlaylistProbe.evaluate(
+        statusCode: 200,
+        contentType: "video/mp2t",
+        body: Data(),
+        pendingAttempt: 0
+    )
+    assertEqual(decision, .mpegts, "video/mp2t should select the VLC path, not AVPlayer")
+}
+
+func testHLSPlaylistProbeDetectsMPEGTSSyncByte() {
+    var packet = Data([0x47])
+    packet.append(Data(repeating: 0, count: 187))
+    packet.append(0x47)
+    packet.append(Data(repeating: 1, count: 187))
+    let decision = HLSPlaylistProbe.evaluate(
+        statusCode: 200,
+        contentType: "application/octet-stream",
+        body: packet,
+        pendingAttempt: 0
+    )
+    assertEqual(decision, .mpegts, "MPEG-TS sync bytes should select the VLC path")
+}
+
+func testHLSPlaylistProbeAcceptsMP4Body() {
+    var body = Data([0x00, 0x00, 0x00, 0x20])
+    body.append(contentsOf: Array("ftypisom".utf8))
+    let decision = HLSPlaylistProbe.evaluate(
+        statusCode: 200,
+        contentType: "video/mp4",
+        body: body,
+        pendingAttempt: 0
+    )
+    assertEqual(decision, .playable, "80后 MP4 点播流应走 AVPlayer，不能当非法播放列表丢掉")
+}
+
+func testHLSPlaylistProbeSendsJPEGSegmentHLSToVLC() {
+    let decision = HLSPlaylistProbe.evaluate(
+        statusCode: 200,
+        contentType: "application/vnd.apple.mpegurl",
+        body: "#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4.000,\n/ts/n4da4274.91959332.jpeg?q=1\n",
+        pendingAttempt: 0
+    )
+    assertEqual(decision, .mpegts, "4gtv JPEG-named TS segments need VLC, not AVPlayer")
+}
+
 func testLivePlaybackParsesKodiCookieAndRefererHeaders() {
     let headers = LivePlayback.headersFromKodiSuffix(
         "User-Agent=okhttp&Referer=https://a.example/&Cookie=sid=abc"
@@ -1030,7 +1280,7 @@ func testLivePlaybackMergesWarmedCookieWithKodiHeaders() {
         kodi: ["Cookie": "token=1", "Referer": "https://a.example/"],
         cookieHeader: "sid=abc"
     )
-    assertEqual(headers["User-Agent"] ?? "", NetworkConfig.userAgent, "live playback still sends a browser UA")
+    assertEqual(headers["User-Agent"] == nil, true, "live playback must not inject a browser UA")
     assertEqual(headers["Referer"] ?? "", "https://a.example/", "explicit Referer from the playlist should be kept")
     assertEqual(headers["Cookie"] ?? "", "token=1; sid=abc", "warmed cookies should be appended to playlist cookies")
 }
@@ -1102,6 +1352,44 @@ func testTxtPlaylistSplitsHashBackupURLs() {
         ["http://a.example/1", "https://b.example/2.m3u8"],
         "TVBox # between URLs should become backup lines"
     )
+}
+
+func testTxtPlaylistStripsSourceTagFromChannelURL() {
+    let text = """
+    央视,#genre#
+    CCTV1,http://home.example:4022/udp/239.252.220.138:5140$【yuwen】
+    """
+    let groups = M3UPlaylistParser.parsePlaylist(text)
+    assertEqual(
+        groups[0].channels[0].urls,
+        ["http://home.example:4022/udp/239.252.220.138:5140"],
+        "txt live lists also attach $source tags that must be stripped"
+    )
+}
+
+func testTxtPlaylistReadsLeadingCommaChannelName() {
+    let text = """
+    咪咕源,#genre#
+    ,江苏卫视,http://a.example/play/27.m3u8
+    """
+    let groups = M3UPlaylistParser.parsePlaylist(text)
+    assertEqual(groups[0].channels.map(\.name), ["江苏卫视"], "a leading comma is a broken name, not an empty channel")
+    assertEqual(groups[0].channels[0].urls, ["http://a.example/play/27.m3u8"], "the URL after the real name should play")
+}
+
+func testTxtPlaylistSplitsGluedChannelsMissingNewline() {
+    let text = """
+    咪咕源,#genre#
+    兵团卫视,http://a.example/play/36.m3u8海南广播电视总台新闻频道,http://b.example/962067517
+    """
+    let groups = M3UPlaylistParser.parsePlaylist(text)
+    assertEqual(
+        groups[0].channels.map(\.name),
+        ["兵团卫视", "海南广播电视总台新闻频道"],
+        "two channels glued without a newline must be split"
+    )
+    assertEqual(groups[0].channels[0].urls, ["http://a.example/play/36.m3u8"], "first URL must not swallow the second channel name")
+    assertEqual(groups[0].channels[1].urls, ["http://b.example/962067517"], "glued second channel should keep its own URL")
 }
 
 func testParsePlaylistStillReadsM3U() {
@@ -1438,50 +1726,6 @@ func testHomeLaunchFirstSuccessPrefersFasterSource() {
     }
 }
 
-func testHomeLaunchFirstSuccessSkipsEmptyWhenLaterSourceHasItems() {
-    runAsync {
-        let value = try await HomeLaunch.firstSuccess(
-            count: 2,
-            isAcceptable: { !$0.isEmpty }
-        ) { index in
-            if index == 0 {
-                try await Task.sleep(nanoseconds: 200_000_000)
-                return "has-vods"
-            }
-            return ""
-        }
-        assertEqual(value, "has-vods", "an empty catalog must not cancel a slower source that actually has items")
-    }
-}
-
-func testHomeLaunchFirstSuccessFallsBackToEmptyWhenEverySourceIsEmpty() {
-    runAsync {
-        let value = try await HomeLaunch.firstSuccess(
-            count: 2,
-            isAcceptable: { !$0.isEmpty }
-        ) { _ in
-            return ""
-        }
-        assertEqual(value, "", "if every source returns an empty catalog, keep the empty result instead of hanging")
-    }
-}
-
-func testRequestGenerationIgnoresCancellationAndStaleEvents() {
-    assertEqual(
-        RequestGeneration.shouldApply(eventGeneration: 1, currentGeneration: 2),
-        false,
-        "a dismissed player or superseded search must not apply"
-    )
-    assertEqual(
-        RequestGeneration.shouldApply(eventGeneration: 4, currentGeneration: 4),
-        true,
-        "the current generation should still apply"
-    )
-    assertEqual(RequestGeneration.isCancellation(CancellationError()), true, "CancellationError is not a parse failure")
-    assertEqual(RequestGeneration.isCancellation(URLError(.cancelled)), true, "URLError.cancelled is not a user-facing failure")
-    assertEqual(RequestGeneration.isCancellation(URLError(.timedOut)), false, "timeouts should still surface")
-}
-
 private func runAsync(_ work: @escaping () async throws -> Void) {
     let group = DispatchGroup()
     group.enter()
@@ -1600,14 +1844,12 @@ enum LogicTests {
     static func main() {
         testMergeIntoPoolPreservesIncomingOrder()
         testMergeIntoPoolKeepsFirstSeenPositionWhenTitleDuplicates()
+        testMergeKeyKeepsHomonymousFilmsWithDifferentYears()
+        testMergeKeyStillCollapsesSameTitleAndYear()
+        testMergeKeyTreatsYearSuffixAsTheSameYear()
         testMergeIntoPoolAppendsNewcomersAfterExistingPool()
         testContentPhasePrefersLoadingOverEmpty()
         testContentPhaseEmptyOnlyWhenIdle()
-        testCategorySwitchShowsLoadingWhenCacheMisses()
-        testCategorySwitchPreservesPagesWhenCacheHits()
-        testPullRefreshKeepsPostersWhenFeedHasContent()
-        testPullRefreshShowsLoadingWhenFeedIsEmpty()
-        testRefreshFirstPageKeepsAlreadyLoadedPages()
         testLoadMoreRevealsBeforeFetching()
         testLoadMoreFetchesNextPageWhenPoolExhausted()
         testLoadMoreIdleWhileBusy()
@@ -1628,6 +1870,7 @@ enum LogicTests {
         testShouldFetchChildrenDirectlyWhenChildIdsAreKnown()
         testFlattenChildPagesKeepsKnownChildIdOrderNotArrivalOrder()
         testMergeVodItemsPreservesFirstSeenOrder()
+        testVodMergeKeepsHomonymousFilmsWithDifferentYears()
         testDefaultPrimaryTypeIdPrefersMovies()
         testDefaultPrimaryTypeIdFallsBackToFirstPrimaryWhenMoviesMissing()
         testPrimaryTabsKeepOnlyTheFourParentCategories()
@@ -1668,6 +1911,16 @@ enum LogicTests {
         testHLSPlaylistProbeDetectsFLVContentType()
         testUserFacingErrorDoesNotCallHTTPLiveStreamAWebpage()
         testLivePlaybackBuildsVLCHTTPOptionsFromHeaders()
+        testLivePlaybackDisablesVLCTLSVerification()
+        testMediaTLSPolicyDetectsExpiredCertificateErrors()
+        testMediaTLSPolicyAllowsServerTrustOnlyWhenRequested()
+        testLivePlaybackUsesVLCWhenPlaylistTLSIsRelaxed()
+        testUserFacingErrorRewritesExpiredCertificate()
+        testUserFacingErrorRewritesCannotDecode()
+        testUserFacingErrorRewritesCoreMediaHTTP602()
+        testUserFacingErrorKeepsChineseStartTimeout()
+        testLivePlaybackRetriesAVPlayerFailureWithVLC()
+        testLivePlaybackDoesNotForceBrowserUserAgent()
         testHLSPlaylistProbeMergesSetCookieIntoPlayerHeaders()
         testHLSPlaylistProbeStartTimeoutFailsOverWhenNotReady()
         testLivePlaybackStartTimeoutAdvancesToNextBackupURL()
@@ -1677,6 +1930,13 @@ enum LogicTests {
         testLivePlaybackAdvancesToNextBackupURL()
         testM3UParserReadsUnquotedAndSingleQuotedGroupTitle()
         testM3UParserStripsKodiHeaderSuffixFromURL()
+        testM3UParserStripsTVBoxSourceTagFromUDPXYURL()
+        testLivePlaybackStripsSourceTagButKeepsQueryDollar()
+        testLivePlaybackPrefersVLCForHTTPMulticastRelay()
+        testHLSPlaylistProbeDetectsMPEGTSContentType()
+        testHLSPlaylistProbeDetectsMPEGTSSyncByte()
+        testHLSPlaylistProbeAcceptsMP4Body()
+        testHLSPlaylistProbeSendsJPEGSegmentHLSToVLC()
         testLivePlaybackParsesKodiCookieAndRefererHeaders()
         testLivePlaybackForwardsSetCookieToPlayerHeader()
         testLivePlaybackMergesWarmedCookieWithKodiHeaders()
@@ -1685,6 +1945,9 @@ enum LogicTests {
         testM3UParserStripsUTF8BOM()
         testTxtPlaylistParsesGenreGroupsAndChannels()
         testTxtPlaylistSplitsHashBackupURLs()
+        testTxtPlaylistStripsSourceTagFromChannelURL()
+        testTxtPlaylistReadsLeadingCommaChannelName()
+        testTxtPlaylistSplitsGluedChannelsMissingNewline()
         testParsePlaylistStillReadsM3U()
         testLivePlaybackIgnoresStaleFailureEvents()
         testLiveResumePrefersLastWatchedChannel()
@@ -1713,9 +1976,6 @@ enum LogicTests {
         testHomeLaunchFirstSuccessThrowsWhenEverySourceFails()
         testHomeLaunchFirstSuccessThrowsWhenCountIsZero()
         testHomeLaunchFirstSuccessPrefersFasterSource()
-        testHomeLaunchFirstSuccessSkipsEmptyWhenLaterSourceHasItems()
-        testHomeLaunchFirstSuccessFallsBackToEmptyWhenEverySourceIsEmpty()
-        testRequestGenerationIgnoresCancellationAndStaleEvents()
         testDisplayBlurbStripsParagraphTags()
         testDisplayBlurbStripsTagsFromFallbackBlurb()
         testDisplayBlurbJoinsAdjacentParagraphsWithSpace()

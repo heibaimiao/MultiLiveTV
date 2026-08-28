@@ -34,6 +34,18 @@ enum VodDisplayFormatter {
         return replaceEmbeddedDates(trimmed)
     }
 
+    static func genreLine(typeName: String?, year: String?) -> String? {
+        var parts: [String] = []
+        if let typeName, !typeName.isEmpty {
+            parts.append(typeName)
+        }
+        let normalizedYear = HomeFeed.normalizeYear(year)
+        if !normalizedYear.isEmpty {
+            parts.append(normalizedYear)
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     private static func decodeHTMLEntities(_ text: String) -> String {
         guard text.contains("&") else { return text }
         return text

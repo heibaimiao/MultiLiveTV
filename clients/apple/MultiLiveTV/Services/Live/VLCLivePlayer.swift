@@ -17,7 +17,7 @@ final class VLCLivePlayer: NSObject, ObservableObject {
         #endif
     }
 
-    static let unavailableMessage = "当前线路是 HTTP-FLV。请在 clients/apple 执行 pod install，然后打开 MultiLiveTV.xcworkspace。"
+    static let unavailableMessage = "当前线路需要 VLC 播放（HTTP-FLV / 组播）。请在 clients/apple 执行 pod install，然后打开 MultiLiveTV.xcworkspace。"
 
     var onPlaying: (() -> Void)?
     var onFailed: ((String) -> Void)?

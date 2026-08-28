@@ -31,6 +31,7 @@ struct VodItem: Codable, Identifiable, Hashable {
     let vodContent: String?
     let typeName: String?
     let vodClass: String?
+    let vodYear: String?
     let variants: [VodVariant]?
     let primarySourceId: Int?
     let vodTime: Int
@@ -44,6 +45,7 @@ struct VodItem: Codable, Identifiable, Hashable {
         case vodContent = "vod_content"
         case typeName = "type_name"
         case vodClass = "vod_class"
+        case vodYear = "vod_year"
         case variants
         case primarySourceId
         case vodTime = "vod_time"
@@ -62,6 +64,10 @@ struct VodItem: Codable, Identifiable, Hashable {
         VodDisplayFormatter.formatRemarks(vodRemarks)
     }
 
+    var displayGenreLine: String? {
+        VodDisplayFormatter.genreLine(typeName: typeName, year: vodYear)
+    }
+
     init(
         vodId: String,
         vodName: String,
@@ -71,6 +77,7 @@ struct VodItem: Codable, Identifiable, Hashable {
         vodContent: String? = nil,
         typeName: String? = nil,
         vodClass: String? = nil,
+        vodYear: String? = nil,
         variants: [VodVariant]? = nil,
         primarySourceId: Int? = nil,
         vodTime: Int = 0
@@ -83,6 +90,7 @@ struct VodItem: Codable, Identifiable, Hashable {
         self.vodContent = vodContent
         self.typeName = typeName
         self.vodClass = vodClass
+        self.vodYear = vodYear
         self.variants = variants
         self.primarySourceId = primarySourceId
         self.vodTime = vodTime

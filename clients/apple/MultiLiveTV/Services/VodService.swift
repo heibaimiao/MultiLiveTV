@@ -18,10 +18,7 @@ final class VodService: ObservableObject {
     ) async throws -> HomeLaunchPayload {
         let sources = store.enabled()
         guard !sources.isEmpty else { throw VodError.sourceNotFound }
-        return try await HomeLaunch.firstSuccess(
-            count: sources.count,
-            isAcceptable: { !$0.snapshot.pool.isEmpty }
-        ) { index in
+        return try await HomeLaunch.firstSuccess(count: sources.count) { index in
             try await loadLaunch(store: store, source: sources[index], tvDisplay: tvDisplay)
         }
     }

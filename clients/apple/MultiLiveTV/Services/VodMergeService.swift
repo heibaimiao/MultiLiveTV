@@ -64,6 +64,7 @@ enum VodMergeService {
             vodContent: bestVod.vodContent.isEmpty ? nil : bestVod.vodContent,
             typeName: bestVod.typeName.isEmpty ? nil : bestVod.typeName,
             vodClass: bestVod.vodClass.isEmpty ? nil : bestVod.vodClass,
+            vodYear: bestVod.vodYear.isEmpty ? nil : bestVod.vodYear,
             variants: variants,
             primarySourceId: source.id,
             vodTime: bestVod.vodTime
@@ -176,7 +177,7 @@ enum VodMergeService {
     }
 
     static func buildVodMergeKey(_ item: VodItemRaw) -> String {
-        HomeFeed.normalizeTitle(item.vodName)
+        HomeFeed.mergeKey(title: item.vodName, year: item.vodYear)
     }
 
     private static func countPlayLines(_ item: VodItemRaw) -> Int {

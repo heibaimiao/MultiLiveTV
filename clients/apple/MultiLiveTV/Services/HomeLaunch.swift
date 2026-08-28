@@ -76,7 +76,6 @@ enum HomeLaunch {
 
     static func firstSuccess<T>(
         count: Int,
-        isAcceptable: @escaping (T) -> Bool = { _ in true },
         operation: @escaping (Int) async throws -> T
     ) async throws -> T {
         guard count > 0 else {
@@ -87,7 +86,6 @@ enum HomeLaunch {
         }
 
         var winner: T?
-        var fallback: T?
         var lastError: Error = URLError(.cannotConnectToHost)
         await withTaskGroup(of: Result<T, Error>.self) { group in
             for index in 0..<count {
@@ -104,14 +102,9 @@ enum HomeLaunch {
                 guard let result = await group.next() else { break }
                 switch result {
                 case .success(let value):
-                    if isAcceptable(value) {
-                        winner = value
-                        group.cancelAll()
-                        return
-                    }
-                    if fallback == nil {
-                        fallback = value
-                    }
+                    winner = value
+                    group.cancelAll()
+                    return
                 case .failure(let error):
                     lastError = error
                 }
@@ -119,9 +112,6 @@ enum HomeLaunch {
         }
         if let winner {
             return winner
-        }
-        if let fallback {
-            return fallback
         }
         throw lastError
     }

@@ -47,6 +47,9 @@ clients/apple/vendor/*.tar.xz
 clients/apple/vendor/*.aria2
 clients/apple/vendor/*.local.podspec.json
 
+# git worktrees (isolated feature checkouts)
+.worktrees/
+
 # brainstorm companion prototypes
 .superpowers/
 

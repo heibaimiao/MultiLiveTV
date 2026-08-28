@@ -97,7 +97,7 @@ enum M3UPlaylistParser {
         var channelsByGroup: [String: [LiveChannel]] = [:]
         var currentGroup = ungrouped
 
-        for line in lines {
+        for line in expandedTxtLines(lines) {
             if line.isEmpty { continue }
             if let genre = txtGenreName(line) {
                 currentGroup = genre.isEmpty ? ungrouped : genre
@@ -122,6 +122,32 @@ enum M3UPlaylistParser {
         }
 
         return groupOrder.map { LiveGroup(name: $0, channels: channelsByGroup[$0] ?? []) }
+    }
+
+    /// 源列表常把 `,江苏卫视,url` 或 `url1频道名,url2` 粘在一行。
+    static func expandedTxtLines(_ lines: [String]) -> [String] {
+        var expanded: [String] = []
+        for line in lines {
+            var current = line
+            while current.hasPrefix(",") {
+                current = String(current.dropFirst()).trimmingCharacters(in: .whitespaces)
+            }
+            expanded.append(contentsOf: splitGluedChannelLines(current))
+        }
+        return expanded
+    }
+
+    static func splitGluedChannelLines(_ line: String) -> [String] {
+        let pattern = #"([A-Za-z0-9./?=&%~_+-])(\p{Han}+,https?://)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return [line]
+        }
+        let range = NSRange(line.startIndex..., in: line)
+        let split = regex.stringByReplacingMatches(in: line, range: range, withTemplate: "$1\n$2")
+        return split
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 
     private static func txtGenreName(_ line: String) -> String? {
@@ -206,11 +232,16 @@ enum M3UPlaylistParser {
 
     static func mediaURL(from line: String) -> String {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let pipe = trimmed.firstIndex(of: "|") else { return trimmed }
-        return String(trimmed[..<pipe]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutPipe: String
+        if let pipe = trimmed.firstIndex(of: "|") {
+            withoutPipe = String(trimmed[..<pipe]).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            withoutPipe = trimmed
+        }
+        return LivePlayback.stripSourceTag(withoutPipe)
     }
 
-    /// rtp/rtmp/udp 无法走 AVPlayer；HTTP/HTTPS HLS 可以（ATS 已放行媒体明文）。
+    /// 仅保留 HTTP/HTTPS。裸 rtp/rtmp/udp 无法播放；HTTP-UDPXY 由 VLC 承接。
     static func playableMediaURL(from line: String) -> String? {
         let url = mediaURL(from: line)
         guard RemoteMediaURL.parse(url) != nil else { return nil }
@@ -247,6 +278,45 @@ enum M3UPlaylistParser {
 }
 
 enum LivePlayback {
+    /// 去掉 TVBox/DIYP 常见的 `$源名` 尾巴；查询参数里的 `$` 原样保留。
+    static func stripSourceTag(_ url: String) -> String {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let dollar = trimmed.firstIndex(of: "$") else { return trimmed }
+        let suffix = String(trimmed[trimmed.index(after: dollar)...])
+        if suffix.contains("=") || suffix.contains("&") || suffix.contains("/") || suffix.contains("://") {
+            return trimmed
+        }
+        return String(trimmed[..<dollar])
+    }
+
+    /// UDPXY 的 `/udp/` `/rtp/` 是无限 MPEG-TS，不能走 HLS URLSession 探测。
+    static func prefersVLC(for url: String) -> Bool {
+        let lower = stripSourceTag(url).lowercased()
+        return lower.contains("/udp/") || lower.contains("/rtp/")
+    }
+
+    /// AVPlayer 解不了 MPEG-2 电信源、HTTP 602 分片时，同一地址再交给 VLC。
+    static func shouldRetryWithVLC(alreadyUsedVLC: Bool, vlcAvailable: Bool) -> Bool {
+        vlcAvailable && !alreadyUsedVLC
+    }
+
+    enum Renderer: Equatable {
+        case avPlayer
+        case vlc
+    }
+
+    /// AVPlayer 无法忽略过期证书；探测阶段放宽 TLS 后的 HLS 必须走 VLC。
+    static func renderer(decision: HLSPlaylistProbe.Decision, relaxedTLS: Bool) -> Renderer? {
+        switch decision {
+        case .playable:
+            return relaxedTLS ? .vlc : .avPlayer
+        case .flv, .mpegts:
+            return .vlc
+        case .retry, .reject:
+            return nil
+        }
+    }
+
     static func nextURLIndex(after current: Int, count: Int) -> Int? {
         let next = current + 1
         return next < count ? next : nil
@@ -328,8 +398,7 @@ enum LivePlayback {
     }
 
     static func playerHeaders(kodi: [String: String], cookieHeader: String?) -> [String: String] {
-        var headers = ["User-Agent": NetworkConfig.userAgent]
-        headers.merge(kodi) { _, new in new }
+        var headers = kodi
         if let cookieHeader, !cookieHeader.isEmpty {
             if let existing = headers["Cookie"], !existing.isEmpty {
                 headers["Cookie"] = existing + "; " + cookieHeader
@@ -352,6 +421,8 @@ enum LivePlayback {
                 options.append(":\(option)=\(value)")
             }
         }
+        options.append(":http-tls-verify=0")
+        options.append(":tls-verify=0")
         return options
     }
 

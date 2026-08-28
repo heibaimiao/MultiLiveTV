@@ -21,12 +21,18 @@ export function normalizeVodTitle(name?: string): string {
     .replace(/[·・:：\-—_]/g, "");
 }
 
+export function normalizeVodYear(year?: string): string {
+  if (!year) return "";
+  const match = year.trim().match(/\d{4}/);
+  return match?.[0] ?? "";
+}
+
 export function buildVodMergeKey(
   item: Pick<VodItem, "vod_name" | "type_name" | "vod_year">
 ): string {
-  // 跨资源站时 type_name / vod_year 常不一致（如动作片 vs 恐怖片），
-  // 仅按片名合并；季数差异通常已体现在片名中（如「第二季」）。
-  return normalizeVodTitle(item.vod_name);
+  const title = normalizeVodTitle(item.vod_name);
+  const year = normalizeVodYear(item.vod_year);
+  return year ? `${title}|${year}` : title;
 }
 
 function countPlayLines(item: VodItem): number {
