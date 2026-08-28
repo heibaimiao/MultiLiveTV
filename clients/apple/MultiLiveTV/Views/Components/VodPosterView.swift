@@ -6,7 +6,7 @@ struct VodPosterView: View {
     let sourceId: Int
     let vodId: String
     let initialURL: String
-    var cornerRadius: CGFloat = 10
+    var cornerRadius: CGFloat = 8
     var showRemarks: String?
 
     @State private var resolvedURL: URL?
@@ -20,17 +20,16 @@ struct VodPosterView: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(alignment: .topTrailing) {
             if let showRemarks, !showRemarks.isEmpty {
                 Text(showRemarks)
-                    .font(.caption2.weight(.medium))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.trailing)
+                    .lineLimit(1)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.black.opacity(0.65), in: Capsule())
+                    .background(.black.opacity(0.62), in: Capsule())
                     .padding(8)
             }
         }
@@ -41,32 +40,48 @@ struct VodPosterView: View {
 
     @ViewBuilder
     private var posterContent: some View {
-        AsyncImage(url: resolvedURL) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            case .failure:
+        RemoteImageView(url: resolvedURL ?? RemoteMediaURL.parse(initialURL)) { phase in
+            posterPhase(phase)
+        }
+    }
+
+    @ViewBuilder
+    private func posterPhase(_ phase: RemoteImagePhase) -> some View {
+        switch phase {
+        case .success(let image):
+            image
+                .resizable()
+                .scaledToFill()
+        case .failure:
+            placeholder
+        case .empty:
+            if didFail && RemoteMediaURL.parse(initialURL) == nil && resolvedURL == nil {
                 placeholder
-            default:
-                if didFail && resolvedURL == nil {
-                    placeholder
-                } else {
-                    AppTheme.tertiaryFill
-                        .overlay { ProgressView() }
-                }
+            } else {
+                AppTheme.tertiaryFill
+                    .overlay {
+                        #if os(iOS)
+                        ProgressView()
+                            .tint(AppTheme.textTertiary)
+                        #else
+                        Color.clear
+                        #endif
+                    }
             }
         }
     }
 
     private var placeholder: some View {
-        AppTheme.tertiaryFill
-            .overlay {
-                Image(systemName: "film")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-            }
+        LinearGradient(
+            colors: [AppTheme.elevated, AppTheme.tertiaryFill],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .overlay {
+            Image(systemName: "film")
+                .font(.title2)
+                .foregroundStyle(AppTheme.textTertiary)
+        }
     }
 
     private var taskKey: String {
@@ -76,26 +91,22 @@ struct VodPosterView: View {
     private func resolveImageURL() async {
         didFail = false
 
-        if let url = normalizedURL(initialURL) {
-            resolvedURL = url
+        if RemoteMediaURL.parse(initialURL) != nil {
             return
         }
 
         do {
             if let pic = try await vod.fetchVodPic(sourceId: sourceId, vodId: vodId),
-               let url = normalizedURL(pic) {
+               let url = RemoteMediaURL.parse(pic) {
+                guard !Task.isCancelled else { return }
                 resolvedURL = url
             } else {
+                guard !Task.isCancelled else { return }
                 didFail = true
             }
         } catch {
+            guard !Task.isCancelled, !RequestGeneration.isCancellation(error) else { return }
             didFail = true
         }
-    }
-
-    private func normalizedURL(_ string: String) -> URL? {
-        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return URL(string: trimmed)
     }
 }

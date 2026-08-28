@@ -3,28 +3,49 @@ import SwiftUI
 struct CategoryTabButton: View {
     enum Size {
         case medium
+        case secondary
         case small
 
         var font: Font {
             switch self {
-            case .medium: .subheadline.weight(.medium)
-            case .small: .caption.weight(.medium)
+            case .medium:
+                #if os(tvOS)
+                .title3.weight(.semibold)
+                #else
+                .subheadline.weight(.semibold)
+                #endif
+            case .secondary:
+                #if os(tvOS)
+                .headline.weight(.semibold)
+                #else
+                .body.weight(.semibold)
+                #endif
+            case .small:
+                #if os(tvOS)
+                .body.weight(.medium)
+                #else
+                .caption.weight(.semibold)
+                #endif
             }
         }
 
         var horizontalPadding: CGFloat {
             switch self {
             case .medium: 16
+            case .secondary: 14
             case .small: 12
             }
         }
 
         var verticalPadding: CGFloat {
             switch self {
-            case .medium: 8
-            case .small: 6
+            case .medium: 10
+            case .secondary: 9
+            case .small: 7
             }
         }
+
+        var usesAccentSelection: Bool { self == .secondary }
     }
 
     let label: String
@@ -32,65 +53,95 @@ struct CategoryTabButton: View {
     var isFocused: Bool = false
     var disabled: Bool = false
     var size: Size = .medium
+    var systemImage: String? = nil
+    var badge: String? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(label)
-                .font(size.font)
-                .foregroundStyle(foregroundColor)
-                .padding(.horizontal, size.horizontalPadding)
-                .padding(.vertical, size.verticalPadding)
-                .background(backgroundColor, in: Capsule())
-                .overlay {
-                    Capsule()
-                        .strokeBorder(focusBorderColor, lineWidth: focusBorderWidth)
+            HStack(spacing: 8) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .font(size.font)
                 }
+                Text(label)
+                    .font(size.font)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                if let badge {
+                    Text(badge)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(isFocused ? Color.black.opacity(0.55) : AppTheme.textTertiary)
+                }
+            }
+            .foregroundStyle(foregroundColor)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
+            .background(backgroundColor, in: Capsule())
         }
-        .buttonStyle(.plain)
         .disabled(disabled)
-        .opacity(disabled ? 0.6 : 1)
+        .opacity(disabled ? 0.55 : 1)
         #if os(tvOS)
-        .tvFocusScale(isFocused)
+        .tvChipFocusChrome()
+        #else
+        .buttonStyle(.plain)
         #endif
     }
 
     private var foregroundColor: Color {
-        if isActive {
-            return Color.white
+        if isFocused {
+            return .black
         }
-        #if os(tvOS)
-        return Color.secondary
-        #else
-        return Color.primary
-        #endif
+        if isActive, size.usesAccentSelection {
+            return AppTheme.accent
+        }
+        if isActive {
+            return AppTheme.textPrimary
+        }
+        return AppTheme.textSecondary
     }
 
     private var backgroundColor: Color {
-        if isActive {
-            return Color.accentColor
+        if isFocused {
+            return .white
         }
-        #if os(tvOS)
-        return Color.white.opacity(isFocused ? 0.14 : 0.08)
-        #else
-        return AppTheme.secondaryFill
-        #endif
+        if isActive, size.usesAccentSelection {
+            return AppTheme.accent.opacity(0.22)
+        }
+        if isActive {
+            return AppTheme.secondaryFill
+        }
+        return .clear
+    }
+}
+
+enum CategoryFocus {
+    static let prefix = "c:"
+    static let search = "c:search"
+
+    static func primary(_ id: Int) -> String { "c:p:\(id)" }
+    static func secondary(_ id: Int) -> String { "c:s:\(id)" }
+
+    static func isCategory(_ id: String?) -> Bool {
+        id?.hasPrefix(prefix) == true
     }
 
-    private var focusBorderWidth: CGFloat {
-        #if os(tvOS)
-        isFocused ? 3 : 0
-        #else
-        0
-        #endif
-    }
-
-    private var focusBorderColor: Color {
-        #if os(tvOS)
-        .white
-        #else
-        .clear
-        #endif
+    static func preferredKey(
+        primary: [CategoryDef],
+        activeTypeId: Int?,
+        activeParentId: Int?,
+        showSecondary: Bool
+    ) -> String {
+        if showSecondary, let parentId = activeParentId {
+            return secondary(activeTypeId ?? parentId)
+        }
+        if let activeTypeId {
+            return Self.primary(activeTypeId)
+        }
+        if let first = primary.first {
+            return Self.primary(first.typeId)
+        }
+        return search
     }
 }
 
@@ -100,78 +151,143 @@ struct CategoryTabs: View {
     let activeTypeId: Int?
     let activeParentId: Int?
     var pending: Bool = false
+    var focusRequest: Int = 0
+    var focusedId: FocusState<String?>.Binding
+    var onSearch: (() -> Void)? = nil
     let onSelect: (Int?) -> Void
-
-    @FocusState private var focusedKey: String?
 
     private var showSecondary: Bool {
         !secondary.isEmpty && activeParentId != nil
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            tabRow(prefix: "p") {
-                CategoryTabButton(
-                    label: "全部",
-                    isActive: activeTypeId == nil,
-                    isFocused: focusedKey == focusKey(prefix: "p", id: nil),
-                    disabled: pending
-                ) { onSelect(nil) }
-                .focused($focusedKey, equals: focusKey(prefix: "p", id: nil))
+    private var preferredFocusKey: String {
+        CategoryFocus.preferredKey(
+            primary: primary,
+            activeTypeId: activeTypeId,
+            activeParentId: activeParentId,
+            showSecondary: showSecondary
+        )
+    }
 
-                ForEach(primary) { category in
-                    CategoryTabButton(
-                        label: category.label,
-                        isActive: activeTypeId == category.typeId || activeParentId == category.typeId,
-                        isFocused: focusedKey == focusKey(prefix: "p", id: category.typeId),
-                        disabled: pending
-                    ) { onSelect(category.typeId) }
-                    .focused($focusedKey, equals: focusKey(prefix: "p", id: category.typeId))
-                }
-            }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            primaryRow
 
             if showSecondary, let activeParentId {
-                tabRow(prefix: "s") {
+                tabRow(prefix: "s", spacing: 12, fadeTrailing: true) {
                     CategoryTabButton(
                         label: "全部",
                         isActive: activeTypeId == activeParentId,
-                        isFocused: focusedKey == focusKey(prefix: "s", id: activeParentId),
+                        isFocused: focusedId.wrappedValue == CategoryFocus.secondary(activeParentId),
                         disabled: pending,
-                        size: .small
+                        size: .secondary
                     ) { onSelect(activeParentId) }
-                    .focused($focusedKey, equals: focusKey(prefix: "s", id: activeParentId))
+                    .tvChipFocused(focusedId, equals: CategoryFocus.secondary(activeParentId))
 
                     ForEach(secondary) { category in
                         CategoryTabButton(
                             label: category.label,
                             isActive: activeTypeId == category.typeId,
-                            isFocused: focusedKey == focusKey(prefix: "s", id: category.typeId),
+                            isFocused: focusedId.wrappedValue == CategoryFocus.secondary(category.typeId),
                             disabled: pending,
-                            size: .small
+                            size: .secondary
                         ) { onSelect(category.typeId) }
-                        .focused($focusedKey, equals: focusKey(prefix: "s", id: category.typeId))
+                        .tvChipFocused(focusedId, equals: CategoryFocus.secondary(category.typeId))
                     }
                 }
             }
         }
+        .padding(.horizontal, AppTheme.screenPadding)
         #if os(tvOS)
-        .padding(.horizontal, TVDesign.screenPadding)
-        .padding(.vertical, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .focusSection()
+        .onChange(of: focusRequest) { _, _ in
+            guard !preferredFocusKey.isEmpty else { return }
+            focusedId.wrappedValue = preferredFocusKey
+        }
         #else
-        .padding(.horizontal)
         .padding(.vertical, 8)
         #endif
     }
 
-    private func tabRow<Content: View>(prefix: String, @ViewBuilder content: () -> Content) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                content()
+    @ViewBuilder
+    private var primaryRow: some View {
+        #if os(tvOS)
+        HStack(alignment: .center, spacing: 16) {
+            BrandLogo(height: 36)
+            tabRow(prefix: "p", spacing: 8, trapsFocus: false) {
+                primaryChips
             }
+            if let onSearch {
+                CategoryTabButton(
+                    label: "搜索",
+                    isActive: false,
+                    isFocused: focusedId.wrappedValue == CategoryFocus.search,
+                    systemImage: "magnifyingglass"
+                ) { onSearch() }
+                .tvChipFocused(focusedId, equals: CategoryFocus.search)
+            }
+        }
+        .focusSection()
+        #else
+        HStack(alignment: .center, spacing: 12) {
+            BrandLogo(height: 28)
+            tabRow(prefix: "p") {
+                primaryChips
+            }
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private var primaryChips: some View {
+        ForEach(primary) { category in
+            CategoryTabButton(
+                label: category.label,
+                isActive: activeTypeId == category.typeId || activeParentId == category.typeId,
+                isFocused: focusedId.wrappedValue == CategoryFocus.primary(category.typeId),
+                disabled: pending
+            ) { onSelect(category.typeId) }
+            .tvChipFocused(focusedId, equals: CategoryFocus.primary(category.typeId))
         }
     }
 
-    private func focusKey(prefix: String, id: Int?) -> String {
-        "\(prefix)-\(id.map(String.init) ?? "all")"
+    @ViewBuilder
+    private func tabRow<Content: View>(
+        prefix: String,
+        spacing: CGFloat = 8,
+        fadeTrailing: Bool = false,
+        trapsFocus: Bool = true,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let row = ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .center, spacing: spacing) {
+                content()
+            }
+        }
+        .contentMargins(.all, 0, for: .scrollContent)
+        .contentMargins(.all, 0)
+        .fixedSize(horizontal: false, vertical: true)
+        .overlay(alignment: .trailing) {
+            if fadeTrailing {
+                LinearGradient(
+                    colors: [.clear, AppTheme.screenBackground],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 44)
+                .allowsHitTesting(false)
+            }
+        }
+        #if os(tvOS)
+        if trapsFocus {
+            row.focusSection()
+        } else {
+            row
+        }
+        #else
+        row
+        #endif
     }
 }

@@ -1,0 +1,4 @@
+https://download.videolan.org/pub/cocoapods/prod/MobileVLCKit-3.6.0-c73b779f-dd8bfdba.tar.xz
+  out=MobileVLCKit-3.6.0.tar.xz
+https://download.videolan.org/pub/cocoapods/prod/TVVLCKit-3.6.0-c73b779f-dd8bfdba.tar.xz
+  out=TVVLCKit-3.6.0.tar.xz

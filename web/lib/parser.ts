@@ -49,6 +49,20 @@ export function parsePlayUrl(vodPlayFrom: string, vodPlayUrl: string): PlaySourc
   });
 }
 
+export function displayPlaySourceName(sourceName: string, lineName: string): string {
+  const source = sourceName.trim();
+  const line = lineName.trim();
+  if (!source) return line;
+  if (!line || source === line) return source;
+  return `${source} · ${line}`;
+}
+
+function playabilityScore(source: PlaySource): number {
+  return source.episodes.filter((episode) =>
+    /\.m3u8|\.mp4|\.mkv|\.flv|\.mov/i.test(episode.url)
+  ).length;
+}
+
 export function mergePlaySourcesFromVods(
   entries: Array<{ source: Source; vod: VodItem }>
 ): PlaySource[] {
@@ -57,16 +71,27 @@ export function mergePlaySourcesFromVods(
   for (const { source, vod } of entries) {
     const parsed = parsePlayUrl(vod.vod_play_from ?? "", vod.vod_play_url ?? "");
     for (const line of parsed) {
-      const key = `${source.id}:${line.key}`;
-      const name = `${source.name} · ${line.name}`;
+      const key = `${source.id}:${line.name}`;
+      const name = displayPlaySourceName(source.name, line.name);
+      const incoming: PlaySource = {
+        ...line,
+        key,
+        name,
+        sourceId: source.id,
+      };
       const existing = merged.get(key);
-      if (!existing || line.episodes.length > existing.episodes.length) {
-        merged.set(key, {
-          ...line,
-          key,
-          name,
-          sourceId: source.id,
-        });
+      if (!existing) {
+        merged.set(key, incoming);
+        continue;
+      }
+      const incomingScore = playabilityScore(incoming);
+      const existingScore = playabilityScore(existing);
+      if (
+        incomingScore > existingScore ||
+        (incomingScore === existingScore &&
+          incoming.episodes.length > existing.episodes.length)
+      ) {
+        merged.set(key, incoming);
       }
     }
   }

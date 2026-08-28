@@ -20,9 +20,24 @@ enum MacCMSCategoryService {
         return typeAliases[cleaned] ?? cleaned
     }
 
+    static func isHiddenCategoryLabel(_ text: String) -> Bool {
+        text.contains("伦理") || text.contains("倫理")
+    }
+
     static func isTypeVisible(_ typeName: String) -> Bool {
         if typeName.contains("[关]") { return false }
         if typeName.range(of: "x$", options: [.regularExpression, .caseInsensitive]) != nil { return false }
+        if isHiddenCategoryLabel(typeName) { return false }
+        return true
+    }
+
+    static func isItemVisible(_ item: VodItem) -> Bool {
+        if let typeName = item.typeName, !typeName.isEmpty, isHiddenCategoryLabel(typeName) {
+            return false
+        }
+        if let vodClass = item.vodClass, !vodClass.isEmpty, isHiddenCategoryLabel(vodClass) {
+            return false
+        }
         return true
     }
 
@@ -79,11 +94,43 @@ enum CategoryListService {
         let list: [VodMergeService.MergedVodItem]
     }
 
+    struct ChildListPage {
+        let childId: Int
+        let list: [VodItemRaw]
+        let pageCount: Int
+        let total: Int
+    }
+
+    struct FlattenedChildPages {
+        let items: [VodItemRaw]
+        let pageCount: Int
+        let total: Int
+    }
+
+    static func shouldFetchChildrenDirectly(knownChildTypeIds: [Int]) -> Bool {
+        !knownChildTypeIds.isEmpty
+    }
+
+    static func flattenChildPages(_ pages: [ChildListPage], orderedChildIds: [Int]) -> FlattenedChildPages {
+        let byId = Dictionary(pages.map { ($0.childId, $0) }, uniquingKeysWith: { first, _ in first })
+        var items: [VodItemRaw] = []
+        var pageCount = 1
+        var total = 0
+        for childId in orderedChildIds {
+            guard let page = byId[childId] else { continue }
+            items.append(contentsOf: page.list)
+            pageCount = max(pageCount, page.pageCount)
+            total += page.total
+        }
+        return FlattenedChildPages(items: items, pageCount: pageCount, total: total)
+    }
+
     static func fetchVodListByTypeMerged(
         store: SourceStore,
         source: Source,
         typeId: Int?,
-        page: Int
+        page: Int,
+        knownChildTypeIds: [Int] = []
     ) async throws -> ListResult {
         if typeId == nil {
             let data = try await MacCMSClient.fetchList(source: source, page: page, typeId: nil)
@@ -95,6 +142,15 @@ enum CategoryListService {
                 limit: data.limit,
                 total: data.total,
                 list: mergeListItems(store: store, source: source, items: data.list)
+            )
+        }
+
+        if shouldFetchChildrenDirectly(knownChildTypeIds: knownChildTypeIds) {
+            return await fetchMergedChildLists(
+                store: store,
+                source: source,
+                page: page,
+                childIds: knownChildTypeIds
             )
         }
 
@@ -125,26 +181,51 @@ enum CategoryListService {
             )
         }
 
-        var allItems: [VodItemRaw] = []
-        var pageCount = 1
-        var total = 0
-        for childId in childIds {
-            guard let data = try? await MacCMSClient.fetchList(source: source, page: page, typeId: childId) else {
-                continue
+        return await fetchMergedChildLists(
+            store: store,
+            source: source,
+            page: page,
+            childIds: childIds
+        )
+    }
+
+    private static func fetchMergedChildLists(
+        store: SourceStore,
+        source: Source,
+        page: Int,
+        childIds: [Int]
+    ) async -> ListResult {
+        let pages: [ChildListPage] = await withTaskGroup(of: ChildListPage?.self) { group in
+            for childId in childIds {
+                group.addTask {
+                    guard let data = try? await MacCMSClient.fetchList(source: source, page: page, typeId: childId) else {
+                        return nil
+                    }
+                    return ChildListPage(
+                        childId: childId,
+                        list: data.list,
+                        pageCount: data.pageCount,
+                        total: data.total
+                    )
+                }
             }
-            allItems.append(contentsOf: data.list)
-            pageCount = max(pageCount, data.pageCount)
-            total += data.total
+            var collected: [ChildListPage] = []
+            collected.reserveCapacity(childIds.count)
+            for await childPage in group {
+                if let childPage { collected.append(childPage) }
+            }
+            return collected
         }
 
-        let list = mergeListItems(store: store, source: source, items: allItems)
+        let flattened = flattenChildPages(pages, orderedChildIds: childIds)
+        let list = mergeListItems(store: store, source: source, items: flattened.items)
         return ListResult(
             code: 1,
             msg: "ok",
             page: page,
-            pageCount: pageCount,
+            pageCount: flattened.pageCount,
             limit: String(list.count),
-            total: total,
+            total: flattened.total,
             list: list
         )
     }

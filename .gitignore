@@ -36,6 +36,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# local test binaries
+.verify-downloads-bin
+clients/apple/.verify-downloads-bin
+
+# CocoaPods / VLCKit (install with `pod install` in clients/apple)
+clients/apple/Pods/
+clients/apple/MultiLiveTV.xcworkspace/
+clients/apple/vendor/*.tar.xz
+clients/apple/vendor/*.aria2
+clients/apple/vendor/*.local.podspec.json
+
+# brainstorm companion prototypes
+.superpowers/
+
 # reverse-engineering artifacts
 *.exe_extracted/
 pyinstxtractor.py

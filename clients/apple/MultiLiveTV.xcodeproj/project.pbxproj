@@ -3,102 +3,290 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		040769629337CD46B503D36E /* CategoryTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D36209B9219AA1AF5EA53A /* CategoryTree.swift */; };
 		04D5DC9920A050CEC84BB8F8 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D030031B9AD901C375C115 /* PlayerView.swift */; };
+		0892D836F6BD11304673417D /* DownloadMediaKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */; };
+		08DF0DB4A7793FB62B639DA0 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203C4FA6CEDFC1CB68D974BE /* DownloadManager.swift */; };
+		09D903548769DDA5EECA9723 /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3E1967438E2460789F8C25 /* NetworkConfig.swift */; };
+		0ADC721120C85829085CEFB6 /* LiveGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B10F2B225FC9AFC5F602DC /* LiveGuideOverlay.swift */; };
 		0C6FFD2B9C6571EC077DFDBA /* PlayParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B6973F6635478FB36F6C3 /* PlayParser.swift */; };
 		0ED8E1ED128687B0721E0108 /* MacCMSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BA465E9AE431265CA8AF4E8 /* MacCMSModels.swift */; };
+		165665E3005E14BA2A7646CE /* HLSPlaylistDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C48BC043833D7193718CADD /* HLSPlaylistDownloadEngine.swift */; };
+		16CFAAF85CBEE3F91EA0F846 /* HomeLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 018139FC242A4D94B1051B7F /* HomeLaunch.swift */; };
+		17B1F1B77029B180EDB0AEE4 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */; };
+		18825A15E98D9751DCCBC548 /* M3UPlaylistParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */; };
 		192DDBD831B164E8D6560AAC /* VodShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7068BC535EC251781DEE5CD /* VodShelf.swift */; };
 		1C7D3667F69E0960D097CB29 /* HomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */; };
+		1F8DF565D09B2B40A52DCA33 /* HLSPlaylistLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D8A94ADE489AFC7DEC2D34 /* HLSPlaylistLocalizer.swift */; };
 		255BDF8FB04ACD076AEFE3F8 /* TVDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C9E57FA4E1CF502A09A637 /* TVDesign.swift */; };
 		282DB0B69B5AAE297D5D6A12 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0407D5270FCA87D0A909EF /* StateViews.swift */; };
+		29B206C6395F9418882443B6 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B498A26E994459FA67D88B /* DownloadStore.swift */; };
+		2A9C6E82F3E1D3970786B5E8 /* DownloadRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F86008EAF83BAE6633A9884 /* DownloadRecord.swift */; };
 		2C0640B349221E01C473BDF6 /* VodDisplayFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A196D30F1A2BC73ADD0E84B7 /* VodDisplayFormatter.swift */; };
+		2D8252A70107834AB538BBFD /* LiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E653A62633B56BBCBEDEBD1D /* LiveView.swift */; };
+		3263FDEB8412C0CE359AD244 /* DownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFDFDF2904B9E1C8A2732EC /* DownloadEngine.swift */; };
+		32726BAC3466C6BA53E9591D /* HLSDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A117EFC61E1E353968E843F /* HLSDownloadEngine.swift */; };
 		341FC0D9F675295F614F5842 /* VodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7460BA3B6D9A1DD08F0F11 /* VodService.swift */; };
+		34892F8D56670EA03B1BCB81 /* BrandLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8213C2D88133680FCCCE4AD4 /* BrandLogo.swift */; };
 		3698F14E5C522DC9D35FE3EE /* VodPosterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C98C8C6B40F76714B9A0FC /* VodPosterView.swift */; };
+		36DBC8D4E3DD5B2B58236C85 /* CinemaChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16AC19BCF6ECB61F0D1500 /* CinemaChrome.swift */; };
+		381754A57DE89334B17564E7 /* LiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F40C815C5F6B8A3A42B8B31 /* LiveStore.swift */; };
 		38B2E9BCE796AC78BEB41D68 /* MacCMSClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37F7E942B3B37D28D922076 /* MacCMSClient.swift */; };
 		3AA25766444A44430097528A /* MacCMSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BA465E9AE431265CA8AF4E8 /* MacCMSModels.swift */; };
+		3C24FC9B2E37DB9649BB565C /* BrandLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8213C2D88133680FCCCE4AD4 /* BrandLogo.swift */; };
+		3FA419489C50527A5D2C4D0E /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73E8027AB111620ABFF7310 /* AppDeepLink.swift */; };
+		44A8E733976DBA4A1650017B /* LiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF53CF4126ACD5F052BB4EC2 /* LiveService.swift */; };
 		472566DDA7A651457945EF79 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8CC89DEDC555ACC4574A5F5 /* Models.swift */; };
+		491B61B68BF2B77F8015886E /* LiveChannelCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8715BAE6DF12AF291D06CB /* LiveChannelCard.swift */; };
 		4BD0316751C72598867FD9FA /* HomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */; };
+		4DB37155C8FDF62AED1C537A /* LiveVideoStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36648814CB64C171472B679E /* LiveVideoStage.swift */; };
 		4E2FD296D1B73DDEB35A38B9 /* VodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7460BA3B6D9A1DD08F0F11 /* VodService.swift */; };
+		509F639BD765E64E59CA49A5 /* lives.json in Resources */ = {isa = PBXBuildFile; fileRef = 65973C09D8A24E43EAE804D8 /* lives.json */; };
+		51363F0D5DBC70BC7CE009ED /* DownloadRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F86008EAF83BAE6633A9884 /* DownloadRecord.swift */; };
 		529DA5A8CEE673BE76462AD7 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D030031B9AD901C375C115 /* PlayerView.swift */; };
+		531132A2284A0FB1FA9BB090 /* ContentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CABF9770EF3536391C69DD9 /* ContentProvider.swift */; };
+		5380E3929029EC64D033EE63 /* DownloadGlyphButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F0B1684AEA4CB648E0036A /* DownloadGlyphButton.swift */; };
 		53C90C8754622E691223644C /* VodCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9986F2D2ADE3C921BDE89 /* VodCard.swift */; };
+		556CA11FB76DD0017488ADBD /* RemoteImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B107467C4B72304AA9EAD52 /* RemoteImageLoader.swift */; };
+		56034409DCE14D1EAFB0C526 /* LivePlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD47C1A1C0277867AD483C34 /* LivePlaybackSession.swift */; };
 		594F70FACD05F4F695A15F9D /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7369D567255A92D5D18970E0 /* SearchView.swift */; };
+		598447B1A7123B65AF95B413 /* TopShelfStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */; };
+		5EF747B5E34B6723CEB8159C /* LiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E653A62633B56BBCBEDEBD1D /* LiveView.swift */; };
+		635ED733EAA4C1991A87AB64 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */; };
+		652606D1DDA97AFED5356754 /* LaunchLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E00AF33D28B3B5B773DDC3 /* LaunchLoadingView.swift */; };
 		6601D7F7DE0387FA7450BB60 /* PlaybackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BBB0664590164724BDC67A /* PlaybackSupport.swift */; };
 		660EF80460EB80AE26B971AF /* CategoryTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D36209B9219AA1AF5EA53A /* CategoryTree.swift */; };
 		667919E6342C3ECEAC2E33FF /* VodDisplayFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A196D30F1A2BC73ADD0E84B7 /* VodDisplayFormatter.swift */; };
 		68E7AE21FB9EFF59B1C3BBE7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A21AE43A6E02F841FDE380C /* HomeView.swift */; };
+		6C3212CDBD8B4432BA3CD78B /* DownloadGlyphButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F0B1684AEA4CB648E0036A /* DownloadGlyphButton.swift */; };
+		6D75F8393BE5486E22D9EDEB /* LiveVideoStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36648814CB64C171472B679E /* LiveVideoStage.swift */; };
 		6F6FBB1E2C0EB4C649DA9469 /* VodPosterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C98C8C6B40F76714B9A0FC /* VodPosterView.swift */; };
 		70D59FD533CA5B3573BE681C /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0407D5270FCA87D0A909EF /* StateViews.swift */; };
 		720172B7EBF953319625C4A6 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8CC89DEDC555ACC4574A5F5 /* Models.swift */; };
+		73585F70C34BFA34AE268867 /* FileDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747E9AE6F699B73B5B04F471 /* FileDownloadEngine.swift */; };
 		73BE26A584A1E82AF4C79742 /* MultiLiveTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847E09F44B2A2BE18BFCBFE4 /* MultiLiveTVApp.swift */; };
+		78164399D2B26F913F3A3B89 /* lives.json in Resources */ = {isa = PBXBuildFile; fileRef = 65973C09D8A24E43EAE804D8 /* lives.json */; };
+		7A4EF667ED61D1C1999D047E /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203C4FA6CEDFC1CB68D974BE /* DownloadManager.swift */; };
 		7A6794C15B1AFA742B3021CD /* TVDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C9E57FA4E1CF502A09A637 /* TVDesign.swift */; };
 		7B6971797488369527678DC6 /* CategoryListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B0D244576AB6B669951D67 /* CategoryListService.swift */; };
 		7D5910763EC40841D8B2C457 /* VodMergeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B913CD283679B2B6B65469 /* VodMergeService.swift */; };
+		81D9E9AEA6DACC535D35358A /* CategoryMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45343F567AC1D3CC105166A /* CategoryMatch.swift */; };
 		830AB69F9C8874FEB14FF7E3 /* PlayParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B6973F6635478FB36F6C3 /* PlayParser.swift */; };
 		84F1D61294ABF49E4759303F /* CategoryTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3750010221A27BF6491F51 /* CategoryTabs.swift */; };
+		88DC5CC2AAAC094023017D2B /* HLSPlaylistProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FA3F2F4865FCEC0A1675BE0 /* HLSPlaylistProbe.swift */; };
+		8A44F2F1749FDD836028D5C5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD40321A3E9AFEDE770F840F /* Assets.xcassets */; };
 		8AE07D67310DFEF984D9C48F /* CategoryTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3750010221A27BF6491F51 /* CategoryTabs.swift */; };
+		8E183071DD14BD06CFDF885F /* RemoteImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B107467C4B72304AA9EAD52 /* RemoteImageLoader.swift */; };
+		8F68024B78976D959D30BAC0 /* RemoteImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0CB16529127B18D10AF105 /* RemoteImageView.swift */; };
+		9229D546C841B4013EA5E4A7 /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B9FA80507BFD460E402CE5 /* TopShelfSnapshot.swift */; };
 		927C15155A8EB88717C16598 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED2825D88B50211383CC816 /* DetailView.swift */; };
 		92D057EF8772AA69174DDCA3 /* HeroBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80986099C8E3DFB463A9FF10 /* HeroBanner.swift */; };
+		9384207CA67A9AAD6440E6C7 /* LivePlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD47C1A1C0277867AD483C34 /* LivePlaybackSession.swift */; };
+		944262AABE85E6074AD1A6E6 /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73E8027AB111620ABFF7310 /* AppDeepLink.swift */; };
+		95DF40B338513E94049DDB55 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD40321A3E9AFEDE770F840F /* Assets.xcassets */; };
+		95F98550AEA7452FC91E5E0B /* HomeLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 018139FC242A4D94B1051B7F /* HomeLaunch.swift */; };
+		984BDE17E9A0FCB5D782C0B1 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B498A26E994459FA67D88B /* DownloadStore.swift */; };
 		985004BE4AF6DBC0D9787EC3 /* MultiLiveTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847E09F44B2A2BE18BFCBFE4 /* MultiLiveTVApp.swift */; };
+		992459BAE3BE14919B82B924 /* LiveChannelCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8715BAE6DF12AF291D06CB /* LiveChannelCard.swift */; };
 		9A61E0E68337002727EA72D7 /* sources.json in Resources */ = {isa = PBXBuildFile; fileRef = 7F02CA9D028B34FBF45BFCC6 /* sources.json */; };
+		9D795020766DA1077545A1B7 /* LiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F40C815C5F6B8A3A42B8B31 /* LiveStore.swift */; };
+		A1A303B0EEAD7D030E7776AF /* HLSPlaylistLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D8A94ADE489AFC7DEC2D34 /* HLSPlaylistLocalizer.swift */; };
+		A49970C82EE3D30F6834521A /* LiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF53CF4126ACD5F052BB4EC2 /* LiveService.swift */; };
+		A5EB961140131BF0E20C534C /* HLSPlaylistDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C48BC043833D7193718CADD /* HLSPlaylistDownloadEngine.swift */; };
 		A78ED4A783DDADBFEBAF6F2E /* VodMergeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B913CD283679B2B6B65469 /* VodMergeService.swift */; };
+		ADFEAF67B75928F2ACC66902 /* LiveModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34061A30D585A243CEFC20C /* LiveModels.swift */; };
+		B0AB5A88DB3CCA10E46B2EFE /* LaunchLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E00AF33D28B3B5B773DDC3 /* LaunchLoadingView.swift */; };
+		B0F230420B545DA296296EF3 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */; };
+		B28761AE63C740FA3D04226C /* DownloadEnqueuePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACDBE1A6C1762D7E75A1E003 /* DownloadEnqueuePolicy.swift */; };
+		B4F289A204BBBB1EAAF2B992 /* CategoryMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45343F567AC1D3CC105166A /* CategoryMatch.swift */; };
 		B869F88025A66AA387FA1501 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6E5C3CD3F08F35F0C625FF /* AppTheme.swift */; };
 		BA534E91AD0D734C5E63504A /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6E5C3CD3F08F35F0C625FF /* AppTheme.swift */; };
 		C11F7F1799DA685A51A8D20E /* HeroBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80986099C8E3DFB463A9FF10 /* HeroBanner.swift */; };
+		C2AEA25CB832D1777363D780 /* VLCLivePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33D39663314E6A296325AB3 /* VLCLivePlayer.swift */; };
+		C361AAA18029D271A4B1ED22 /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B9FA80507BFD460E402CE5 /* TopShelfSnapshot.swift */; };
+		C420D3E7D775F18B26723632 /* HLSPlaylistProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FA3F2F4865FCEC0A1675BE0 /* HLSPlaylistProbe.swift */; };
+		C710C4065D807D7F4088E7A4 /* TopShelfStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */; };
 		C8C889199027CBE941496D93 /* VodShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7068BC535EC251781DEE5CD /* VodShelf.swift */; };
 		CDF5A91AD9FFF8D0E0682C3A /* CategoryListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B0D244576AB6B669951D67 /* CategoryListService.swift */; };
+		CE6FB0C99073FC50F77381CD /* MultiLiveTVTopShelf.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 82978569B894FD485E9521FA /* MultiLiveTVTopShelf.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CF0B8F8A67297C628DCDC4BB /* RemoteImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0CB16529127B18D10AF105 /* RemoteImageView.swift */; };
 		CF98AF560C4239A1940F8F58 /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3E1967438E2460789F8C25 /* NetworkConfig.swift */; };
 		D3BC4BD11BD99BEDE5B417A7 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED2825D88B50211383CC816 /* DetailView.swift */; };
+		D652B17F709FAAD763A223AF /* M3UPlaylistParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */; };
+		D68817863576A66CFCDED5B7 /* CinemaChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16AC19BCF6ECB61F0D1500 /* CinemaChrome.swift */; };
+		D9D8647270F15522A4720563 /* DownloadMediaKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */; };
+		DC60E330B60D83160AFBB7B2 /* LiveGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B10F2B225FC9AFC5F602DC /* LiveGuideOverlay.swift */; };
 		DE4E0E67140A96321E832024 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7369D567255A92D5D18970E0 /* SearchView.swift */; };
+		DF5C9711006DFCD21318E951 /* TVServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA8CE142B3E1D6E7CF966468 /* TVServices.framework */; };
 		DF98935CC5E94C101D48EC5D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A21AE43A6E02F841FDE380C /* HomeView.swift */; };
+		E03D432E68C202E89C2334A1 /* HLSDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A117EFC61E1E353968E843F /* HLSDownloadEngine.swift */; };
 		E31E4B131ACD7C949A847203 /* SourceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F139E06244EF24231B11CF /* SourceStore.swift */; };
+		E3E070C11008FC7F186A6D23 /* LiveModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34061A30D585A243CEFC20C /* LiveModels.swift */; };
+		E4C07D581D093223B96A3FF2 /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73E8027AB111620ABFF7310 /* AppDeepLink.swift */; };
+		E5AEB72E4958EF94CEE6502F /* FileDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747E9AE6F699B73B5B04F471 /* FileDownloadEngine.swift */; };
+		E77BFB7F9220356E53357556 /* VLCLivePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33D39663314E6A296325AB3 /* VLCLivePlayer.swift */; };
+		E85250F17D52EB23CF5A2C2A /* DownloadEnqueuePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACDBE1A6C1762D7E75A1E003 /* DownloadEnqueuePolicy.swift */; };
 		E8CFE67CD6D9C0676E2C14CC /* SourceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F139E06244EF24231B11CF /* SourceStore.swift */; };
+		EE8585611B614E472D790356 /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B9FA80507BFD460E402CE5 /* TopShelfSnapshot.swift */; };
 		EE9715B4A4C9BAC4FF5C23C9 /* MacCMSClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37F7E942B3B37D28D922076 /* MacCMSClient.swift */; };
+		F65FD58D42FF9E5C4CBFC858 /* DownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFDFDF2904B9E1C8A2732EC /* DownloadEngine.swift */; };
 		F6C3FE4D2975592664595AAD /* sources.json in Resources */ = {isa = PBXBuildFile; fileRef = 7F02CA9D028B34FBF45BFCC6 /* sources.json */; };
 		F7B95BB9E2E4EB96890900BE /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3E1967438E2460789F8C25 /* NetworkConfig.swift */; };
+		F7E329EFAABE19C64A208825 /* TopShelfStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */; };
 		F8A5261D8442596D53E12BDD /* VodCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A9986F2D2ADE3C921BDE89 /* VodCard.swift */; };
+		FA1005D269BB997E8A5D1EC5 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */; };
 		FC7632CF1698E1532D80DBA1 /* PlaybackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BBB0664590164724BDC67A /* PlaybackSupport.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E23B11C9D9739EEDDD3079BE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 33CC49DA533C18CE6BF45A4F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8563AE5827B859AF42A38A01;
+			remoteInfo = MultiLiveTVTopShelf;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		973EBD3ABC0BD7A52789A7AC /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CE6FB0C99073FC50F77381CD /* MultiLiveTVTopShelf.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		018139FC242A4D94B1051B7F /* HomeLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeLaunch.swift; sourceTree = "<group>"; };
 		08B0D244576AB6B669951D67 /* CategoryListService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryListService.swift; sourceTree = "<group>"; };
 		0A0407D5270FCA87D0A909EF /* StateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateViews.swift; sourceTree = "<group>"; };
+		0C48BC043833D7193718CADD /* HLSPlaylistDownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSPlaylistDownloadEngine.swift; sourceTree = "<group>"; };
+		0FA3F2F4865FCEC0A1675BE0 /* HLSPlaylistProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSPlaylistProbe.swift; sourceTree = "<group>"; };
+		10D8A94ADE489AFC7DEC2D34 /* HLSPlaylistLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSPlaylistLocalizer.swift; sourceTree = "<group>"; };
 		13A9986F2D2ADE3C921BDE89 /* VodCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodCard.swift; sourceTree = "<group>"; };
 		15D36209B9219AA1AF5EA53A /* CategoryTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryTree.swift; sourceTree = "<group>"; };
+		203C4FA6CEDFC1CB68D974BE /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
+		2C0CB16529127B18D10AF105 /* RemoteImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImageView.swift; sourceTree = "<group>"; };
+		2E6874A9C4E2EFA63F0616F5 /* Pods_MultiLiveTV_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiLiveTV_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F86008EAF83BAE6633A9884 /* DownloadRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRecord.swift; sourceTree = "<group>"; };
 		31BBB0664590164724BDC67A /* PlaybackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackSupport.swift; sourceTree = "<group>"; };
 		325928130DD0490CEACDB893 /* MultiLiveTV-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "MultiLiveTV-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		36648814CB64C171472B679E /* LiveVideoStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveVideoStage.swift; sourceTree = "<group>"; };
+		3A117EFC61E1E353968E843F /* HLSDownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSDownloadEngine.swift; sourceTree = "<group>"; };
 		3A21AE43A6E02F841FDE380C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		44F0B1684AEA4CB648E0036A /* DownloadGlyphButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadGlyphButton.swift; sourceTree = "<group>"; };
+		4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopShelfStore.swift; sourceTree = "<group>"; };
+		51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadMediaKind.swift; sourceTree = "<group>"; };
 		5BA465E9AE431265CA8AF4E8 /* MacCMSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCMSModels.swift; sourceTree = "<group>"; };
+		65973C09D8A24E43EAE804D8 /* lives.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = lives.json; sourceTree = "<group>"; };
 		68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeed.swift; sourceTree = "<group>"; };
 		7369D567255A92D5D18970E0 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		747E9AE6F699B73B5B04F471 /* FileDownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadEngine.swift; sourceTree = "<group>"; };
+		7E8715BAE6DF12AF291D06CB /* LiveChannelCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveChannelCard.swift; sourceTree = "<group>"; };
 		7F02CA9D028B34FBF45BFCC6 /* sources.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sources.json; sourceTree = "<group>"; };
 		80986099C8E3DFB463A9FF10 /* HeroBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroBanner.swift; sourceTree = "<group>"; };
+		8213C2D88133680FCCCE4AD4 /* BrandLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandLogo.swift; sourceTree = "<group>"; };
+		82978569B894FD485E9521FA /* MultiLiveTVTopShelf.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MultiLiveTVTopShelf.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		847E09F44B2A2BE18BFCBFE4 /* MultiLiveTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiLiveTVApp.swift; sourceTree = "<group>"; };
+		88B498A26E994459FA67D88B /* DownloadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadStore.swift; sourceTree = "<group>"; };
+		8CABF9770EF3536391C69DD9 /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProvider.swift; sourceTree = "<group>"; };
+		8CB3812DB8CC624190BEBB65 /* Pods-MultiLiveTV-iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-iOS.release.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS.release.xcconfig"; sourceTree = "<group>"; };
+		8F40C815C5F6B8A3A42B8B31 /* LiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStore.swift; sourceTree = "<group>"; };
+		9380F4E647F1AD015F6EA831 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		98C9E57FA4E1CF502A09A637 /* TVDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVDesign.swift; sourceTree = "<group>"; };
 		99C98C8C6B40F76714B9A0FC /* VodPosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodPosterView.swift; sourceTree = "<group>"; };
+		9B107467C4B72304AA9EAD52 /* RemoteImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImageLoader.swift; sourceTree = "<group>"; };
 		9ED2825D88B50211383CC816 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		A196D30F1A2BC73ADD0E84B7 /* VodDisplayFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodDisplayFormatter.swift; sourceTree = "<group>"; };
+		A2B9FA80507BFD460E402CE5 /* TopShelfSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopShelfSnapshot.swift; sourceTree = "<group>"; };
+		A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
+		A34061A30D585A243CEFC20C /* LiveModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveModels.swift; sourceTree = "<group>"; };
+		A9B4C843241A0092C0F0F4C5 /* Pods-MultiLiveTV-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-tvOS.release.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS.release.xcconfig"; sourceTree = "<group>"; };
+		ACDBE1A6C1762D7E75A1E003 /* DownloadEnqueuePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEnqueuePolicy.swift; sourceTree = "<group>"; };
+		B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3UPlaylistParser.swift; sourceTree = "<group>"; };
+		B9B10F2B225FC9AFC5F602DC /* LiveGuideOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGuideOverlay.swift; sourceTree = "<group>"; };
+		BF53CF4126ACD5F052BB4EC2 /* LiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveService.swift; sourceTree = "<group>"; };
 		C1D030031B9AD901C375C115 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		C3F139E06244EF24231B11CF /* SourceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceStore.swift; sourceTree = "<group>"; };
+		C45343F567AC1D3CC105166A /* CategoryMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryMatch.swift; sourceTree = "<group>"; };
 		C7068BC535EC251781DEE5CD /* VodShelf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodShelf.swift; sourceTree = "<group>"; };
+		CD40321A3E9AFEDE770F840F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D37F7E942B3B37D28D922076 /* MacCMSClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCMSClient.swift; sourceTree = "<group>"; };
+		D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
+		D9E00AF33D28B3B5B773DDC3 /* LaunchLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchLoadingView.swift; sourceTree = "<group>"; };
 		DA671CB3DA231ED6DE035667 /* MultiLiveTV-tvOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "MultiLiveTV-tvOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAFDFDF2904B9E1C8A2732EC /* DownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEngine.swift; sourceTree = "<group>"; };
 		DB3750010221A27BF6491F51 /* CategoryTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryTabs.swift; sourceTree = "<group>"; };
 		DB3E1967438E2460789F8C25 /* NetworkConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConfig.swift; sourceTree = "<group>"; };
+		DD16AC19BCF6ECB61F0D1500 /* CinemaChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinemaChrome.swift; sourceTree = "<group>"; };
+		E33D39663314E6A296325AB3 /* VLCLivePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLCLivePlayer.swift; sourceTree = "<group>"; };
+		E646633A35D9158FD5E3387E /* Pods_MultiLiveTV_tvOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiLiveTV_tvOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E653A62633B56BBCBEDEBD1D /* LiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveView.swift; sourceTree = "<group>"; };
+		E73E8027AB111620ABFF7310 /* AppDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDeepLink.swift; sourceTree = "<group>"; };
 		E8CC89DEDC555ACC4574A5F5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		EA2186A345ACF22B38E8BDB8 /* Pods-MultiLiveTV-iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-iOS.debug.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS.debug.xcconfig"; sourceTree = "<group>"; };
 		F35B6973F6635478FB36F6C3 /* PlayParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayParser.swift; sourceTree = "<group>"; };
 		F8B913CD283679B2B6B65469 /* VodMergeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodMergeService.swift; sourceTree = "<group>"; };
+		FA8CE142B3E1D6E7CF966468 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
 		FC6E5C3CD3F08F35F0C625FF /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		FD47C1A1C0277867AD483C34 /* LivePlaybackSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackSession.swift; sourceTree = "<group>"; };
 		FE7460BA3B6D9A1DD08F0F11 /* VodService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		757FF01C39CFCE5E39BC876C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		828A76CE09E0D66C0374E243 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C36E2A641ACA2B837E07F071 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DF5C9711006DFCD21318E951 /* TVServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		0F093006D4649F9E717B5C63 /* Live */ = {
+			isa = PBXGroup;
+			children = (
+				0FA3F2F4865FCEC0A1675BE0 /* HLSPlaylistProbe.swift */,
+				A34061A30D585A243CEFC20C /* LiveModels.swift */,
+				FD47C1A1C0277867AD483C34 /* LivePlaybackSession.swift */,
+				BF53CF4126ACD5F052BB4EC2 /* LiveService.swift */,
+				8F40C815C5F6B8A3A42B8B31 /* LiveStore.swift */,
+				B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */,
+				E33D39663314E6A296325AB3 /* VLCLivePlayer.swift */,
+			);
+			path = Live;
+			sourceTree = "<group>";
+		};
 		245B0433827B2CFAD6AEFA30 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				2F86008EAF83BAE6633A9884 /* DownloadRecord.swift */,
 				E8CC89DEDC555ACC4574A5F5 /* Models.swift */,
 			);
 			path = Models;
@@ -108,7 +296,9 @@
 			isa = PBXGroup;
 			children = (
 				9ED2825D88B50211383CC816 /* DetailView.swift */,
+				D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */,
 				3A21AE43A6E02F841FDE380C /* HomeView.swift */,
+				E653A62633B56BBCBEDEBD1D /* LiveView.swift */,
 				C1D030031B9AD901C375C115 /* PlayerView.swift */,
 				7369D567255A92D5D18970E0 /* SearchView.swift */,
 				3AB9838862EAFD7936A498C1 /* Components */,
@@ -120,8 +310,16 @@
 			isa = PBXGroup;
 			children = (
 				FC6E5C3CD3F08F35F0C625FF /* AppTheme.swift */,
+				8213C2D88133680FCCCE4AD4 /* BrandLogo.swift */,
 				DB3750010221A27BF6491F51 /* CategoryTabs.swift */,
+				DD16AC19BCF6ECB61F0D1500 /* CinemaChrome.swift */,
+				44F0B1684AEA4CB648E0036A /* DownloadGlyphButton.swift */,
 				80986099C8E3DFB463A9FF10 /* HeroBanner.swift */,
+				D9E00AF33D28B3B5B773DDC3 /* LaunchLoadingView.swift */,
+				7E8715BAE6DF12AF291D06CB /* LiveChannelCard.swift */,
+				B9B10F2B225FC9AFC5F602DC /* LiveGuideOverlay.swift */,
+				36648814CB64C171472B679E /* LiveVideoStage.swift */,
+				2C0CB16529127B18D10AF105 /* RemoteImageView.swift */,
 				0A0407D5270FCA87D0A909EF /* StateViews.swift */,
 				98C9E57FA4E1CF502A09A637 /* TVDesign.swift */,
 				13A9986F2D2ADE3C921BDE89 /* VodCard.swift */,
@@ -131,11 +329,24 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		6B37D5392ED10B3EDB162912 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FA8CE142B3E1D6E7CF966468 /* TVServices.framework */,
+				2E6874A9C4E2EFA63F0616F5 /* Pods_MultiLiveTV_iOS.framework */,
+				E646633A35D9158FD5E3387E /* Pods_MultiLiveTV_tvOS.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		71B7FB7DDFCEEF9C6A3BC476 = {
 			isa = PBXGroup;
 			children = (
 				7DAD97375C864CC212FDBC1C /* MultiLiveTV */,
+				A000A9C41F10EA67785971FA /* MultiLiveTVTopShelf */,
+				6B37D5392ED10B3EDB162912 /* Frameworks */,
 				76CCD28D5D4035DC0B8D6D29 /* Products */,
+				E55B861EEB780D63BCF44C5C /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -144,6 +355,7 @@
 			children = (
 				325928130DD0490CEACDB893 /* MultiLiveTV-iOS.app */,
 				DA671CB3DA231ED6DE035667 /* MultiLiveTV-tvOS.app */,
+				82978569B894FD485E9521FA /* MultiLiveTVTopShelf.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,6 +363,7 @@
 		7DAD97375C864CC212FDBC1C /* MultiLiveTV */ = {
 			isa = PBXGroup;
 			children = (
+				CD40321A3E9AFEDE770F840F /* Assets.xcassets */,
 				847E09F44B2A2BE18BFCBFE4 /* MultiLiveTVApp.swift */,
 				245B0433827B2CFAD6AEFA30 /* Models */,
 				A6731338A79705676A0358B4 /* Resources */,
@@ -164,27 +377,81 @@
 			isa = PBXGroup;
 			children = (
 				08B0D244576AB6B669951D67 /* CategoryListService.swift */,
+				C45343F567AC1D3CC105166A /* CategoryMatch.swift */,
 				15D36209B9219AA1AF5EA53A /* CategoryTree.swift */,
+				A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */,
 				68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */,
+				018139FC242A4D94B1051B7F /* HomeLaunch.swift */,
 				D37F7E942B3B37D28D922076 /* MacCMSClient.swift */,
 				5BA465E9AE431265CA8AF4E8 /* MacCMSModels.swift */,
 				DB3E1967438E2460789F8C25 /* NetworkConfig.swift */,
 				31BBB0664590164724BDC67A /* PlaybackSupport.swift */,
 				F35B6973F6635478FB36F6C3 /* PlayParser.swift */,
+				9B107467C4B72304AA9EAD52 /* RemoteImageLoader.swift */,
 				C3F139E06244EF24231B11CF /* SourceStore.swift */,
 				A196D30F1A2BC73ADD0E84B7 /* VodDisplayFormatter.swift */,
 				F8B913CD283679B2B6B65469 /* VodMergeService.swift */,
 				FE7460BA3B6D9A1DD08F0F11 /* VodService.swift */,
+				B61D310F20EDA15E4924F0EE /* Download */,
+				0F093006D4649F9E717B5C63 /* Live */,
+				B2B273F73A944B9E79F1E88C /* TopShelf */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		A000A9C41F10EA67785971FA /* MultiLiveTVTopShelf */ = {
+			isa = PBXGroup;
+			children = (
+				8CABF9770EF3536391C69DD9 /* ContentProvider.swift */,
+			);
+			path = MultiLiveTVTopShelf;
 			sourceTree = "<group>";
 		};
 		A6731338A79705676A0358B4 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				65973C09D8A24E43EAE804D8 /* lives.json */,
 				7F02CA9D028B34FBF45BFCC6 /* sources.json */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		B2B273F73A944B9E79F1E88C /* TopShelf */ = {
+			isa = PBXGroup;
+			children = (
+				E73E8027AB111620ABFF7310 /* AppDeepLink.swift */,
+				A2B9FA80507BFD460E402CE5 /* TopShelfSnapshot.swift */,
+				4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */,
+			);
+			path = TopShelf;
+			sourceTree = "<group>";
+		};
+		B61D310F20EDA15E4924F0EE /* Download */ = {
+			isa = PBXGroup;
+			children = (
+				DAFDFDF2904B9E1C8A2732EC /* DownloadEngine.swift */,
+				ACDBE1A6C1762D7E75A1E003 /* DownloadEnqueuePolicy.swift */,
+				203C4FA6CEDFC1CB68D974BE /* DownloadManager.swift */,
+				51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */,
+				88B498A26E994459FA67D88B /* DownloadStore.swift */,
+				747E9AE6F699B73B5B04F471 /* FileDownloadEngine.swift */,
+				3A117EFC61E1E353968E843F /* HLSDownloadEngine.swift */,
+				0C48BC043833D7193718CADD /* HLSPlaylistDownloadEngine.swift */,
+				10D8A94ADE489AFC7DEC2D34 /* HLSPlaylistLocalizer.swift */,
+			);
+			path = Download;
+			sourceTree = "<group>";
+		};
+		E55B861EEB780D63BCF44C5C /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				EA2186A345ACF22B38E8BDB8 /* Pods-MultiLiveTV-iOS.debug.xcconfig */,
+				8CB3812DB8CC624190BEBB65 /* Pods-MultiLiveTV-iOS.release.xcconfig */,
+				9380F4E647F1AD015F6EA831 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */,
+				A9B4C843241A0092C0F0F4C5 /* Pods-MultiLiveTV-tvOS.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -194,34 +461,56 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 38B30609A13BD5A17B758E56 /* Build configuration list for PBXNativeTarget "MultiLiveTV-iOS" */;
 			buildPhases = (
+				70E6FF882CCC22AE47C63D20 /* [CP] Check Pods Manifest.lock */,
+				D1872DB8F3C0573B492AC536 /* Copy VLCKit XCFramework slice */,
 				3D218FBA25AF4F093A19A321 /* Sources */,
 				05CF083FC006F9CA73B90650 /* Resources */,
+				828A76CE09E0D66C0374E243 /* Frameworks */,
+				BDADC17D457E00294ECE53A5 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = "MultiLiveTV-iOS";
-			packageProductDependencies = (
-			);
 			productName = "MultiLiveTV-iOS";
 			productReference = 325928130DD0490CEACDB893 /* MultiLiveTV-iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
-		EE7EB9D758D565E675276EFC /* MultiLiveTV-tvOS */ = {
+		8563AE5827B859AF42A38A01 /* MultiLiveTVTopShelf */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4C31ED03E01FAF0108EB9893 /* Build configuration list for PBXNativeTarget "MultiLiveTV-tvOS" */;
+			buildConfigurationList = EB1264F80CA6B399A1267C11 /* Build configuration list for PBXNativeTarget "MultiLiveTVTopShelf" */;
 			buildPhases = (
-				F3F0A947ADA457CE829C661B /* Sources */,
-				2D2467E1D8B099C52735A768 /* Resources */,
+				236E73DA8BAEFEB8384DFB5E /* Sources */,
+				C36E2A641ACA2B837E07F071 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = "MultiLiveTV-tvOS";
-			packageProductDependencies = (
+			name = MultiLiveTVTopShelf;
+			productName = MultiLiveTVTopShelf;
+			productReference = 82978569B894FD485E9521FA /* MultiLiveTVTopShelf.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		EE7EB9D758D565E675276EFC /* MultiLiveTV-tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C31ED03E01FAF0108EB9893 /* Build configuration list for PBXNativeTarget "MultiLiveTV-tvOS" */;
+			buildPhases = (
+				CE10DCC5D179D0888FD59EF9 /* [CP] Check Pods Manifest.lock */,
+				73FC91E81FFD9A6F45603A45 /* Copy VLCKit XCFramework slice */,
+				F3F0A947ADA457CE829C661B /* Sources */,
+				2D2467E1D8B099C52735A768 /* Resources */,
+				973EBD3ABC0BD7A52789A7AC /* Embed Foundation Extensions */,
+				757FF01C39CFCE5E39BC876C /* Frameworks */,
+				A1A9396C569D2AE37C02E97B /* [CP] Embed Pods Frameworks */,
 			);
+			buildRules = (
+			);
+			dependencies = (
+				DF939C1E372698112B8CD715 /* PBXTargetDependency */,
+			);
+			name = "MultiLiveTV-tvOS";
 			productName = "MultiLiveTV-tvOS";
 			productReference = DA671CB3DA231ED6DE035667 /* MultiLiveTV-tvOS.app */;
 			productType = "com.apple.product-type.application";
@@ -239,6 +528,10 @@
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
+					8563AE5827B859AF42A38A01 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
 					EE7EB9D758D565E675276EFC = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
@@ -246,6 +539,7 @@
 				};
 			};
 			buildConfigurationList = 24307189C0313F0971624D1F /* Build configuration list for PBXProject "MultiLiveTV" */;
+			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -254,13 +548,13 @@
 			);
 			mainGroup = 71B7FB7DDFCEEF9C6A3BC476;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 76CCD28D5D4035DC0B8D6D29 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				661C22185F02B35290EE2E3D /* MultiLiveTV-iOS */,
 				EE7EB9D758D565E675276EFC /* MultiLiveTV-tvOS */,
+				8563AE5827B859AF42A38A01 /* MultiLiveTVTopShelf */,
 			);
 		};
 /* End PBXProject section */
@@ -270,6 +564,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				95DF40B338513E94049DDB55 /* Assets.xcassets in Resources */,
+				78164399D2B26F913F3A3B89 /* lives.json in Resources */,
 				F6C3FE4D2975592664595AAD /* sources.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -278,25 +574,187 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A44F2F1749FDD836028D5C5 /* Assets.xcassets in Resources */,
+				509F639BD765E64E59CA49A5 /* lives.json in Resources */,
 				9A61E0E68337002727EA72D7 /* sources.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		70E6FF882CCC22AE47C63D20 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MultiLiveTV-iOS-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		73FC91E81FFD9A6F45603A45 /* Copy VLCKit XCFramework slice */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy VLCKit XCFramework slice";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/bin/sh\n# Copy the matching VLCKit xcframework slice into XCFrameworkIntermediates.\n# CocoaPods 1.17 does not add a native target dependency on Pods-MultiLiveTV-*,\n# so [CP] Copy XCFrameworks never runs unless the app target does this itself.\nset -euo pipefail\n\nif [ -z \"${PODS_ROOT:-}\" ] || [ -z \"${PODS_XCFRAMEWORKS_BUILD_DIR:-}\" ]; then\n  echo \"error: CocoaPods build settings missing. Open MultiLiveTV.xcworkspace after pod install.\" >&2\n  exit 1\nfi\n\ncase \"${PLATFORM_NAME}\" in\n  appletvsimulator)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64_x86_64-simulator\"\n    ;;\n  appletvos)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64\"\n    ;;\n  iphonesimulator)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_i386_x86_64-simulator\"\n    ;;\n  iphoneos)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_armv7_armv7s\"\n    ;;\n  *)\n    echo \"note: skipping VLCKit slice copy for ${PLATFORM_NAME}\"\n    exit 0\n    ;;\nesac\n\nif [ ! -d \"${slice}\" ]; then\n  echo \"error: missing ${slice}. Run pod install in clients/apple.\" >&2\n  exit 1\nfi\n\ndest=\"${PODS_XCFRAMEWORKS_BUILD_DIR}/${name}\"\nmkdir -p \"${dest}\"\nrsync -a --delete \"${slice}/\" \"${dest}/\"\necho \"Copied ${slice} -> ${dest}\"\n";
+		};
+		A1A9396C569D2AE37C02E97B /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		BDADC17D457E00294ECE53A5 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		CE10DCC5D179D0888FD59EF9 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MultiLiveTV-tvOS-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D1872DB8F3C0573B492AC536 /* Copy VLCKit XCFramework slice */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy VLCKit XCFramework slice";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/bin/sh\n# Copy the matching VLCKit xcframework slice into XCFrameworkIntermediates.\n# CocoaPods 1.17 does not add a native target dependency on Pods-MultiLiveTV-*,\n# so [CP] Copy XCFrameworks never runs unless the app target does this itself.\nset -euo pipefail\n\nif [ -z \"${PODS_ROOT:-}\" ] || [ -z \"${PODS_XCFRAMEWORKS_BUILD_DIR:-}\" ]; then\n  echo \"error: CocoaPods build settings missing. Open MultiLiveTV.xcworkspace after pod install.\" >&2\n  exit 1\nfi\n\ncase \"${PLATFORM_NAME}\" in\n  appletvsimulator)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64_x86_64-simulator\"\n    ;;\n  appletvos)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64\"\n    ;;\n  iphonesimulator)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_i386_x86_64-simulator\"\n    ;;\n  iphoneos)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_armv7_armv7s\"\n    ;;\n  *)\n    echo \"note: skipping VLCKit slice copy for ${PLATFORM_NAME}\"\n    exit 0\n    ;;\nesac\n\nif [ ! -d \"${slice}\" ]; then\n  echo \"error: missing ${slice}. Run pod install in clients/apple.\" >&2\n  exit 1\nfi\n\ndest=\"${PODS_XCFRAMEWORKS_BUILD_DIR}/${name}\"\nmkdir -p \"${dest}\"\nrsync -a --delete \"${slice}/\" \"${dest}/\"\necho \"Copied ${slice} -> ${dest}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		236E73DA8BAEFEB8384DFB5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4C07D581D093223B96A3FF2 /* AppDeepLink.swift in Sources */,
+				531132A2284A0FB1FA9BB090 /* ContentProvider.swift in Sources */,
+				09D903548769DDA5EECA9723 /* NetworkConfig.swift in Sources */,
+				9229D546C841B4013EA5E4A7 /* TopShelfSnapshot.swift in Sources */,
+				F7E329EFAABE19C64A208825 /* TopShelfStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3D218FBA25AF4F093A19A321 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				944262AABE85E6074AD1A6E6 /* AppDeepLink.swift in Sources */,
 				BA534E91AD0D734C5E63504A /* AppTheme.swift in Sources */,
+				34892F8D56670EA03B1BCB81 /* BrandLogo.swift in Sources */,
 				CDF5A91AD9FFF8D0E0682C3A /* CategoryListService.swift in Sources */,
+				B4F289A204BBBB1EAAF2B992 /* CategoryMatch.swift in Sources */,
 				8AE07D67310DFEF984D9C48F /* CategoryTabs.swift in Sources */,
 				660EF80460EB80AE26B971AF /* CategoryTree.swift in Sources */,
+				D68817863576A66CFCDED5B7 /* CinemaChrome.swift in Sources */,
+				17B1F1B77029B180EDB0AEE4 /* DeepLinkRouter.swift in Sources */,
 				D3BC4BD11BD99BEDE5B417A7 /* DetailView.swift in Sources */,
+				3263FDEB8412C0CE359AD244 /* DownloadEngine.swift in Sources */,
+				B28761AE63C740FA3D04226C /* DownloadEnqueuePolicy.swift in Sources */,
+				5380E3929029EC64D033EE63 /* DownloadGlyphButton.swift in Sources */,
+				7A4EF667ED61D1C1999D047E /* DownloadManager.swift in Sources */,
+				D9D8647270F15522A4720563 /* DownloadMediaKind.swift in Sources */,
+				2A9C6E82F3E1D3970786B5E8 /* DownloadRecord.swift in Sources */,
+				29B206C6395F9418882443B6 /* DownloadStore.swift in Sources */,
+				FA1005D269BB997E8A5D1EC5 /* DownloadsView.swift in Sources */,
+				E5AEB72E4958EF94CEE6502F /* FileDownloadEngine.swift in Sources */,
+				E03D432E68C202E89C2334A1 /* HLSDownloadEngine.swift in Sources */,
+				165665E3005E14BA2A7646CE /* HLSPlaylistDownloadEngine.swift in Sources */,
+				1F8DF565D09B2B40A52DCA33 /* HLSPlaylistLocalizer.swift in Sources */,
+				88DC5CC2AAAC094023017D2B /* HLSPlaylistProbe.swift in Sources */,
 				92D057EF8772AA69174DDCA3 /* HeroBanner.swift in Sources */,
 				1C7D3667F69E0960D097CB29 /* HomeFeed.swift in Sources */,
+				16CFAAF85CBEE3F91EA0F846 /* HomeLaunch.swift in Sources */,
 				DF98935CC5E94C101D48EC5D /* HomeView.swift in Sources */,
+				652606D1DDA97AFED5356754 /* LaunchLoadingView.swift in Sources */,
+				992459BAE3BE14919B82B924 /* LiveChannelCard.swift in Sources */,
+				DC60E330B60D83160AFBB7B2 /* LiveGuideOverlay.swift in Sources */,
+				ADFEAF67B75928F2ACC66902 /* LiveModels.swift in Sources */,
+				56034409DCE14D1EAFB0C526 /* LivePlaybackSession.swift in Sources */,
+				44A8E733976DBA4A1650017B /* LiveService.swift in Sources */,
+				381754A57DE89334B17564E7 /* LiveStore.swift in Sources */,
+				6D75F8393BE5486E22D9EDEB /* LiveVideoStage.swift in Sources */,
+				2D8252A70107834AB538BBFD /* LiveView.swift in Sources */,
+				D652B17F709FAAD763A223AF /* M3UPlaylistParser.swift in Sources */,
 				EE9715B4A4C9BAC4FF5C23C9 /* MacCMSClient.swift in Sources */,
 				3AA25766444A44430097528A /* MacCMSModels.swift in Sources */,
 				720172B7EBF953319625C4A6 /* Models.swift in Sources */,
@@ -305,10 +763,15 @@
 				830AB69F9C8874FEB14FF7E3 /* PlayParser.swift in Sources */,
 				6601D7F7DE0387FA7450BB60 /* PlaybackSupport.swift in Sources */,
 				04D5DC9920A050CEC84BB8F8 /* PlayerView.swift in Sources */,
+				8E183071DD14BD06CFDF885F /* RemoteImageLoader.swift in Sources */,
+				8F68024B78976D959D30BAC0 /* RemoteImageView.swift in Sources */,
 				DE4E0E67140A96321E832024 /* SearchView.swift in Sources */,
 				E8CFE67CD6D9C0676E2C14CC /* SourceStore.swift in Sources */,
 				282DB0B69B5AAE297D5D6A12 /* StateViews.swift in Sources */,
 				255BDF8FB04ACD076AEFE3F8 /* TVDesign.swift in Sources */,
+				EE8585611B614E472D790356 /* TopShelfSnapshot.swift in Sources */,
+				C710C4065D807D7F4088E7A4 /* TopShelfStore.swift in Sources */,
+				C2AEA25CB832D1777363D780 /* VLCLivePlayer.swift in Sources */,
 				F8A5261D8442596D53E12BDD /* VodCard.swift in Sources */,
 				667919E6342C3ECEAC2E33FF /* VodDisplayFormatter.swift in Sources */,
 				A78ED4A783DDADBFEBAF6F2E /* VodMergeService.swift in Sources */,
@@ -322,14 +785,43 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3FA419489C50527A5D2C4D0E /* AppDeepLink.swift in Sources */,
 				B869F88025A66AA387FA1501 /* AppTheme.swift in Sources */,
+				3C24FC9B2E37DB9649BB565C /* BrandLogo.swift in Sources */,
 				7B6971797488369527678DC6 /* CategoryListService.swift in Sources */,
+				81D9E9AEA6DACC535D35358A /* CategoryMatch.swift in Sources */,
 				84F1D61294ABF49E4759303F /* CategoryTabs.swift in Sources */,
 				040769629337CD46B503D36E /* CategoryTree.swift in Sources */,
+				36DBC8D4E3DD5B2B58236C85 /* CinemaChrome.swift in Sources */,
+				B0F230420B545DA296296EF3 /* DeepLinkRouter.swift in Sources */,
 				927C15155A8EB88717C16598 /* DetailView.swift in Sources */,
+				F65FD58D42FF9E5C4CBFC858 /* DownloadEngine.swift in Sources */,
+				E85250F17D52EB23CF5A2C2A /* DownloadEnqueuePolicy.swift in Sources */,
+				6C3212CDBD8B4432BA3CD78B /* DownloadGlyphButton.swift in Sources */,
+				08DF0DB4A7793FB62B639DA0 /* DownloadManager.swift in Sources */,
+				0892D836F6BD11304673417D /* DownloadMediaKind.swift in Sources */,
+				51363F0D5DBC70BC7CE009ED /* DownloadRecord.swift in Sources */,
+				984BDE17E9A0FCB5D782C0B1 /* DownloadStore.swift in Sources */,
+				635ED733EAA4C1991A87AB64 /* DownloadsView.swift in Sources */,
+				73585F70C34BFA34AE268867 /* FileDownloadEngine.swift in Sources */,
+				32726BAC3466C6BA53E9591D /* HLSDownloadEngine.swift in Sources */,
+				A5EB961140131BF0E20C534C /* HLSPlaylistDownloadEngine.swift in Sources */,
+				A1A303B0EEAD7D030E7776AF /* HLSPlaylistLocalizer.swift in Sources */,
+				C420D3E7D775F18B26723632 /* HLSPlaylistProbe.swift in Sources */,
 				C11F7F1799DA685A51A8D20E /* HeroBanner.swift in Sources */,
 				4BD0316751C72598867FD9FA /* HomeFeed.swift in Sources */,
+				95F98550AEA7452FC91E5E0B /* HomeLaunch.swift in Sources */,
 				68E7AE21FB9EFF59B1C3BBE7 /* HomeView.swift in Sources */,
+				B0AB5A88DB3CCA10E46B2EFE /* LaunchLoadingView.swift in Sources */,
+				491B61B68BF2B77F8015886E /* LiveChannelCard.swift in Sources */,
+				0ADC721120C85829085CEFB6 /* LiveGuideOverlay.swift in Sources */,
+				E3E070C11008FC7F186A6D23 /* LiveModels.swift in Sources */,
+				9384207CA67A9AAD6440E6C7 /* LivePlaybackSession.swift in Sources */,
+				A49970C82EE3D30F6834521A /* LiveService.swift in Sources */,
+				9D795020766DA1077545A1B7 /* LiveStore.swift in Sources */,
+				4DB37155C8FDF62AED1C537A /* LiveVideoStage.swift in Sources */,
+				5EF747B5E34B6723CEB8159C /* LiveView.swift in Sources */,
+				18825A15E98D9751DCCBC548 /* M3UPlaylistParser.swift in Sources */,
 				38B2E9BCE796AC78BEB41D68 /* MacCMSClient.swift in Sources */,
 				0ED8E1ED128687B0721E0108 /* MacCMSModels.swift in Sources */,
 				472566DDA7A651457945EF79 /* Models.swift in Sources */,
@@ -338,10 +830,15 @@
 				0C6FFD2B9C6571EC077DFDBA /* PlayParser.swift in Sources */,
 				FC7632CF1698E1532D80DBA1 /* PlaybackSupport.swift in Sources */,
 				529DA5A8CEE673BE76462AD7 /* PlayerView.swift in Sources */,
+				556CA11FB76DD0017488ADBD /* RemoteImageLoader.swift in Sources */,
+				CF0B8F8A67297C628DCDC4BB /* RemoteImageView.swift in Sources */,
 				594F70FACD05F4F695A15F9D /* SearchView.swift in Sources */,
 				E31E4B131ACD7C949A847203 /* SourceStore.swift in Sources */,
 				70D59FD533CA5B3573BE681C /* StateViews.swift in Sources */,
 				7A6794C15B1AFA742B3021CD /* TVDesign.swift in Sources */,
+				C361AAA18029D271A4B1ED22 /* TopShelfSnapshot.swift in Sources */,
+				598447B1A7123B65AF95B413 /* TopShelfStore.swift in Sources */,
+				E77BFB7F9220356E53357556 /* VLCLivePlayer.swift in Sources */,
 				53C90C8754622E691223644C /* VodCard.swift in Sources */,
 				2C0640B349221E01C473BDF6 /* VodDisplayFormatter.swift in Sources */,
 				7D5910763EC40841D8B2C457 /* VodMergeService.swift in Sources */,
@@ -353,11 +850,40 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		DF939C1E372698112B8CD715 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8563AE5827B859AF42A38A01 /* MultiLiveTVTopShelf */;
+			targetProxy = E23B11C9D9739EEDDD3079BE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-		4255450349C74100576E09C5 /* Debug */ = {
+		18C0D6F1B2B15484C58F012C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MultiLiveTVTopShelf/MultiLiveTVTopShelf.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = MultiLiveTVTopShelf/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.heibaimiao.multilivetv.tv.topshelf;
+				PRODUCT_NAME = MultiLiveTVTopShelf;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		4255450349C74100576E09C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = EA2186A345ACF22B38E8BDB8 /* Pods-MultiLiveTV-iOS.debug.xcconfig */;
+			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = "MultiLiveTV/Info-iOS.plist";
@@ -374,9 +900,11 @@
 		};
 		4A7234BA8BEC8E0CD8017991 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A9B4C843241A0092C0F0F4C5 /* Pods-MultiLiveTV-tvOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
+				CODE_SIGN_ENTITLEMENTS = "MultiLiveTV/MultiLiveTV-tvOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = "MultiLiveTV/Info-tvOS.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -428,6 +956,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -436,6 +965,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -449,8 +979,10 @@
 		};
 		75010118C8AE11B1D98AF4BD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8CB3812DB8CC624190BEBB65 /* Pods-MultiLiveTV-iOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = "MultiLiveTV/Info-iOS.plist";
@@ -462,6 +994,25 @@
 				PRODUCT_NAME = MultiLiveTV;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		ACBA122EB3C7EB76FAC5389E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MultiLiveTVTopShelf/MultiLiveTVTopShelf.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = MultiLiveTVTopShelf/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.heibaimiao.multilivetv.tv.topshelf;
+				PRODUCT_NAME = MultiLiveTVTopShelf;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
 			};
 			name = Release;
 		};
@@ -503,6 +1054,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -517,6 +1069,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -531,9 +1084,11 @@
 		};
 		DA4DA79B64482FA88B545CC5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9380F4E647F1AD015F6EA831 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
+				CODE_SIGN_ENTITLEMENTS = "MultiLiveTV/MultiLiveTV-tvOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = "MultiLiveTV/Info-tvOS.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -573,6 +1128,15 @@
 			buildConfigurations = (
 				DA4DA79B64482FA88B545CC5 /* Debug */,
 				4A7234BA8BEC8E0CD8017991 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EB1264F80CA6B399A1267C11 /* Build configuration list for PBXNativeTarget "MultiLiveTVTopShelf" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18C0D6F1B2B15484C58F012C /* Debug */,
+				ACBA122EB3C7EB76FAC5389E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

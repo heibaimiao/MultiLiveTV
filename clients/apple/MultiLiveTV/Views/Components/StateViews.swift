@@ -6,8 +6,9 @@ struct AppLoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
             ProgressView()
+                .tint(AppTheme.accent)
             Text(message)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.textSecondary)
                 #if os(tvOS)
                 .font(.title3)
                 #endif
@@ -23,16 +24,16 @@ struct AppErrorView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle")
+            Image(systemName: "exclamationmark.triangle.fill")
                 #if os(tvOS)
                 .font(.system(size: 48))
                 #else
                 .font(.largeTitle)
                 #endif
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.accent)
 
             Text(message)
-                .foregroundStyle(.red)
+                .foregroundStyle(AppTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 #if os(tvOS)
                 .font(.title3)
@@ -42,6 +43,7 @@ struct AppErrorView: View {
             if let retry {
                 Button("重试", action: retry)
                     .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.accent)
             }
         }
         .padding()
@@ -53,30 +55,35 @@ struct AppErrorView: View {
 struct AppEmptyStateView: View {
     let title: String
     var subtitle: String?
+    var systemImage: String = "film"
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "film")
+        VStack(spacing: 14) {
+            Image(systemName: systemImage)
                 #if os(tvOS)
-                .font(.system(size: 56))
+                .font(.system(size: 56, weight: .light))
                 #else
-                .font(.largeTitle)
+                .font(.system(size: 40, weight: .light))
                 #endif
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.textTertiary)
             Text(title)
-                .font(.headline)
                 #if os(tvOS)
-                .font(.title2)
+                .font(.title2.weight(.semibold))
+                #else
+                .font(.headline)
                 #endif
+                .foregroundStyle(AppTheme.textPrimary)
             if let subtitle {
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .multilineTextAlignment(.center)
                     #if os(tvOS)
                     .font(.body)
                     #endif
             }
         }
+        .padding(.horizontal, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .screenBackground()
     }

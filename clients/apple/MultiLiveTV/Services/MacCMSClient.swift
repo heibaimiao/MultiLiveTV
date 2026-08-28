@@ -14,10 +14,22 @@ enum MacCMSClient {
         return response.types
     }
 
-    static func fetchList(source: Source, page: Int, typeId: Int?) async throws -> MacCMSListResponse {
-        var params = ["ac": "list", "pg": String(page)]
+    static func catalogParams(page: Int, typeId: Int?) -> [String: String] {
+        var params = ["ac": "detail", "pg": String(page)]
         if let typeId { params["t"] = String(typeId) }
-        let data = try await fetchBody(baseURL: source.url, params: params)
+        return params
+    }
+
+    static func searchParams(keyword: String, page: Int) -> [String: String] {
+        [
+            "ac": "detail",
+            "wd": keyword,
+            "pg": String(page),
+        ]
+    }
+
+    static func fetchList(source: Source, page: Int, typeId: Int?) async throws -> MacCMSListResponse {
+        let data = try await fetchBody(baseURL: source.url, params: catalogParams(page: page, typeId: typeId))
         return try MacCMSJSONParser.parseList(data)
     }
 
@@ -27,11 +39,7 @@ enum MacCMSClient {
     }
 
     static func search(source: Source, keyword: String, page: Int) async throws -> MacCMSListResponse {
-        let data = try await fetchBody(baseURL: source.url, params: [
-            "ac": "list",
-            "wd": keyword,
-            "pg": String(page),
-        ])
+        let data = try await fetchBody(baseURL: source.url, params: searchParams(keyword: keyword, page: page))
         return try MacCMSJSONParser.parseList(data)
     }
 

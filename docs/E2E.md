@@ -16,7 +16,7 @@ curl http://localhost:8080/health
 
 ## Apple 客户端
 
-1. `cd clients/apple && xcodegen generate && open MultiLiveTV.xcodeproj`
+1. `cd clients/apple && xcodegen generate && open MultiLiveTV.xcworkspace`
 2. 选 **MultiLiveTV-tvOS** scheme，Apple TV 模拟器运行
 3. 验收路径：
    - 首页分类切换，影片卡片可焦点导航

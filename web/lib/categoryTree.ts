@@ -37,6 +37,7 @@ export function normalizeTypeName(typeName?: string): string {
 export function isTypeVisible(typeName: string): boolean {
   if (typeName.includes("[关]")) return false;
   if (/x$/i.test(typeName.trim())) return false;
+  if (typeName.includes("伦理") || typeName.includes("倫理")) return false;
   return true;
 }
 

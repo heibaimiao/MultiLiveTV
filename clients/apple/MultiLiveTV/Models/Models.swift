@@ -30,8 +30,10 @@ struct VodItem: Codable, Identifiable, Hashable {
     let vodBlurb: String?
     let vodContent: String?
     let typeName: String?
+    let vodClass: String?
     let variants: [VodVariant]?
     let primarySourceId: Int?
+    let vodTime: Int
 
     enum CodingKeys: String, CodingKey {
         case vodId = "vod_id"
@@ -41,8 +43,10 @@ struct VodItem: Codable, Identifiable, Hashable {
         case vodBlurb = "vod_blurb"
         case vodContent = "vod_content"
         case typeName = "type_name"
+        case vodClass = "vod_class"
         case variants
         case primarySourceId
+        case vodTime = "vod_time"
     }
 
     var resolvedSourceId: Int {
@@ -51,7 +55,7 @@ struct VodItem: Codable, Identifiable, Hashable {
 
     var displayBlurb: String? {
         let text = (vodContent?.isEmpty == false ? vodContent : vodBlurb) ?? ""
-        return text.isEmpty ? nil : text
+        return VodDisplayFormatter.plainText(text)
     }
 
     var displayRemarks: String? {
@@ -66,8 +70,10 @@ struct VodItem: Codable, Identifiable, Hashable {
         vodBlurb: String? = nil,
         vodContent: String? = nil,
         typeName: String? = nil,
+        vodClass: String? = nil,
         variants: [VodVariant]? = nil,
-        primarySourceId: Int? = nil
+        primarySourceId: Int? = nil,
+        vodTime: Int = 0
     ) {
         self.vodId = vodId
         self.vodName = vodName
@@ -76,8 +82,10 @@ struct VodItem: Codable, Identifiable, Hashable {
         self.vodBlurb = vodBlurb
         self.vodContent = vodContent
         self.typeName = typeName
+        self.vodClass = vodClass
         self.variants = variants
         self.primarySourceId = primarySourceId
+        self.vodTime = vodTime
     }
 
 }

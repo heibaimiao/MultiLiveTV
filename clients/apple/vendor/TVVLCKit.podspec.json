@@ -1,0 +1,43 @@
+{
+  "name": "TVVLCKit",
+  "version": "3.6.0",
+  "summary": "TVVLCKit is an Objective-C wrapper for libvlc's external interface on tvOS.",
+  "homepage": "https://code.videolan.org/videolan/VLCKit",
+  "license": {
+    "type": "LGPLv2.1",
+    "file": "COPYING.txt"
+  },
+  "authors": {
+    "VideoLAN": "videolan@videolan.org"
+  },
+  "platforms": {
+    "tvos": "10.2"
+  },
+  "source": {
+    "http": "https://download.videolan.org/cocoapods/prod/TVVLCKit-3.6.0-c73b779f-dd8bfdba.tar.xz",
+    "sha256": "90d85d85528286d7ef9cb27187e0e3027cccd602e8d2379587e65c698f04498c"
+  },
+  "tvos": {
+    "vendored_frameworks": "TVVLCKit.xcframework"
+  },
+  "frameworks": [
+    "CoreText",
+    "AVFoundation",
+    "AudioToolbox",
+    "OpenGLES",
+    "VideoToolbox",
+    "CoreMedia"
+  ],
+  "libraries": [
+    "c++",
+    "xml2",
+    "z",
+    "bz2",
+    "iconv"
+  ],
+  "requires_arc": false,
+  "pod_target_xcconfig": {
+    "CLANG_CXX_LANGUAGE_STANDARD": "c++14",
+    "CLANG_CXX_LIBRARY": "libc++"
+  }
+}

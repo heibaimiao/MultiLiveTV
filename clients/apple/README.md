@@ -22,13 +22,20 @@ brew install xcodegen
 
 ## 构建
 
+直播里的 HTTP-FLV（TVBox 常见虎牙转推）需要 [VLCKit](https://github.com/videolan/vlckit)。HLS / m3u8 仍走 AVPlayer。
+
 ```bash
 cd clients/apple
 xcodegen generate
-open MultiLiveTV.xcodeproj
+pod install
+open MultiLiveTV.xcworkspace
 ```
 
-选择 **MultiLiveTV-tvOS** 或 **MultiLiveTV-iOS** scheme，运行模拟器或真机。
+必须打开 **`.xcworkspace`**，不要再开 `.xcodeproj`。重新跑 `xcodegen generate` 之后会自动执行 `pod install`。
+
+选择 **MultiLiveTV-tvOS** 或 **MultiLiveTV-iOS** scheme，运行模拟器或真机。TVVLCKit 体积很大，首次 `pod install` 会下载约 200MB。
+
+如果链接报 `Framework 'TVVLCKit' not found` 或 `XCFrameworkIntermediates/TVVLCKit` 不存在：关掉 Xcode，在 `clients/apple` 执行 `xcodegen generate && pod install`，再打开 `MultiLiveTV.xcworkspace` 后 Clean Build Folder。不要用 `.xcodeproj` 构建。
 
 ## 资源站配置
 

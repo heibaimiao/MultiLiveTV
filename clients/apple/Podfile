@@ -1,0 +1,85 @@
+source 'https://cdn.cocoapods.org/'
+
+require 'json'
+
+install! 'cocoapods', :disable_input_output_paths => true
+use_frameworks!
+
+def vlckit_podspec(name, tarball)
+  archive = File.expand_path(tarball, __dir__)
+  spec = JSON.parse(File.read(File.expand_path("vendor/#{name}.podspec.json", __dir__)))
+  if File.exist?(archive)
+    spec['source'] = { 'http' => 'file://' + archive }
+  end
+  generated = File.expand_path("vendor/#{name}.local.podspec.json", __dir__)
+  File.write(generated, JSON.pretty_generate(spec))
+  generated
+end
+
+target 'MultiLiveTV-iOS' do
+  platform :ios, '17.0'
+  pod 'MobileVLCKit', :podspec => vlckit_podspec('MobileVLCKit', 'vendor/MobileVLCKit-3.6.0.tar.xz')
+end
+
+target 'MultiLiveTV-tvOS' do
+  platform :tvos, '17.0'
+  pod 'TVVLCKit', :podspec => vlckit_podspec('TVVLCKit', 'vendor/TVVLCKit-3.6.0.tar.xz')
+end
+
+post_install do |installer|
+  # Linker fallback: find the .framework inside the xcframework even if Copy XCFrameworks is skipped.
+  slice_xcconfigs = {
+    'Pods-MultiLiveTV-tvOS' => <<~XC,
+      FRAMEWORK_SEARCH_PATHS[sdk=appletvsimulator*] = $(inherited) "${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64_x86_64-simulator"
+      FRAMEWORK_SEARCH_PATHS[sdk=appletvos*] = $(inherited) "${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64"
+    XC
+    'Pods-MultiLiveTV-iOS' => <<~XC
+      FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*] = $(inherited) "${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_i386_x86_64-simulator"
+      FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*] = $(inherited) "${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_armv7_armv7s"
+    XC
+  }
+  slice_xcconfigs.each do |target_name, extra|
+    support = File.join(installer.sandbox.root, 'Target Support Files', target_name)
+    Dir.glob(File.join(support, "#{target_name}.*.xcconfig")).each do |path|
+      contents = File.read(path)
+      next if contents.include?('FRAMEWORK_SEARCH_PATHS[sdk=')
+      File.write(path, contents.rstrip + "\n" + extra)
+    end
+  end
+end
+
+post_integrate do |installer|
+  # Must run after CocoaPods inserts [CP] phases. Xcode 15+ skips scripts with no
+  # outputs, which is how XCFrameworkIntermediates/TVVLCKit goes missing.
+  mark_cp_scripts_always_run = lambda do |project|
+    project.targets.each do |target|
+      target.build_phases.each do |phase|
+        next unless phase.respond_to?(:name)
+        name = phase.name.to_s
+        next unless name.start_with?('[CP]') || name.include?('VLCKit')
+        phase.always_out_of_date = '1'
+      end
+    end
+  end
+
+  mark_cp_scripts_always_run.call(installer.pods_project)
+  installer.pods_project.save
+
+  installer.aggregate_targets.each do |aggregate|
+    user_project = aggregate.user_project
+    mark_cp_scripts_always_run.call(user_project)
+
+    # CocoaPods 1.17 links Pods_*.framework but never adds a target dependency,
+    # so Xcode links before the dummy umbrella exists.
+    aggregate.user_targets.each do |user_target|
+      phase = user_target.frameworks_build_phase
+      next unless phase
+      phase.files.to_a.each do |build_file|
+        path = build_file.file_ref&.path.to_s
+        next unless path.start_with?('Pods_') && path.end_with?('.framework')
+        phase.remove_build_file(build_file)
+      end
+    end
+    user_project.save
+  end
+end

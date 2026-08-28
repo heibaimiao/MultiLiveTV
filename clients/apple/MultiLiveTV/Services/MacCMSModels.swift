@@ -35,8 +35,10 @@ struct VodItemRaw {
             vodBlurb: vodBlurb.isEmpty ? nil : vodBlurb,
             vodContent: vodContent.isEmpty ? nil : vodContent,
             typeName: typeName.isEmpty ? nil : typeName,
+            vodClass: vodClass.isEmpty ? nil : vodClass,
             variants: variants,
-            primarySourceId: primarySourceId
+            primarySourceId: primarySourceId,
+            vodTime: vodTime
         )
     }
 }

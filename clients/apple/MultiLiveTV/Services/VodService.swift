@@ -8,6 +8,54 @@ final class VodService: ObservableObject {
         store = (try? SourceStore()) ?? SourceStore(sources: [])
     }
 
+    func loadHomeLaunch(tvDisplay: Bool) async throws -> HomeLaunchPayload {
+        try await Self.loadHomeLaunch(store: store, tvDisplay: tvDisplay)
+    }
+
+    nonisolated private static func loadHomeLaunch(
+        store: SourceStore,
+        tvDisplay: Bool
+    ) async throws -> HomeLaunchPayload {
+        let sources = store.enabled()
+        guard !sources.isEmpty else { throw VodError.sourceNotFound }
+        return try await HomeLaunch.firstSuccess(
+            count: sources.count,
+            isAcceptable: { !$0.snapshot.pool.isEmpty }
+        ) { index in
+            try await loadLaunch(store: store, source: sources[index], tvDisplay: tvDisplay)
+        }
+    }
+
+    nonisolated private static func loadLaunch(
+        store: SourceStore,
+        source: Source,
+        tvDisplay: Bool
+    ) async throws -> HomeLaunchPayload {
+        try Task.checkCancellation()
+        return try await HomeLaunch.load(
+            fetchCategories: {
+                let types = try await MacCMSClient.fetchTypes(source: source)
+                return MacCMSCategoryService.buildCategories(from: types)
+            },
+            fetchList: { typeId, childIds in
+                let result = try await CategoryListService.fetchVodListByTypeMerged(
+                    store: store,
+                    source: source,
+                    typeId: typeId,
+                    page: 1,
+                    knownChildTypeIds: childIds
+                )
+                return HomeLaunch.ListPage(
+                    items: VodMergeService.toVodItems(result.list),
+                    page: result.page,
+                    pageCount: result.pageCount
+                )
+            },
+            sourceId: source.id,
+            tvDisplay: tvDisplay
+        )
+    }
+
     func fetchTypes(sourceId: Int? = nil) async throws -> TypesResponse {
         let source: Source
         if let sourceId {
@@ -26,14 +74,20 @@ final class VodService: ObservableObject {
         )
     }
 
-    func fetchList(page: Int, typeId: Int? = nil, sourceId: Int? = nil) async throws -> ListResponse {
+    func fetchList(
+        page: Int,
+        typeId: Int? = nil,
+        sourceId: Int? = nil,
+        knownChildTypeIds: [Int] = []
+    ) async throws -> ListResponse {
         if let sourceId {
             guard let source = store.byID(sourceId) else { throw VodError.sourceNotFound }
             let result = try await CategoryListService.fetchVodListByTypeMerged(
                 store: store,
                 source: source,
                 typeId: typeId,
-                page: page
+                page: page,
+                knownChildTypeIds: knownChildTypeIds
             )
             return makeListResponse(source: source, typeId: typeId, result: result)
         }
@@ -44,7 +98,8 @@ final class VodService: ObservableObject {
                     store: store,
                     source: source,
                     typeId: typeId,
-                    page: page
+                    page: page,
+                    knownChildTypeIds: knownChildTypeIds
                 )
                 if !result.list.isEmpty {
                     return makeListResponse(source: source, typeId: typeId, result: result)
@@ -85,19 +140,28 @@ final class VodService: ObservableObject {
         }
 
         let merged = VodMergeService.mergeVodItems(mergeable, store: store)
-        return VodMergeService.toVodItems(merged)
+        return CategoryMatch.excludingHidden(VodMergeService.toVodItems(merged))
     }
 
-    func detail(sourceId: Int, vodId: String) async throws -> DetailResponse {
+    func detail(
+        sourceId: Int,
+        vodId: String,
+        onPrimary: ((DetailResponse) -> Void)? = nil
+    ) async throws -> DetailResponse {
         guard let source = store.byID(sourceId) else { throw VodError.sourceNotFound }
-        guard let detail = try await VodMergeService.fetchMergedVodDetail(
-            store: store,
+        guard let (primary, primaryResponse) = try await VodMergeService.fetchPrimaryVodDetail(
             source: source,
             vodId: vodId
         ) else {
             throw VodError.vodNotFound
         }
-        return detail
+        onPrimary?(primaryResponse)
+        return await VodMergeService.enrichMergedVodDetail(
+            store: store,
+            source: source,
+            vodId: vodId,
+            primary: primary
+        )
     }
 
     func parsePlay(sourceId: Int, url: String) async throws -> ParseResponse {
@@ -131,3 +195,5 @@ final class VodService: ObservableObject {
         )
     }
 }
+
+extension VodService: PlayURLParsing {}

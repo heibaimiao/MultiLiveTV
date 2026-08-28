@@ -1,0 +1,47 @@
+{
+  "name": "MobileVLCKit",
+  "version": "3.6.0",
+  "summary": "MobileVLCKit is an Objective-C wrapper for libvlc's external interface on iOS.",
+  "homepage": "https://code.videolan.org/videolan/VLCKit",
+  "license": {
+    "type": "LGPL v2.1",
+    "file": "COPYING.txt"
+  },
+  "authors": {
+    "VideoLAN": "videolan@videolan.org"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "source": {
+    "http": "https://download.videolan.org/pub/cocoapods/prod/MobileVLCKit-3.6.0-c73b779f-dd8bfdba.tar.xz",
+    "sha256": "1a5077beeb7bf943a3fbbb91523752e50a10d490a3046cb9808d906784ddbc36"
+  },
+  "ios": {
+    "vendored_frameworks": "MobileVLCKit.xcframework"
+  },
+  "frameworks": [
+    "QuartzCore",
+    "CoreText",
+    "AVFoundation",
+    "Security",
+    "CFNetwork",
+    "AudioToolbox",
+    "OpenGLES",
+    "CoreGraphics",
+    "VideoToolbox",
+    "CoreMedia"
+  ],
+  "libraries": [
+    "c++",
+    "xml2",
+    "z",
+    "bz2",
+    "iconv"
+  ],
+  "requires_arc": false,
+  "pod_target_xcconfig": {
+    "CLANG_CXX_LANGUAGE_STANDARD": "c++14",
+    "CLANG_CXX_LIBRARY": "libc++"
+  }
+}

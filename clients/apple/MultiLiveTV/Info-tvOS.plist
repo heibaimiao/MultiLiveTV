@@ -19,13 +19,33 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.heibaimiao.multilivetv.tv</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>multilivetv</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

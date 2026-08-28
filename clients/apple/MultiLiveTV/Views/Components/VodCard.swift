@@ -15,23 +15,7 @@ struct VodCard: View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 10) {
                 poster
-
-                if layout == .grid {
-                    Text(item.vodName)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
-
-                    if let typeName = item.typeName {
-                        Text(typeName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, minHeight: 16, alignment: .leading)
-                    }
-                }
+                caption
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             #if os(tvOS)
@@ -39,8 +23,7 @@ struct VodCard: View {
             #endif
         }
         #if os(tvOS)
-        .buttonStyle(.plain)
-        .tvFocusScale(isFocused)
+        .tvFocusChrome(isFocused)
         #else
         .buttonStyle(.plain)
         #endif
@@ -50,14 +33,13 @@ struct VodCard: View {
     private var poster: some View {
         Group {
             #if os(tvOS)
-            AsyncImage(url: URL(string: item.vodPic)) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    AppTheme.tertiaryFill
-                }
-            }
+            VodPosterView(
+                sourceId: item.resolvedSourceId,
+                vodId: item.vodId,
+                initialURL: item.vodPic,
+                cornerRadius: cornerRadius,
+                showRemarks: item.displayRemarks
+            )
             .frame(width: TVDesign.cardWidth, height: TVDesign.cardHeight)
             #else
             Color.clear
@@ -73,48 +55,35 @@ struct VodCard: View {
                 }
             #endif
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .strokeBorder(isFocused ? Color.white : Color.clear, lineWidth: 4)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(isFocused ? Color.white.opacity(0.95) : Color.clear, lineWidth: 3)
         }
-        .overlay(alignment: .bottomLeading) {
-            if layout == .shelf {
-                shelfTitleOverlay
-            }
-        }
+        .shadow(color: .black.opacity(0.28), radius: 10, y: 6)
     }
 
-    @ViewBuilder
-    private var shelfTitleOverlay: some View {
+    private var caption: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(item.vodName)
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(isFocused ? AppTheme.textPrimary : AppTheme.textSecondary)
                 .lineLimit(2)
-                .foregroundStyle(.white)
-            if let remarks = item.displayRemarks {
-                Text(remarks)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, minHeight: layout == .grid ? 40 : 0, alignment: .topLeading)
+
+            if layout == .grid, let typeName = item.typeName, !typeName.isEmpty {
+                Text(typeName)
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(AppTheme.textTertiary)
+                    .lineLimit(1)
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.75)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
+        .opacity(isFocused || layout == .grid ? 1 : 0.9)
     }
 
     private var cornerRadius: CGFloat {
-        #if os(tvOS)
-        TVDesign.cornerRadius
-        #else
-        12
-        #endif
+        AppTheme.posterRadius
     }
 
     #if os(iOS)

@@ -26,7 +26,16 @@
 		<true/>
 	</dict>
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>Logo</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
+	</dict>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -43,10 +52,12 @@
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

@@ -1,69 +1,99 @@
 import SwiftUI
 
-#if os(tvOS)
 struct HeroBanner: View {
     let item: VodItem
+    var compact: Bool = false
+
+    private var height: CGFloat {
+        #if os(tvOS)
+        TVDesign.heroHeight
+        #else
+        compact ? 240 : 280
+        #endif
+    }
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: URL(string: item.vodPic)) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    LinearGradient(
-                        colors: [Color(white: 0.15), Color(white: 0.08)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                }
-            }
-            .frame(height: TVDesign.heroHeight)
-            .clipped()
+            CinemaBackdrop(urlString: item.vodPic, height: height)
 
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.85)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: TVDesign.heroHeight)
+            HStack(alignment: .bottom, spacing: 28) {
+                poster
 
-            VStack(alignment: .leading, spacing: 12) {
-                if let typeName = item.typeName {
-                    Text(typeName.uppercased())
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .tracking(1.2)
-                }
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        if let typeName = item.typeName, !typeName.isEmpty {
+                            MetaChip(text: typeName)
+                        }
+                        if let remarks = item.displayRemarks {
+                            MetaChip(text: remarks)
+                        }
+                    }
 
-                Text(item.vodName)
-                    .font(.system(size: 52, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-
-                if let remarks = item.displayRemarks {
-                    Text(remarks)
-                        .font(.title3)
-                        .foregroundStyle(.white.opacity(0.75))
-                }
-
-                if let blurb = item.displayBlurb {
-                    Text(blurb)
-                        .font(.body)
-                        .foregroundStyle(.white.opacity(0.65))
+                    Text(item.vodName)
+                        .font(titleFont)
+                        .foregroundStyle(AppTheme.textPrimary)
                         .lineLimit(2)
-                        .frame(maxWidth: 900, alignment: .leading)
+                        .shadow(color: .black.opacity(0.45), radius: 8, y: 2)
+
+                    if let blurb = item.displayBlurb {
+                        Text(blurb)
+                            .font(blurbFont)
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .lineLimit(compact ? 2 : 3)
+                            .frame(maxWidth: 760, alignment: .leading)
+                    }
                 }
+                .padding(.bottom, compact ? 16 : 28)
             }
-            .padding(.horizontal, TVDesign.screenPadding)
-            .padding(.bottom, 36)
+            .padding(.horizontal, AppTheme.screenPadding)
+            .padding(.bottom, compact ? 12 : 20)
         }
-        .frame(height: TVDesign.heroHeight)
-        .clipShape(RoundedRectangle(cornerRadius: TVDesign.cornerRadius))
-        .padding(.horizontal, TVDesign.screenPadding)
-        .animation(.easeInOut(duration: 0.3), value: item.id)
+        .frame(height: height)
+        .animation(.easeInOut(duration: 0.35), value: item.id)
+    }
+
+    @ViewBuilder
+    private var poster: some View {
+        VodPosterView(
+            sourceId: item.resolvedSourceId,
+            vodId: item.vodId,
+            initialURL: item.vodPic,
+            cornerRadius: AppTheme.posterRadius,
+            showRemarks: nil
+        )
+        .frame(width: posterWidth, height: posterHeight)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.posterRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
+        #if os(iOS)
+        .padding(.bottom, 8)
+        #endif
+    }
+
+    private var titleFont: Font {
+        #if os(tvOS)
+        .system(size: 48, weight: .bold)
+        #else
+        .system(size: compact ? 28 : 34, weight: .bold)
+        #endif
+    }
+
+    private var blurbFont: Font {
+        #if os(tvOS)
+        .title3
+        #else
+        .subheadline
+        #endif
+    }
+
+    private var posterWidth: CGFloat {
+        #if os(tvOS)
+        210
+        #else
+        compact ? 96 : 120
+        #endif
+    }
+
+    private var posterHeight: CGFloat {
+        posterWidth * 1.5
     }
 }
-#endif

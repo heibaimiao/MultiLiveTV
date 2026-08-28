@@ -12,8 +12,8 @@ enum CategoryTreeBuilder {
     private static let parentNames: Set<String> = ["电影", "剧集", "综艺", "动漫"]
 
     static func build(from all: [CategoryDef]) -> CategoryTree {
+        let all = all.filter { MacCMSCategoryService.isTypeVisible($0.label) }
         let parents = all.filter { parentNames.contains($0.label) }
-        let parentIds = Set(parents.map(\.typeId))
 
         var childrenByParent: [Int: [CategoryDef]] = [:]
         for parent in parents {
@@ -23,11 +23,7 @@ enum CategoryTreeBuilder {
             }
         }
 
-        let childIdSet = Set(childrenByParent.values.flatMap { $0.map(\.typeId) })
-        let standalone = all.filter { !parentIds.contains($0.typeId) && !childIdSet.contains($0.typeId) }
-        let primary = parents + standalone
-
-        return CategoryTree(all: all, primary: primary, childrenByParent: childrenByParent)
+        return CategoryTree(all: all, primary: parents, childrenByParent: childrenByParent)
     }
 
     static func parentTypeId(tree: CategoryTree, typeId: Int?) -> Int? {
@@ -52,8 +48,12 @@ enum CategoryTreeBuilder {
     }
 
     static func label(tree: CategoryTree, typeId: Int?) -> String {
-        guard let typeId else { return "全部" }
+        guard let typeId else { return "电影" }
         return tree.all.first { $0.typeId == typeId }?.label ?? String(typeId)
+    }
+
+    static func defaultTypeId(in tree: CategoryTree) -> Int? {
+        tree.primary.first { $0.label == "电影" }?.typeId ?? tree.primary.first?.typeId
     }
 
     private static func childTypeIds(all: [CategoryDef], parentId: Int) -> [Int] {

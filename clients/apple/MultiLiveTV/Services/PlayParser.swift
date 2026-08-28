@@ -108,22 +108,21 @@ enum PlayParser {
         for entry in entries {
             let parsed = parsePlayURL(vodPlayFrom: entry.vod.vodPlayFrom, vodPlayURL: entry.vod.vodPlayURL)
             for line in parsed {
-                let key = "\(entry.source.id):\(line.key)"
-                let name = "\(entry.source.name) · \(line.name)"
+                let mergeKey = "\(entry.source.id):\(line.name)"
+                let name = displayPlaySourceName(sourceName: entry.source.name, lineName: line.name)
                 let ranked = RankedPlaySource(
                     playSource: PlaySource(
                         name: name,
-                        key: key,
+                        key: mergeKey,
                         episodes: line.episodes,
                         sourceId: entry.source.id
                     ),
                     vodTime: entry.vod.vodTime
                 )
-                if let existing = merged[key],
-                   line.episodes.count <= existing.playSource.episodes.count {
+                if let existing = merged[mergeKey], !shouldReplace(existing: existing.playSource, with: ranked.playSource) {
                     continue
                 }
-                merged[key] = ranked
+                merged[mergeKey] = ranked
             }
         }
 
@@ -134,6 +133,21 @@ enum PlayParser {
             if lhsScore != rhsScore { return lhsScore > rhsScore }
             return lhs.playSource.name < rhs.playSource.name
         }.map(\.playSource)
+    }
+
+    static func displayPlaySourceName(sourceName: String, lineName: String) -> String {
+        let source = sourceName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let line = lineName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if source.isEmpty { return line }
+        if line.isEmpty || source == line { return source }
+        return "\(source) · \(line)"
+    }
+
+    private static func shouldReplace(existing: PlaySource, with incoming: PlaySource) -> Bool {
+        let incomingScore = playabilityScore(incoming)
+        let existingScore = playabilityScore(existing)
+        if incomingScore != existingScore { return incomingScore > existingScore }
+        return incoming.episodes.count > existing.episodes.count
     }
 
     private static func playabilityScore(_ source: PlaySource) -> Int {

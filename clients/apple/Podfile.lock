@@ -1,0 +1,21 @@
+PODS:
+  - MobileVLCKit (3.6.0)
+  - TVVLCKit (3.6.0)
+
+DEPENDENCIES:
+  - MobileVLCKit (from `/Users/heibai/Code/self/MultiLiveTV/clients/apple/vendor/MobileVLCKit.local.podspec.json`)
+  - TVVLCKit (from `/Users/heibai/Code/self/MultiLiveTV/clients/apple/vendor/TVVLCKit.local.podspec.json`)
+
+EXTERNAL SOURCES:
+  MobileVLCKit:
+    :podspec: "/Users/heibai/Code/self/MultiLiveTV/clients/apple/vendor/MobileVLCKit.local.podspec.json"
+  TVVLCKit:
+    :podspec: "/Users/heibai/Code/self/MultiLiveTV/clients/apple/vendor/TVVLCKit.local.podspec.json"
+
+SPEC CHECKSUMS:
+  MobileVLCKit: c98d80ba561623227756f0f9a6fbfe88bd628970
+  TVVLCKit: c24badb6b0f074f9c3c2d3533006499316d38e7e
+
+PODFILE CHECKSUM: 7957b0b76484695d16332746f78abca2fccdb8fa
+
+COCOAPODS: 1.17.0
