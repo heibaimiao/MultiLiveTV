@@ -1,0 +1,487 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-10T16:10:00+08:00",
+  "description": "现网 MacCMS 采集站 + EHR663 官方平台脚本 + Apple 直播源注册表。",
+  "counts": {
+    "cms_in_app": 29,
+    "official": 4,
+    "live": 1,
+    "total": 34
+  },
+  "sources": [
+    {
+      "id": "cms-33",
+      "numericId": 33,
+      "name": "无忧",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://www.wyvod.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-125",
+      "numericId": 125,
+      "name": "猫眼",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.maoyanapi.top/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-143",
+      "numericId": 143,
+      "name": "虎牙",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://www.huyaapi.com/api.php/provide/vod/at/json",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-146",
+      "numericId": 146,
+      "name": "影剧",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://caiji.maotaizy.cc/api.php/provide/vod/at/josn/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-157",
+      "numericId": 157,
+      "name": "光速",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.guangsuapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-158",
+      "numericId": 158,
+      "name": "魔都",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://www.mdzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-159",
+      "numericId": 159,
+      "name": "非凡",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "http://api.ffzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-160",
+      "numericId": 160,
+      "name": "量子",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://cj.lziapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-161",
+      "numericId": 161,
+      "name": "暴风",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://bfzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-162",
+      "numericId": 162,
+      "name": "极速",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://jszyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-163",
+      "numericId": 163,
+      "name": "速播",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://subocaiji.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-164",
+      "numericId": 164,
+      "name": "红牛",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://www.hongniuzy2.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-165",
+      "numericId": 165,
+      "name": "无尽",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.wujinapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-166",
+      "numericId": 166,
+      "name": "索尼",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://suonizy.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-167",
+      "numericId": 167,
+      "name": "无印",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.wsyzy.net/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-168",
+      "numericId": 168,
+      "name": "新浪",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.xinlangapi.com/xinlangapi.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-169",
+      "numericId": 169,
+      "name": "西瓜",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://caiji.xgzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-170",
+      "numericId": 170,
+      "name": "豆瓣",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://dbzy.tv/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-171",
+      "numericId": 171,
+      "name": "1080",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.1080zyku.com/inc/api_mac10.php",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-172",
+      "numericId": 172,
+      "name": "爱坤",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://ikunzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-173",
+      "numericId": 173,
+      "name": "豪华",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://hhzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-174",
+      "numericId": 174,
+      "name": "如意",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://cj.rycjapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-175",
+      "numericId": 175,
+      "name": "U酷",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.ukuapi88.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-176",
+      "numericId": 176,
+      "name": "奇艺",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://iqiyizyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-177",
+      "numericId": 177,
+      "name": "金鹰",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://jyzyapi.com/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-178",
+      "numericId": 178,
+      "name": "最大",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.zuidapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-179",
+      "numericId": 179,
+      "name": "天堂",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "http://caiji.dyttzyapi.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-180",
+      "numericId": 180,
+      "name": "牛牛",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://api.niuniuzy.me/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "cms-181",
+      "numericId": 181,
+      "name": "360",
+      "type": "cms_api",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://360zyzz.com/api.php/provide/vod/",
+      "jx_url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "origin": [
+        "sources.json"
+      ]
+    },
+    {
+      "id": "live-1",
+      "numericId": 1,
+      "name": "ZB",
+      "type": "live_m3u",
+      "enabled": true,
+      "inApp": true,
+      "url": "http://wangziduoqing.com/yuan/zb.txt",
+      "origin": [
+        "clients/apple/.../lives.json"
+      ]
+    },
+    {
+      "id": "official-qq",
+      "numericId": 901,
+      "name": "腾讯视频",
+      "type": "official_py",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91.py",
+      "jx_url": "https://jx.xmflv.cc/?url=",
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ]
+    },
+    {
+      "id": "official-youku",
+      "numericId": 902,
+      "name": "优酷",
+      "type": "official_py",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E4%BC%98%E9%85%B7%E8%A7%86%E9%A2%91.py",
+      "jx_url": "https://jx.xmflv.cc/?url=",
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ]
+    },
+    {
+      "id": "official-qiyi",
+      "numericId": 903,
+      "name": "爱奇艺",
+      "type": "official_py",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E7%88%B1%E5%A5%87%E8%89%BA.py",
+      "jx_url": "https://jx.xmflv.cc/?url=",
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ]
+    },
+    {
+      "id": "official-mgtv",
+      "numericId": 904,
+      "name": "芒果TV",
+      "type": "official_py",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "url": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E8%8A%92%E6%9E%9CTV.py",
+      "jx_url": "https://jx.xmflv.cc/?url=",
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ]
+    }
+  ]
+}

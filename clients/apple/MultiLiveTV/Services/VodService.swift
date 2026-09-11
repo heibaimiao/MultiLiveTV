@@ -6,6 +6,9 @@ final class VodService: ObservableObject {
 
     init() {
         store = (try? SourceStore()) ?? SourceStore(sources: [])
+        PlayLineWeighting.playPriorityBySourceId = Dictionary(
+            uniqueKeysWithValues: store.all().map { ($0.numericId, $0.priority.playPriority) }
+        )
     }
 
     func loadHomeLaunch(tvDisplay: Bool) async throws -> HomeLaunchPayload {
@@ -16,31 +19,13 @@ final class VodService: ObservableObject {
         store: SourceStore,
         tvDisplay: Bool
     ) async throws -> HomeLaunchPayload {
-        let sources = store.enabled()
-        guard !sources.isEmpty else { throw VodError.sourceNotFound }
-        return try await HomeLaunch.firstSuccess(count: sources.count) { index in
-            try await loadLaunch(store: store, source: sources[index], tvDisplay: tvDisplay)
-        }
-    }
-
-    nonisolated private static func loadLaunch(
-        store: SourceStore,
-        source: Source,
-        tvDisplay: Bool
-    ) async throws -> HomeLaunchPayload {
         try Task.checkCancellation()
         return try await HomeLaunch.load(
-            fetchCategories: {
-                let types = try await MacCMSClient.fetchTypes(source: source)
-                return MacCMSCategoryService.buildCategories(from: types)
-            },
-            fetchList: { typeId, childIds in
-                let result = try await CategoryListService.fetchVodListByTypeMerged(
+            fetchList: { slug in
+                let result = try await CategoryListService.fetchUnifiedList(
                     store: store,
-                    source: source,
-                    typeId: typeId,
-                    page: 1,
-                    knownChildTypeIds: childIds
+                    slug: slug,
+                    page: 1
                 )
                 return HomeLaunch.ListPage(
                     items: VodMergeService.toVodItems(result.list),
@@ -48,7 +33,6 @@ final class VodService: ObservableObject {
                     pageCount: result.pageCount
                 )
             },
-            sourceId: source.id,
             tvDisplay: tvDisplay
         )
     }
@@ -63,7 +47,7 @@ final class VodService: ObservableObject {
             source = found
         }
 
-        let types = try await MacCMSClient.fetchTypes(source: source)
+        let types = try await SourceCollector.fetchTypes(source: source)
         let categories = MacCMSCategoryService.buildCategories(from: types)
         return TypesResponse(
             source: ListResponse.SourceRef(id: source.id, name: source.name),
@@ -73,9 +57,32 @@ final class VodService: ObservableObject {
 
     func fetchList(
         page: Int,
+        slug: String? = nil,
+        hours: Int? = nil
+    ) async throws -> ListResponse {
+        let result = try await CategoryListService.fetchUnifiedList(
+            store: store,
+            slug: slug,
+            page: page,
+            hours: hours
+        )
+        return ListResponse(
+            source: nil,
+            typeId: nil,
+            page: result.page,
+            pagecount: result.pageCount,
+            total: result.total,
+            list: VodMergeService.toVodItems(result.list)
+        )
+    }
+
+    /// 单源 type_id 列表（调试 / 兼容）
+    func fetchListByType(
+        page: Int,
         typeId: Int? = nil,
         sourceId: Int? = nil,
-        knownChildTypeIds: [Int] = []
+        knownChildTypeIds: [Int] = [],
+        hours: Int? = nil
     ) async throws -> ListResponse {
         if let sourceId {
             guard let source = store.byID(sourceId) else { throw VodError.sourceNotFound }
@@ -84,7 +91,8 @@ final class VodService: ObservableObject {
                 source: source,
                 typeId: typeId,
                 page: page,
-                knownChildTypeIds: knownChildTypeIds
+                knownChildTypeIds: knownChildTypeIds,
+                hours: hours
             )
             return makeListResponse(source: source, typeId: typeId, result: result)
         }
@@ -96,7 +104,8 @@ final class VodService: ObservableObject {
                     source: source,
                     typeId: typeId,
                     page: page,
-                    knownChildTypeIds: knownChildTypeIds
+                    knownChildTypeIds: knownChildTypeIds,
+                    hours: hours
                 )
                 if !result.list.isEmpty {
                     return makeListResponse(source: source, typeId: typeId, result: result)
@@ -119,15 +128,24 @@ final class VodService: ObservableObject {
 
     func search(_ keyword: String, page: Int = 1) async throws -> [VodItem] {
         var mergeable: [MergeableVodItem] = []
+        let searchable = store.collectable(capability: \.search)
 
         await withTaskGroup(of: [MergeableVodItem].self) { group in
-            for source in store.enabled() {
+            for source in searchable {
                 group.addTask {
-                    guard let data = try? await MacCMSClient.search(source: source, keyword: keyword, page: page) else {
+                    guard let pageResult = try? await SourceCollector.search(
+                        source: source,
+                        keyword: keyword,
+                        page: page
+                    ) else {
                         return []
                     }
-                    return data.list.map {
-                        MergeableVodItem(item: $0, sourceId: source.id, sourceName: source.name)
+                    return pageResult.list.map {
+                        MergeableVodItem(
+                            item: $0.toVodItemRaw(),
+                            sourceId: source.id,
+                            sourceName: source.name
+                        )
                     }
                 }
             }
@@ -176,8 +194,8 @@ final class VodService: ObservableObject {
 
     func fetchVodPic(sourceId: Int, vodId: String) async throws -> String? {
         guard let source = store.byID(sourceId) else { throw VodError.sourceNotFound }
-        let data = try await MacCMSClient.fetchDetail(source: source, ids: vodId)
-        let pic = data.list.first?.vodPic ?? ""
+        let movie = try await SourceCollector.detail(source: source, sourceMovieId: vodId)
+        let pic = movie.poster
         return pic.isEmpty ? nil : pic
     }
 

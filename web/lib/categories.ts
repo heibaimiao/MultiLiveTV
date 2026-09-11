@@ -8,7 +8,7 @@ import {
   type CategoryDef,
   type CategoryTree,
 } from "./categoryTree";
-import { mergeVodItems } from "./vodMerge";
+import { mergeVodItems, sortMergedByUpdatedDesc } from "./vodMerge";
 import type { Source, VodItem, VodType } from "./types";
 
 export type { CategoryDef, CategoryTree };
@@ -69,12 +69,14 @@ export function parseLegacyCategory(value?: string | null): number | null {
 }
 
 function mergeListItems(source: Source, items: VodItem[]) {
-  return mergeVodItems(
-    items.map((item) => ({
-      ...item,
-      sourceId: source.id,
-      sourceName: source.name,
-    }))
+  return sortMergedByUpdatedDesc(
+    mergeVodItems(
+      items.map((item) => ({
+        ...item,
+        sourceId: source.id,
+        sourceName: source.name,
+      }))
+    )
   );
 }
 

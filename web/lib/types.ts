@@ -26,6 +26,10 @@ export interface VodItem {
   vod_content?: string;
   vod_play_from?: string;
   vod_play_url?: string;
+  /** MacCMS update time (unix seconds or datetime string) */
+  vod_time?: string | number;
+  /** MacCMS created/add time fallback */
+  vod_time_add?: string | number;
   type_id?: number;
   type_name?: string;
 }
@@ -40,6 +44,22 @@ export interface PlaySource {
   key: string;
   episodes: Episode[];
   sourceId?: number;
+  weight?: number;
+  mode?: "direct" | "ticket";
+  playFrom?: string;
+  providerId?: string;
+  ticket?: string;
+  requiresAuth?: boolean;
+}
+
+export interface PlayResolveRequest {
+  mode: "direct" | "ticket";
+  sourceId?: number;
+  url?: string;
+  jx?: boolean;
+  ticket?: string;
+  providerId?: string;
+  playFrom?: string;
 }
 
 export interface VodVariant {
@@ -83,4 +103,6 @@ export type MergeableVodItem = VodItem & {
 export interface ParseResult {
   url: string;
   parsed: boolean;
+  mode?: string;
+  expiresAt?: number | null;
 }

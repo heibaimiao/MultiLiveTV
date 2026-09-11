@@ -5,18 +5,18 @@ enum CategoryMatch {
         items.filter(MacCMSCategoryService.isItemVisible)
     }
 
-    static func filter(_ items: [VodItem], selectedTypeId: Int?, tree: CategoryTree) -> [VodItem] {
+    static func filter(_ items: [VodItem], selectedSlug: String?, tree: CategoryTree) -> [VodItem] {
         let items = excludingHidden(items)
-        guard let selectedTypeId else { return items }
-        let allowed = allowedLabels(selectedTypeId: selectedTypeId, tree: tree)
+        guard let selectedSlug else { return items }
+        let allowed = allowedLabels(selectedSlug: selectedSlug, tree: tree)
         guard !allowed.isEmpty else { return items }
         return items.filter { matches($0, allowed: allowed) }
     }
 
-    static func allowedLabels(selectedTypeId: Int, tree: CategoryTree) -> Set<String> {
-        guard let selected = tree.all.first(where: { $0.typeId == selectedTypeId }) else { return [] }
+    static func allowedLabels(selectedSlug: String, tree: CategoryTree) -> Set<String> {
+        guard let selected = tree.all.first(where: { $0.slug == selectedSlug }) else { return [] }
         var labels: Set<String> = [normalized(selected.label)]
-        if let children = tree.childrenByParent[selectedTypeId] {
+        if let children = tree.childrenByParent[selectedSlug] {
             for child in children {
                 labels.insert(normalized(child.label))
             }

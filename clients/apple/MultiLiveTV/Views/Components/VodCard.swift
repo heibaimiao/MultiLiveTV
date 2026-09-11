@@ -72,14 +72,43 @@ struct VodCard: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, minHeight: layout == .grid ? 40 : 0, alignment: .topLeading)
 
-            if layout == .grid, let genre = item.displayGenreLine {
-                Text(genre)
-                    .font(.caption)
-                    .foregroundStyle(AppTheme.textTertiary)
-                    .lineLimit(1)
+            if layout == .grid {
+                if let remarks = item.displayRemarks, !remarks.isEmpty {
+                    Text(remarks)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .lineLimit(1)
+                } else if let sourceLine = Self.sourceMetaLine(for: item) {
+                    Text(sourceLine)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .lineLimit(1)
+                } else if let genre = item.displayGenreLine {
+                    Text(genre)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .lineLimit(1)
+                }
             }
         }
         .opacity(isFocused || layout == .grid ? 1 : 0.9)
+    }
+
+    private static func sourceMetaLine(for item: VodItem) -> String? {
+        guard let variants = item.variants, !variants.isEmpty else { return nil }
+        var ordered: [String] = []
+        var seen = Set<String>()
+        for variant in variants.sorted(by: {
+            PlayLineWeighting.sourceWeight($0.sourceId) > PlayLineWeighting.sourceWeight($1.sourceId)
+        }) {
+            let name = variant.sourceName
+            guard !name.isEmpty, !seen.contains(name) else { continue }
+            seen.insert(name)
+            ordered.append(name)
+        }
+        guard !ordered.isEmpty else { return nil }
+        if ordered.count <= 2 { return ordered.joined(separator: " · ") }
+        return "\(ordered.prefix(2).joined(separator: " · ")) · 等\(ordered.count)个源"
     }
 
     private var cornerRadius: CGFloat {

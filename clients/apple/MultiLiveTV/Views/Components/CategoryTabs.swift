@@ -119,52 +119,49 @@ enum CategoryFocus {
     static let prefix = "c:"
     static let search = "c:search"
 
-    static func primary(_ id: Int) -> String { "c:p:\(id)" }
-    static func secondary(_ id: Int) -> String { "c:s:\(id)" }
+    static func primary(_ slug: String) -> String { "c:p:\(slug)" }
+    static func secondary(_ slug: String) -> String { "c:s:\(slug)" }
 
     static func isCategory(_ id: String?) -> Bool {
         id?.hasPrefix(prefix) == true
     }
 
     static func preferredKey(
-        primary: [CategoryDef],
-        activeTypeId: Int?,
-        activeParentId: Int?,
+        primary: [SlugCategory],
+        activeSlug: String?,
+        activeParentSlug: String?,
         showSecondary: Bool
     ) -> String {
-        if showSecondary, let parentId = activeParentId {
-            return secondary(activeTypeId ?? parentId)
+        if showSecondary, let parentSlug = activeParentSlug {
+            return secondary(activeSlug ?? parentSlug)
         }
-        if let activeTypeId {
-            return Self.primary(activeTypeId)
+        if let activeSlug {
+            return Self.primary(activeSlug)
         }
-        if let first = primary.first {
-            return Self.primary(first.typeId)
-        }
-        return search
+        return Self.primary("all")
     }
 }
 
 struct CategoryTabs: View {
-    let primary: [CategoryDef]
-    let secondary: [CategoryDef]
-    let activeTypeId: Int?
-    let activeParentId: Int?
+    let primary: [SlugCategory]
+    let secondary: [SlugCategory]
+    let activeSlug: String?
+    let activeParentSlug: String?
     var pending: Bool = false
     var focusRequest: Int = 0
     var focusedId: FocusState<String?>.Binding
     var onSearch: (() -> Void)? = nil
-    let onSelect: (Int?) -> Void
+    let onSelect: (String?) -> Void
 
     private var showSecondary: Bool {
-        !secondary.isEmpty && activeParentId != nil
+        !secondary.isEmpty && activeParentSlug != nil
     }
 
     private var preferredFocusKey: String {
         CategoryFocus.preferredKey(
             primary: primary,
-            activeTypeId: activeTypeId,
-            activeParentId: activeParentId,
+            activeSlug: activeSlug,
+            activeParentSlug: activeParentSlug,
             showSecondary: showSecondary
         )
     }
@@ -173,26 +170,26 @@ struct CategoryTabs: View {
         VStack(alignment: .leading, spacing: 10) {
             primaryRow
 
-            if showSecondary, let activeParentId {
+            if showSecondary, let activeParentSlug {
                 tabRow(prefix: "s", spacing: 12, fadeTrailing: true) {
                     CategoryTabButton(
                         label: "全部",
-                        isActive: activeTypeId == activeParentId,
-                        isFocused: focusedId.wrappedValue == CategoryFocus.secondary(activeParentId),
+                        isActive: activeSlug == activeParentSlug,
+                        isFocused: focusedId.wrappedValue == CategoryFocus.secondary(activeParentSlug),
                         disabled: pending,
                         size: .secondary
-                    ) { onSelect(activeParentId) }
-                    .tvChipFocused(focusedId, equals: CategoryFocus.secondary(activeParentId))
+                    ) { onSelect(activeParentSlug) }
+                    .tvChipFocused(focusedId, equals: CategoryFocus.secondary(activeParentSlug))
 
                     ForEach(secondary) { category in
                         CategoryTabButton(
                             label: category.label,
-                            isActive: activeTypeId == category.typeId,
-                            isFocused: focusedId.wrappedValue == CategoryFocus.secondary(category.typeId),
+                            isActive: activeSlug == category.slug,
+                            isFocused: focusedId.wrappedValue == CategoryFocus.secondary(category.slug),
                             disabled: pending,
                             size: .secondary
-                        ) { onSelect(category.typeId) }
-                        .tvChipFocused(focusedId, equals: CategoryFocus.secondary(category.typeId))
+                        ) { onSelect(category.slug) }
+                        .tvChipFocused(focusedId, equals: CategoryFocus.secondary(category.slug))
                     }
                 }
             }
@@ -242,14 +239,22 @@ struct CategoryTabs: View {
 
     @ViewBuilder
     private var primaryChips: some View {
+        CategoryTabButton(
+            label: "全部",
+            isActive: activeSlug == nil,
+            isFocused: focusedId.wrappedValue == CategoryFocus.primary("all"),
+            disabled: pending
+        ) { onSelect(nil) }
+        .tvChipFocused(focusedId, equals: CategoryFocus.primary("all"))
+
         ForEach(primary) { category in
             CategoryTabButton(
                 label: category.label,
-                isActive: activeTypeId == category.typeId || activeParentId == category.typeId,
-                isFocused: focusedId.wrappedValue == CategoryFocus.primary(category.typeId),
+                isActive: activeSlug == category.slug || activeParentSlug == category.slug,
+                isFocused: focusedId.wrappedValue == CategoryFocus.primary(category.slug),
                 disabled: pending
-            ) { onSelect(category.typeId) }
-            .tvChipFocused(focusedId, equals: CategoryFocus.primary(category.typeId))
+            ) { onSelect(category.slug) }
+            .tvChipFocused(focusedId, equals: CategoryFocus.primary(category.slug))
         }
     }
 

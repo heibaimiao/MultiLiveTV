@@ -33,6 +33,9 @@ swiftc -o "$OUT" \
   "$ROOT/MultiLiveTV/Services/HomeFeed.swift" \
   "$ROOT/MultiLiveTV/Services/HomeLaunch.swift" \
   "$ROOT/MultiLiveTV/Services/MacCMSModels.swift" \
+  "$ROOT/MultiLiveTV/Services/SourceMovie.swift" \
+  "$ROOT/MultiLiveTV/Services/SourceHealthStore.swift" \
+  "$ROOT/MultiLiveTV/Services/SourceAdapter.swift" \
   "$ROOT/MultiLiveTV/Services/SourceStore.swift" \
   "$ROOT/MultiLiveTV/Services/NetworkConfig.swift" \
   "$ROOT/MultiLiveTV/Services/RemoteImageLoader.swift" \
@@ -40,10 +43,13 @@ swiftc -o "$OUT" \
   "$ROOT/MultiLiveTV/Services/TopShelf/TopShelfSnapshot.swift" \
   "$ROOT/MultiLiveTV/Services/TopShelf/TopShelfStore.swift" \
   "$ROOT/MultiLiveTV/Services/PlaybackSupport.swift" \
+  "$ROOT/MultiLiveTV/Services/VodPlaybackFailover.swift" \
+  "$ROOT/MultiLiveTV/Services/PlayLineWeights.swift" \
   "$ROOT/MultiLiveTV/Services/PlayParser.swift" \
   "$ROOT/MultiLiveTV/Services/MacCMSClient.swift" \
   "$ROOT/MultiLiveTV/Services/VodMergeService.swift" \
   "$ROOT/MultiLiveTV/Services/CategoryListService.swift" \
+  "$ROOT/MultiLiveTV/Services/UnifiedCategories.swift" \
   "$ROOT/MultiLiveTV/Services/CategoryTree.swift" \
   "$ROOT/MultiLiveTV/Services/CategoryMatch.swift" \
   "$ROOT/MultiLiveTV/Services/Live/LiveModels.swift" \

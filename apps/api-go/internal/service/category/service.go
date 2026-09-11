@@ -80,7 +80,7 @@ func mergeListItems(store *config.SourceStore, source model.Source, items []mode
 			SourceName: source.Name,
 		}
 	}
-	return merge.MergeVodItems(mergeable, store)
+	return merge.SortMergedByUpdatedDesc(merge.MergeVodItems(mergeable, store))
 }
 
 func FetchVodListByType(store *config.SourceStore, source model.Source, typeID *int, page int, knownTypes []model.VodType) (*model.MacCmsListResponse, error) {

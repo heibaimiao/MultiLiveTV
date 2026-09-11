@@ -83,12 +83,13 @@ enum PlayParser {
 
             var key = name.trimmingCharacters(in: .whitespacesAndNewlines)
             if key.isEmpty { key = "line-\(index + 1)" }
-            sources.append(PlaySource(
+            sources.append(PlayLineWeighting.annotate(PlaySource(
                 name: formatPlaySourceName(raw: name, index: index),
                 key: key,
                 episodes: episodes,
-                sourceId: nil
-            ))
+                sourceId: nil,
+                playFrom: key
+            ), rawPlayFrom: key))
         }
         return sources
     }
@@ -108,15 +109,17 @@ enum PlayParser {
         for entry in entries {
             let parsed = parsePlayURL(vodPlayFrom: entry.vod.vodPlayFrom, vodPlayURL: entry.vod.vodPlayURL)
             for line in parsed {
+                let playFrom = line.playFrom ?? line.key
                 let mergeKey = "\(entry.source.id):\(line.name)"
                 let name = displayPlaySourceName(sourceName: entry.source.name, lineName: line.name)
                 let ranked = RankedPlaySource(
-                    playSource: PlaySource(
+                    playSource: PlayLineWeighting.annotate(PlaySource(
                         name: name,
                         key: mergeKey,
                         episodes: line.episodes,
-                        sourceId: entry.source.id
-                    ),
+                        sourceId: entry.source.id,
+                        playFrom: playFrom
+                    ), rawPlayFrom: playFrom),
                     vodTime: entry.vod.vodTime
                 )
                 if let existing = merged[mergeKey], !shouldReplace(existing: existing.playSource, with: ranked.playSource) {
@@ -126,13 +129,7 @@ enum PlayParser {
             }
         }
 
-        return merged.values.sorted { lhs, rhs in
-            if lhs.vodTime != rhs.vodTime { return lhs.vodTime > rhs.vodTime }
-            let lhsScore = playabilityScore(lhs.playSource)
-            let rhsScore = playabilityScore(rhs.playSource)
-            if lhsScore != rhsScore { return lhsScore > rhsScore }
-            return lhs.playSource.name < rhs.playSource.name
-        }.map(\.playSource)
+        return PlayLineWeighting.sort(merged.values.map(\.playSource))
     }
 
     static func displayPlaySourceName(sourceName: String, lineName: String) -> String {
@@ -185,16 +182,19 @@ enum PlayParser {
         guard let (data, contentType) = try? await fetch(url) else { return nil }
 
         if contentType.contains("application/json"),
-           let resolved = parseJSONPlaybackURL(data) {
+           let resolved = parseJSONPlaybackURL(data),
+           PlaybackSupport.isDirectMediaURL(resolved) {
             return resolved
         }
 
         let text = normalizeResponseText(data)
-        if text.hasPrefix("http"), let direct = sanitizePlaybackURL(text.components(separatedBy: .whitespaces).first) {
+        if text.hasPrefix("http"),
+           let direct = sanitizePlaybackURL(text.components(separatedBy: .whitespaces).first),
+           PlaybackSupport.isDirectMediaURL(direct) {
             return direct
         }
 
-        if let m3u8 = firstM3U8(in: text) {
+        if let m3u8 = firstM3U8(in: text), PlaybackSupport.isDirectMediaURL(m3u8) {
             return m3u8
         }
 
@@ -203,21 +203,23 @@ enum PlayParser {
             if let playerURL,
                let (playerData, playerType) = try? await fetch(playerURL) {
                 if playerType.contains("application/json"),
-                   let resolved = parseJSONPlaybackURL(playerData) {
+                   let resolved = parseJSONPlaybackURL(playerData),
+                   PlaybackSupport.isDirectMediaURL(resolved) {
                     return resolved
                 }
                 let playerText = normalizeResponseText(playerData)
-                if let m3u8 = firstM3U8(in: playerText) {
+                if let m3u8 = firstM3U8(in: playerText), PlaybackSupport.isDirectMediaURL(m3u8) {
                     return m3u8
                 }
                 if playerText.hasPrefix("http"),
-                   let direct = sanitizePlaybackURL(playerText.components(separatedBy: .whitespaces).first) {
+                   let direct = sanitizePlaybackURL(playerText.components(separatedBy: .whitespaces).first),
+                   PlaybackSupport.isDirectMediaURL(direct) {
                     return direct
                 }
             }
         }
 
-        return isDirectMediaURL(originalURL) ? originalURL : nil
+        return PlaybackSupport.isDirectMediaURL(originalURL) ? originalURL : nil
     }
 
     private static func fetch(_ url: URL) async throws -> (Data, String) {
@@ -287,11 +289,7 @@ enum PlayParser {
     }
 
     private static func isDirectMediaURL(_ url: String) -> Bool {
-        let lower = url.lowercased()
-        return lower.contains(".m3u8")
-            || lower.contains(".mp4")
-            || lower.contains(".mkv")
-            || lower.contains(".flv")
+        PlaybackSupport.isDirectMediaURL(url)
     }
 
     private static func sanitizePlaybackURL(_ raw: String?) -> String? {

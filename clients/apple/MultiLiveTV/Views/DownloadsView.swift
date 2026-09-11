@@ -22,7 +22,7 @@ struct DownloadsView: View {
             .screenBackground()
             .navigationTitle("下载")
             .fullScreenCover(item: $playbackRequest) { request in
-                PlayerView(sourceId: request.sourceId, episode: request.episode)
+                PlayerView(candidates: request.candidates)
                     .environmentObject(vod)
                     .environmentObject(downloads)
             }

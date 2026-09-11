@@ -1,0 +1,12 @@
+{
+  "id": 171,
+  "name": "1080",
+  "url": "https://api.1080zyku.com/inc/api_mac10.php/",
+  "via": "direct",
+  "ms": 462,
+  "error": "HTTP Error 502: Bad Gateway | direct:<urlopen error Tunnel connection failed: 403 Forbidden>",
+  "class_count": 0,
+  "visible_count": 0,
+  "parents": [],
+  "classes": []
+}

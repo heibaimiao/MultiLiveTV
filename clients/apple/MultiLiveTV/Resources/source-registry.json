@@ -1,0 +1,1014 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-10T16:10:00+08:00",
+  "description": "Apple VOD Source Registry — CMS JSON + EHR663 official platform spiders.",
+  "counts": {
+    "cms_in_app": 29,
+    "official": 4,
+    "total": 33
+  },
+  "sources": [
+    {
+      "source_id": "cms-33",
+      "numericId": 33,
+      "name": "无忧",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://www.wyvod.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 480,
+        "play_priority": 480
+      }
+    },
+    {
+      "source_id": "cms-125",
+      "numericId": 125,
+      "name": "猫眼",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.maoyanapi.top/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 470,
+        "play_priority": 470
+      }
+    },
+    {
+      "source_id": "cms-143",
+      "numericId": 143,
+      "name": "虎牙",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://www.huyaapi.com/api.php/provide/vod/at/json",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 460,
+        "play_priority": 460
+      }
+    },
+    {
+      "source_id": "cms-146",
+      "numericId": 146,
+      "name": "影剧",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://caiji.maotaizy.cc/api.php/provide/vod/at/josn/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 450,
+        "play_priority": 450
+      }
+    },
+    {
+      "source_id": "cms-157",
+      "numericId": 157,
+      "name": "光速",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.guangsuapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 440,
+        "play_priority": 440
+      }
+    },
+    {
+      "source_id": "cms-158",
+      "numericId": 158,
+      "name": "魔都",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://www.mdzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 430,
+        "play_priority": 430
+      }
+    },
+    {
+      "source_id": "cms-159",
+      "numericId": 159,
+      "name": "非凡",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "http://api.ffzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 420,
+        "play_priority": 420
+      }
+    },
+    {
+      "source_id": "cms-160",
+      "numericId": 160,
+      "name": "量子",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://cj.lziapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 410,
+        "play_priority": 410
+      }
+    },
+    {
+      "source_id": "cms-161",
+      "numericId": 161,
+      "name": "暴风",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://bfzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 400,
+        "play_priority": 400
+      }
+    },
+    {
+      "source_id": "cms-162",
+      "numericId": 162,
+      "name": "极速",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://jszyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 390,
+        "play_priority": 390
+      }
+    },
+    {
+      "source_id": "cms-163",
+      "numericId": 163,
+      "name": "速播",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://subocaiji.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 380,
+        "play_priority": 380
+      }
+    },
+    {
+      "source_id": "cms-164",
+      "numericId": 164,
+      "name": "红牛",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://www.hongniuzy2.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 370,
+        "play_priority": 370
+      }
+    },
+    {
+      "source_id": "cms-165",
+      "numericId": 165,
+      "name": "无尽",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.wujinapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 360,
+        "play_priority": 360
+      }
+    },
+    {
+      "source_id": "cms-166",
+      "numericId": 166,
+      "name": "索尼",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://suonizy.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 350,
+        "play_priority": 350
+      }
+    },
+    {
+      "source_id": "cms-167",
+      "numericId": 167,
+      "name": "无印",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.wsyzy.net/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 340,
+        "play_priority": 340
+      }
+    },
+    {
+      "source_id": "cms-168",
+      "numericId": 168,
+      "name": "新浪",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.xinlangapi.com/xinlangapi.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 330,
+        "play_priority": 330
+      }
+    },
+    {
+      "source_id": "cms-169",
+      "numericId": 169,
+      "name": "西瓜",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://caiji.xgzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 320,
+        "play_priority": 320
+      }
+    },
+    {
+      "source_id": "cms-170",
+      "numericId": 170,
+      "name": "豆瓣",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://dbzy.tv/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 310,
+        "play_priority": 310
+      }
+    },
+    {
+      "source_id": "cms-171",
+      "numericId": 171,
+      "name": "1080",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.1080zyku.com/inc/api_mac10.php",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 300,
+        "play_priority": 300
+      }
+    },
+    {
+      "source_id": "cms-172",
+      "numericId": 172,
+      "name": "爱坤",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://ikunzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 290,
+        "play_priority": 290
+      }
+    },
+    {
+      "source_id": "cms-173",
+      "numericId": 173,
+      "name": "豪华",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://hhzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 280,
+        "play_priority": 280
+      }
+    },
+    {
+      "source_id": "cms-174",
+      "numericId": 174,
+      "name": "如意",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://cj.rycjapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 270,
+        "play_priority": 270
+      }
+    },
+    {
+      "source_id": "cms-175",
+      "numericId": 175,
+      "name": "U酷",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.ukuapi88.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 260,
+        "play_priority": 260
+      }
+    },
+    {
+      "source_id": "cms-176",
+      "numericId": 176,
+      "name": "奇艺",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://iqiyizyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 250,
+        "play_priority": 250
+      }
+    },
+    {
+      "source_id": "cms-177",
+      "numericId": 177,
+      "name": "金鹰",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://jyzyapi.com/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 240,
+        "play_priority": 240
+      }
+    },
+    {
+      "source_id": "cms-178",
+      "numericId": 178,
+      "name": "最大",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.zuidapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 230,
+        "play_priority": 230
+      }
+    },
+    {
+      "source_id": "cms-179",
+      "numericId": 179,
+      "name": "天堂",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "http://caiji.dyttzyapi.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 220,
+        "play_priority": 220
+      }
+    },
+    {
+      "source_id": "cms-180",
+      "numericId": 180,
+      "name": "牛牛",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://api.niuniuzy.me/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 210,
+        "play_priority": 210
+      }
+    },
+    {
+      "source_id": "cms-181",
+      "numericId": 181,
+      "name": "360",
+      "type": "cms",
+      "protocol": "json",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "connection": {
+        "endpoint": "https://360zyzz.com/api.php/provide/vod/",
+        "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+      },
+      "capabilities": {
+        "search": true,
+        "category": true,
+        "detail": true,
+        "play": true,
+        "pagination": true,
+        "live": false
+      },
+      "adapter": {
+        "type": "cms_json",
+        "parser": "default_cms_parser"
+      },
+      "priority": {
+        "metadata_priority": 200,
+        "play_priority": 200
+      }
+    },
+    {
+      "source_id": "official-qq",
+      "numericId": 901,
+      "name": "腾讯视频",
+      "type": "official",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ],
+      "connection": {
+        "endpoint": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91.py",
+        "jx_url": "https://jx.xmflv.cc/?url="
+      },
+      "capabilities": {
+        "search": false,
+        "category": false,
+        "detail": false,
+        "play": true,
+        "pagination": false,
+        "live": false
+      },
+      "adapter": {
+        "type": "ehr663_py",
+        "parser": "ehr663_qq"
+      },
+      "priority": {
+        "metadata_priority": 900,
+        "play_priority": 2000
+      }
+    },
+    {
+      "source_id": "official-youku",
+      "numericId": 902,
+      "name": "优酷",
+      "type": "official",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ],
+      "connection": {
+        "endpoint": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E4%BC%98%E9%85%B7%E8%A7%86%E9%A2%91.py",
+        "jx_url": "https://jx.xmflv.cc/?url="
+      },
+      "capabilities": {
+        "search": false,
+        "category": false,
+        "detail": false,
+        "play": true,
+        "pagination": false,
+        "live": false
+      },
+      "adapter": {
+        "type": "ehr663_py",
+        "parser": "ehr663_youku"
+      },
+      "priority": {
+        "metadata_priority": 890,
+        "play_priority": 1980
+      }
+    },
+    {
+      "source_id": "official-qiyi",
+      "numericId": 903,
+      "name": "爱奇艺",
+      "type": "official",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ],
+      "connection": {
+        "endpoint": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E7%88%B1%E5%A5%87%E8%89%BA.py",
+        "jx_url": "https://jx.xmflv.cc/?url="
+      },
+      "capabilities": {
+        "search": false,
+        "category": false,
+        "detail": false,
+        "play": true,
+        "pagination": false,
+        "live": false
+      },
+      "adapter": {
+        "type": "ehr663_py",
+        "parser": "ehr663_qiyi"
+      },
+      "priority": {
+        "metadata_priority": 895,
+        "play_priority": 1990
+      }
+    },
+    {
+      "source_id": "official-mgtv",
+      "numericId": 904,
+      "name": "芒果TV",
+      "type": "official",
+      "protocol": "python",
+      "enabled": true,
+      "inApp": true,
+      "vip_only": false,
+      "origin": [
+        "demos/ehr663-vod/official.json"
+      ],
+      "connection": {
+        "endpoint": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E8%8A%92%E6%9E%9CTV.py",
+        "jx_url": "https://jx.xmflv.cc/?url="
+      },
+      "capabilities": {
+        "search": false,
+        "category": false,
+        "detail": false,
+        "play": true,
+        "pagination": false,
+        "live": false
+      },
+      "adapter": {
+        "type": "ehr663_py",
+        "parser": "ehr663_mgtv"
+      },
+      "priority": {
+        "metadata_priority": 885,
+        "play_priority": 1970
+      }
+    }
+  ]
+}

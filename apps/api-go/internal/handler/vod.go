@@ -3,23 +3,33 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/heibaimiao/multilivetv/api-go/internal/config"
 	"github.com/heibaimiao/multilivetv/api-go/internal/model"
+	"github.com/heibaimiao/multilivetv/api-go/internal/service/bpz5"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/category"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/maccms"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/merge"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/parser"
+	"github.com/heibaimiao/multilivetv/api-go/internal/service/unified"
 )
 
 type Handler struct {
 	Sources  *config.SourceStore
 	Category *category.Cache
+	BPZ5     *bpz5.Client
 }
 
 func New(sources *config.SourceStore) *Handler {
 	return &Handler{Sources: sources, Category: category.NewCache()}
+}
+
+func NewWithBPZ5(sources *config.SourceStore, client *bpz5.Client) *Handler {
+	h := New(sources)
+	h.BPZ5 = client
+	return h
 }
 
 func (h *Handler) GetSources(c *gin.Context) {
@@ -44,6 +54,33 @@ func (h *Handler) GetVodList(c *gin.Context) {
 		page = 1
 	}
 	typeID := config.ParseTypeID(c.Query("t"))
+	cat := strings.TrimSpace(c.Query("cat"))
+
+	if cat != "" {
+		data, err := unified.FetchListBySlug(h.Sources, cat, page)
+		if err == unified.ErrNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			return
+		}
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"cat":            data.Cat,
+			"label":          data.Label,
+			"sourcesUsed":    data.SourcesUsed,
+			"sourcesFailed":  data.SourcesFailed,
+			"code":           data.Code,
+			"msg":            data.Msg,
+			"page":           data.Page,
+			"pagecount":      data.PageCount,
+			"limit":          data.Limit,
+			"total":          data.Total,
+			"list":           data.List,
+		})
+		return
+	}
 
 	if sourceIDParam != "" {
 		id, err := strconv.Atoi(sourceIDParam)
@@ -92,6 +129,10 @@ func (h *Handler) GetVodList(c *gin.Context) {
 		msg = "ok"
 	}
 	c.JSON(http.StatusOK, emptyListResponse(fallback, typeID, page, msg))
+}
+
+func (h *Handler) GetUnifiedCategories(c *gin.Context) {
+	c.JSON(http.StatusOK, unified.Public())
 }
 
 func listResponse(src *model.Source, typeID *int, data *category.ListResult) gin.H {
@@ -150,10 +191,18 @@ func (h *Handler) GetVodDetail(c *gin.Context) {
 		return
 	}
 
+	playSources := merged.PlaySources
+	if h.BPZ5 != nil && h.BPZ5.Enabled() {
+		if official := h.BPZ5.EnrichOfficialPlaySources(merged.Vod, merged.PlaySources); len(official) > 0 {
+			playSources = append(append([]model.PlaySource{}, official...), merged.PlaySources...)
+			parser.SortPlaySources(playSources)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"source":      gin.H{"id": src.ID, "name": src.Name},
 		"vod":         merged.Vod,
-		"playSources": merged.PlaySources,
+		"playSources": playSources,
 		"variants":    merged.Variants,
 		"merged":      true,
 	})
@@ -202,7 +251,7 @@ func (h *Handler) SearchVod(c *gin.Context) {
 		}
 	}
 
-	list := merge.MergeVodItems(mergeable, h.Sources)
+	list := merge.SortMergedByUpdatedDesc(merge.MergeVodItems(mergeable, h.Sources))
 	c.JSON(http.StatusOK, gin.H{
 		"keyword": keyword,
 		"merged":  true,
@@ -289,4 +338,68 @@ func (h *Handler) ParsePlay(c *gin.Context) {
 
 	result := parser.ParsePlayAddress(*src, playURL)
 	c.JSON(http.StatusOK, result)
+}
+
+func (h *Handler) ResolvePlay(c *gin.Context) {
+	var req model.PlayResolveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid json body"})
+		return
+	}
+
+	mode := strings.TrimSpace(req.Mode)
+	if mode == "" {
+		mode = "direct"
+	}
+	echoPlayFrom := strings.TrimSpace(req.PlayFrom)
+
+	switch mode {
+	case "direct":
+		if req.URL == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "url is required for direct mode"})
+			return
+		}
+		jx := true
+		if req.Jx != nil {
+			jx = *req.Jx
+		}
+		if !jx || req.SourceID == 0 {
+			c.JSON(http.StatusOK, model.ParseResult{URL: req.URL, Parsed: false, Mode: "direct", PlayFrom: echoPlayFrom})
+			return
+		}
+		src := h.Sources.ByID(req.SourceID)
+		if src == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Source not found"})
+			return
+		}
+		result := parser.ParsePlayAddress(*src, req.URL)
+		result.PlayFrom = echoPlayFrom
+		if result.Mode == "" {
+			result.Mode = "direct"
+		}
+		c.JSON(http.StatusOK, result)
+	case "ticket":
+		ticket := bpz5.NormalizeTicket(req.Ticket, req.URL)
+		if ticket == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ticket is required for ticket mode"})
+			return
+		}
+		if h.BPZ5 == nil || !h.BPZ5.Enabled() {
+			c.JSON(http.StatusNotImplemented, gin.H{"error": "ticket_not_enabled"})
+			return
+		}
+		resolved, err := h.BPZ5.ResolveLine(ticket)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, model.ParseResult{
+			URL:      resolved.URL,
+			Parsed:   true,
+			Mode:     "ticket",
+			PlayFrom: echoPlayFrom,
+		})
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported_mode"})
+	}
 }

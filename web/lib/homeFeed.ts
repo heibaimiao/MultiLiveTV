@@ -1,4 +1,4 @@
-import { buildVodMergeKey, mergeVodItems } from "./vodMerge";
+import { buildVodMergeKey, mergeVodItems, sortMergedByUpdatedDesc } from "./vodMerge";
 import type { MergeableVodItem, MergedVodItem } from "./types";
 
 export const HOME_FETCH_SIZE = 50;
@@ -52,10 +52,12 @@ export function mergeIntoPool(
   const fallbackSourceName =
     incoming[0]?.sourceName ?? pool[0]?.variants[0]?.sourceName ?? "";
 
-  const merged = mergeVodItems([
-    ...flattenForMerge(pool, fallbackSourceId, fallbackSourceName),
-    ...incoming,
-  ]);
+  const merged = sortMergedByUpdatedDesc(
+    mergeVodItems([
+      ...flattenForMerge(pool, fallbackSourceId, fallbackSourceName),
+      ...incoming,
+    ])
+  );
 
   if (isFirstBatch) {
     return merged.slice(0, HOME_FETCH_SIZE);
@@ -66,7 +68,10 @@ export function mergeIntoPool(
     (item) => !existingKeys.has(buildVodMergeKey(item))
   );
 
-  return [...pool, ...newcomers.slice(0, HOME_FETCH_SIZE)];
+  return sortMergedByUpdatedDesc([
+    ...pool,
+    ...newcomers.slice(0, HOME_FETCH_SIZE),
+  ]);
 }
 
 export function getVisibleItems(

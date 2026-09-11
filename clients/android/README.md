@@ -1,33 +1,38 @@
-# MultiLiveTV Android Client (TV / Pad)
+# MultiLiveTV Android Pad
 
-Jetpack Compose MVP，调用 Go API。
+按 Apple iPad 客户端行为重建的平板 App：内嵌 MacCMS 多源聚合，**不依赖 Go 后端**。
 
-## 功能
+## 功能（对标 iPad）
 
-- 搜索（跨源合并）
-- 详情弹窗展示线路与集数
-- Retrofit + Kotlin Serialization
+- 底部 / 侧边 Tab：首页、直播、搜索、下载
+- 首页：统一分类 Chip + 海报网格，首屏 30、滚动再揭 20、分页 50
+- 列表排序：**上映年份优先**，同年再按更新时间；分类切换缓存 + 后台刷新；下拉刷新
+- 多源合并：同名同年折叠（空年份并入），伦理片客户端过滤
+- 海报角标显示备注（正片 / HD / 更新至…）
+- 详情：线路按权重排序，点选集全屏播放
+- 播放：jx 解析 + 直链探测 + 最多 4 路故障切换（Media3 ExoPlayer）
+- 搜索：多源并行合并
+- 直播：`lives.json` → M3U / TXT 列表，HLS 播放
 
-## 集成到 Android Studio
+## 构建
 
-1. 新建 **Empty Activity** 项目，包名 `com.heibaimiao.multilivetv`
-2. 将 `clients/android/app/src/main/java/com/heibaimiao/multilivetv/` 复制到工程
-3. `build.gradle.kts` 添加依赖：
+需要 JDK 17 与 Android SDK（`local.properties` 里 `sdk.dir=`）。
 
-```kotlin
-implementation("com.squareup.retrofit2:retrofit:2.11.0")
-implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
-implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-implementation("io.coil-kt:coil-compose:2.7.0")
+```bash
+cd clients/android
+./gradlew :core:test
+./gradlew :app:assembleDebug
 ```
 
-4. 插件：`kotlin("plugin.serialization")`
+用 Android Studio 打开 `clients/android`，平板模拟器或真机安装 `:app`。
 
-## API 地址
+## 改源
 
-- 模拟器访问本机：`http://10.0.2.2:8080/api/v1/`
-- 真机：改为开发机局域网 IP
+与 Apple 同源 JSON，在 `core/src/main/resources/`：
 
-## Android TV
+- `source-registry.json`
+- `unified-categories.json`
+- `play-line-weights.json`
+- `lives.json`
 
-在 `AndroidManifest.xml` 添加 `LEANBACK_LAUNCHER` category 与 TV banner 即可上架 TV 启动器。
+改完后与 `clients/apple/MultiLiveTV/Resources/` 保持同步。

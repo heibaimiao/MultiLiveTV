@@ -1,88 +1,71 @@
 import HomePageClient from "@/components/HomePageClient";
+import { bpz5Configured, fetchHomeFeed } from "@/lib/bpz5";
+import { getEnabledSources } from "@/lib/sources";
 import {
-  fetchVodListByType,
-  parseTypeId,
-  parseLegacyCategory,
-} from "@/lib/categories";
-import { getCachedCategoryTree } from "@/lib/categoryCache";
+  DEFAULT_HOME_SLUG,
+  fetchUnifiedList,
+  getPublicUnifiedCatalog,
+  resolveHomeSlug,
+} from "@/lib/unifiedCategories";
 import { mergeIntoPool } from "@/lib/homeFeed";
-import type { CategoryTree } from "@/lib/categoryTree";
-import type { MergedVodItem } from "@/lib/types";
-import { getEnabledSources, getDefaultSource } from "@/lib/sources";
-import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 interface HomePageProps {
-  searchParams: Promise<{ t?: string; category?: string }>;
+  searchParams: Promise<{
+    cat?: string;
+    t?: string;
+    category?: string;
+  }>;
 }
-
-const EMPTY_TREE: CategoryTree = {
-  all: [],
-  primary: [],
-  childrenByParent: {},
-};
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
+  const slug = resolveHomeSlug(params.cat ?? params.category ?? null);
+  void params.t;
 
-  if (params.category && !params.t) {
-    const legacyId = parseLegacyCategory(params.category);
-    redirect(legacyId ? `/?t=${legacyId}` : "/");
-  }
-
-  const typeId = parseTypeId(params.t);
+  const catalog = getPublicUnifiedCatalog();
   const sources = getEnabledSources();
-  const defaultSource = getDefaultSource();
+  const feedConfigured = bpz5Configured();
 
-  let initialPool: MergedVodItem[] = [];
-  let pageCount = 1;
-  let categoryTree: CategoryTree = EMPTY_TREE;
-  let activeSource = defaultSource;
+  let pool: Awaited<ReturnType<typeof fetchUnifiedList>>["list"] = [];
+  let pagecount = 1;
+  let sourcesUsed: number[] = [];
+  let feedSections: Awaited<ReturnType<typeof fetchHomeFeed>>["sections"] = [];
+  let initialSlug: string | null = slug;
 
-  for (const source of sources) {
-    try {
-      const tree = await getCachedCategoryTree(source.id);
-      const data = await fetchVodListByType(source, typeId, 1);
-      if (tree.primary.length) {
-        categoryTree = tree;
-      }
-      if (data.list?.length) {
-        initialPool = mergeIntoPool(
-          [],
-          data.list.map((item) => ({
-            ...item,
-            sourceId: source.id,
-            sourceName: source.name,
-          })),
-          true
-        );
-        pageCount = data.pagecount ?? 1;
-        activeSource = source;
-        break;
-      }
-    } catch {
-      continue;
+  if (feedConfigured && slug === null) {
+    const feed = await fetchHomeFeed();
+    feedSections = feed.sections;
+    initialSlug = null;
+    if (!feed.enabled) {
+      // keep recommend tab selected; client shows empty/error until retry
+      pool = [];
     }
-  }
-
-  if (!categoryTree.primary.length) {
+  } else {
+    const listSlug = slug ?? DEFAULT_HOME_SLUG;
+    initialSlug = listSlug;
     try {
-      categoryTree = await getCachedCategoryTree(activeSource.id);
+      const result = await fetchUnifiedList(listSlug, 1);
+      pool = mergeIntoPool([], result.list, true);
+      pagecount = result.pagecount;
+      sourcesUsed = result.sourcesUsed;
     } catch {
-      categoryTree = EMPTY_TREE;
+      pool = [];
     }
   }
 
   return (
     <HomePageClient
-      initialTypeId={typeId}
-      initialPool={initialPool}
-      initialPageCount={pageCount}
-      categoryTree={categoryTree}
-      sourceId={activeSource.id}
-      sourceName={activeSource.name}
+      initialSlug={initialSlug}
+      initialPool={pool}
+      initialPageCount={pagecount}
+      primary={catalog.primary}
+      childrenByParent={catalog.childrenByParent}
       sourceCount={sources.length}
+      sourcesUsed={sourcesUsed}
+      feedEnabled={feedConfigured}
+      initialFeedSections={feedSections}
     />
   );
 }

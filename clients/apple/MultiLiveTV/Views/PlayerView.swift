@@ -2,15 +2,28 @@ import AVKit
 import SwiftUI
 
 struct PlaybackRequest: Identifiable {
-    let sourceId: Int
-    let episode: Episode
+    let candidates: [PlaybackCandidate]
 
-    var id: String { "\(sourceId)-\(episode.id)" }
+    var id: String {
+        candidates.map { "\($0.sourceId)-\($0.episode.id)" }.joined(separator: "|")
+    }
+
+    init(candidates: [PlaybackCandidate]) {
+        self.candidates = candidates.isEmpty
+            ? [PlaybackCandidate(sourceId: 0, episode: Episode(name: "", url: ""))]
+            : candidates
+    }
+
+    init(sourceId: Int, episode: Episode) {
+        self.init(candidates: [PlaybackCandidate(sourceId: sourceId, episode: episode)])
+    }
+
+    var sourceId: Int { candidates[0].sourceId }
+    var episode: Episode { candidates[0].episode }
 }
 
 struct PlayerView: View {
-    let sourceId: Int
-    let episode: Episode
+    let candidates: [PlaybackCandidate]
 
     @EnvironmentObject private var vod: VodService
     @EnvironmentObject private var downloads: DownloadManager
@@ -24,6 +37,23 @@ struct PlayerView: View {
     @State private var failedURL: String?
     @State private var playingLocal = false
     @State private var didBecomeReady = false
+    @State private var candidateIndex = 0
+    @State private var statusMessage = "解析播放地址…"
+
+    init(candidates: [PlaybackCandidate]) {
+        self.candidates = candidates
+    }
+
+    init(sourceId: Int, episode: Episode) {
+        self.candidates = [PlaybackCandidate(sourceId: sourceId, episode: episode)]
+    }
+
+    private var activeCandidate: PlaybackCandidate {
+        let index = min(max(candidateIndex, 0), max(candidates.count - 1, 0))
+        return candidates.isEmpty
+            ? PlaybackCandidate(sourceId: 0, episode: Episode(name: "", url: ""))
+            : candidates[index]
+    }
 
     var body: some View {
         ZStack {
@@ -41,13 +71,19 @@ struct PlayerView: View {
                 #endif
             } else if let errorMessage {
                 AppErrorView(message: errorMessage) {
-                    Task { await startPlayback() }
+                    Task {
+                        candidateIndex = 0
+                        await startPlayback()
+                    }
                 }
             } else {
-                AppLoadingView(message: playingLocal ? "正在打开本地影片…" : "解析播放地址…")
+                AppLoadingView(message: playingLocal ? "正在打开本地影片…" : statusMessage)
             }
         }
-        .task(id: episode.id) { await startPlayback() }
+        .task(id: candidates.map(\.episode.id).joined(separator: "|")) {
+            candidateIndex = 0
+            await startPlayback()
+        }
         .onDisappear {
             playbackGeneration += 1
             teardownPlayer()
@@ -68,6 +104,10 @@ struct PlayerView: View {
         failedURL = nil
         teardownPlayer()
 
+        let candidate = activeCandidate
+        let sourceId = candidate.sourceId
+        let episode = candidate.episode
+
         if !playingLocal, let localURL = downloads.playbackURL(sourceId: sourceId, episodeURL: episode.url) {
             playingLocal = true
             attachPlayer(
@@ -79,9 +119,12 @@ struct PlayerView: View {
         }
 
         playingLocal = false
+        statusMessage = candidates.count > 1
+            ? "解析播放地址…（线路 \(candidateIndex + 1)/\(candidates.count)）"
+            : "解析播放地址…"
 
         guard let source = vod.source(for: sourceId) else {
-            errorMessage = "资源站不存在"
+            await failOverOrStop(resolvedURL: episode.url, underlying: "资源站不存在", generation: generation)
             return
         }
 
@@ -104,16 +147,27 @@ struct PlayerView: View {
         }
 
         guard PlaybackSupport.isDirectMediaURL(resolvedURLString) else {
-            failedURL = resolvedURLString
-            errorMessage = PlaybackSupport.userFacingError(for: resolvedURLString, underlying: nil)
+            await failOverOrStop(resolvedURL: resolvedURLString, underlying: nil, generation: generation)
             return
         }
 
         guard let playbackURL = RemoteMediaURL.parse(resolvedURLString) else {
-            errorMessage = "无效播放地址"
+            await failOverOrStop(resolvedURL: resolvedURLString, underlying: "无效播放地址", generation: generation)
             return
         }
 
+        statusMessage = "检测线路…"
+        let headers = PlaybackSupport.httpHeaders(for: source, playbackURL: playbackURL)
+        let playable = await VodMediaProbe.isLikelyPlayable(url: playbackURL, headers: headers)
+        guard RequestGeneration.shouldApply(eventGeneration: generation, currentGeneration: playbackGeneration) else {
+            return
+        }
+        guard playable else {
+            await failOverOrStop(resolvedURL: resolvedURLString, underlying: "线路不可用", generation: generation)
+            return
+        }
+
+        statusMessage = "起播中…"
         attachPlayer(
             item: PlaybackSupport.makePlayerItem(source: source, playbackURL: playbackURL),
             resolvedURL: resolvedURLString,
@@ -135,7 +189,11 @@ struct PlayerView: View {
                 guard generation == playbackGeneration else { return }
                 switch item.status {
                 case .failed:
-                    await handlePlaybackFailure(resolvedURL: resolvedURL, underlying: item.error?.localizedDescription)
+                    await failOverOrStop(
+                        resolvedURL: resolvedURL,
+                        underlying: item.error?.localizedDescription,
+                        generation: generation
+                    )
                 case .readyToPlay:
                     didBecomeReady = true
                     startTimeoutTask?.cancel()
@@ -154,7 +212,7 @@ struct PlayerView: View {
                 .localizedDescription
             Task { @MainActor in
                 guard generation == playbackGeneration else { return }
-                await handlePlaybackFailure(resolvedURL: resolvedURL, underlying: underlying)
+                await failOverOrStop(resolvedURL: resolvedURL, underlying: underlying, generation: generation)
             }
         }
         startTimeoutTask = Task { @MainActor in
@@ -165,17 +223,20 @@ struct PlayerView: View {
                 elapsed: HLSPlaylistProbe.startTimeout,
                 isReadyToPlay: didBecomeReady
             ) {
-                await handlePlaybackFailure(resolvedURL: resolvedURL, underlying: "起播超时")
+                await failOverOrStop(resolvedURL: resolvedURL, underlying: "起播超时", generation: generation)
             }
         }
 
         avPlayer.play()
     }
 
-    private func handlePlaybackFailure(resolvedURL: String, underlying: String?) async {
+    private func failOverOrStop(resolvedURL: String, underlying: String?, generation: Int) async {
+        guard RequestGeneration.shouldApply(eventGeneration: generation, currentGeneration: playbackGeneration) else {
+            return
+        }
         if playingLocal {
             if let record = downloads.records.first(where: {
-                $0.sourceId == sourceId && $0.originalURL == episode.url
+                $0.sourceId == activeCandidate.sourceId && $0.originalURL == activeCandidate.episode.url
             }) {
                 downloads.markEvicted(id: record.id)
             }
@@ -183,6 +244,16 @@ struct PlayerView: View {
             await startPlayback()
             return
         }
+
+        if let next = VodPlaybackFailover.nextIndex(after: candidateIndex, count: candidates.count) {
+            candidateIndex = next
+            statusMessage = "线路失败，切换备用线…"
+            teardownPlayer()
+            await startPlayback()
+            return
+        }
+
+        failedURL = resolvedURL
         errorMessage = PlaybackSupport.userFacingError(for: resolvedURL, underlying: underlying)
         teardownPlayer()
     }

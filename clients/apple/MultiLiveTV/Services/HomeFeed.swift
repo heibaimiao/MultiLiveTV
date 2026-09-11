@@ -34,7 +34,68 @@ enum HomeFeed {
         guard let match = trimmed.range(of: #"\d{4}"#, options: .regularExpression) else {
             return ""
         }
+        let digits = String(trimmed[match])
+        guard let value = Int(digits), isDisplayableReleaseYear(value) else {
+            return ""
+        }
+        return digits
+    }
+
+    /// Years used for ranking. Future placeholders (e.g. 2030) map to the current
+    /// calendar year so recently-added titles still surface with this year's films.
+    static func sortYearValue(_ year: String?, vodTime: Int = 0, now: Date = Date()) -> Int {
+        let current = Calendar(identifier: .gregorian).component(.year, from: now)
+        if let digits = rawYearDigits(year), let value = Int(digits) {
+            if value >= 1900 && value <= current + 1 {
+                return value
+            }
+            if value > current + 1 {
+                return current
+            }
+        }
+        return yearFromVodTime(vodTime, fallback: 0)
+    }
+
+    static func yearValue(_ year: String?) -> Int {
+        Int(normalizeYear(year)) ?? 0
+    }
+
+    /// MacCMS often fills placeholder years (e.g. 2030). Hide those on the card.
+    static func isDisplayableReleaseYear(_ year: Int, now: Date = Date()) -> Bool {
+        let current = Calendar(identifier: .gregorian).component(.year, from: now)
+        return year >= 1900 && year <= current + 1
+    }
+
+    private static func rawYearDigits(_ year: String?) -> String? {
+        guard let year else { return nil }
+        let trimmed = year.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let match = trimmed.range(of: #"\d{4}"#, options: .regularExpression) else {
+            return nil
+        }
         return String(trimmed[match])
+    }
+
+    private static func yearFromVodTime(_ vodTime: Int, fallback: Int) -> Int {
+        guard vodTime > 0 else { return fallback }
+        let date = Date(timeIntervalSince1970: TimeInterval(vodTime))
+        return Calendar(identifier: .gregorian).component(.year, from: date)
+    }
+
+    /// Release year first (placeholders treated as this year), then update time.
+    static func sortByUpdatedDesc(_ items: [VodItem]) -> [VodItem] {
+        items.enumerated()
+            .sorted { lhs, rhs in
+                let ly = sortYearValue(lhs.element.vodYear, vodTime: lhs.element.vodTime)
+                let ry = sortYearValue(rhs.element.vodYear, vodTime: rhs.element.vodTime)
+                if ly != ry {
+                    return ly > ry
+                }
+                if lhs.element.vodTime != rhs.element.vodTime {
+                    return lhs.element.vodTime > rhs.element.vodTime
+                }
+                return lhs.offset < rhs.offset
+            }
+            .map(\.element)
     }
 
     static func mergeKey(for item: VodItem) -> String {
@@ -46,6 +107,27 @@ enum HomeFeed {
         let year = normalizeYear(year)
         if year.isEmpty { return normalized }
         return "\(normalized)|\(year)"
+    }
+
+    /// Prefer an existing title|year key when the new row has no year (or vice versa).
+    static func resolvePoolMergeKey(for item: VodItem, existingKeys: [String]) -> String {
+        let title = normalizeTitle(item.vodName)
+        guard !title.isEmpty else { return mergeKey(for: item) }
+        let year = normalizeYear(item.vodYear)
+        let bare = title
+        let yeared = year.isEmpty ? nil : "\(title)|\(year)"
+        let titleKeys = existingKeys.filter { $0 == bare || $0.hasPrefix("\(title)|") }
+
+        if let yeared {
+            if titleKeys.contains(yeared) { return yeared }
+            if titleKeys.contains(bare) { return yeared }
+            return yeared
+        }
+
+        let yearedKeys = titleKeys.filter { $0.contains("|") }
+        if yearedKeys.count == 1 { return yearedKeys[0] }
+        if titleKeys.contains(bare) { return bare }
+        return bare
     }
 
     static func initialDisplayCount(poolLength: Int) -> Int {
@@ -65,15 +147,15 @@ enum HomeFeed {
     }
 
     static func hotItems(_ pool: [VodItem]) -> [VodItem] {
-        Array(pool.prefix(hotSize))
+        Array(sortedByUpdatedDesc(pool).prefix(hotSize))
     }
 
     static func recentItems(_ pool: [VodItem]) -> [VodItem] {
-        Array(sortedRest(pool).prefix(recentSize))
+        Array(sortedByUpdatedDesc(pool).dropFirst(hotSize).prefix(recentSize))
     }
 
     static func allItems(_ pool: [VodItem]) -> [VodItem] {
-        Array(sortedRest(pool).dropFirst(recentSize))
+        Array(sortedByUpdatedDesc(pool).dropFirst(hotSize + recentSize))
     }
 
     static func allRows(items: [VodItem], displayCount: Int) -> [[VodItem]] {
@@ -123,16 +205,8 @@ enum HomeFeed {
         return .idle
     }
 
-    private static func sortedRest(_ pool: [VodItem]) -> [VodItem] {
-        Array(pool.dropFirst(hotSize))
-            .enumerated()
-            .sorted { lhs, rhs in
-                if lhs.element.vodTime != rhs.element.vodTime {
-                    return lhs.element.vodTime > rhs.element.vodTime
-                }
-                return lhs.offset < rhs.offset
-            }
-            .map(\.element)
+    private static func sortedByUpdatedDesc(_ pool: [VodItem]) -> [VodItem] {
+        sortByUpdatedDesc(pool)
     }
 
     static func contentPhase(isLoading: Bool, errorMessage: String?, poolIsEmpty: Bool) -> ContentPhase {
@@ -196,7 +270,18 @@ enum HomeFeed {
 
         func consume(_ items: [VodItem], overwrite: Bool) {
             for item in items {
-                let key = mergeKey(for: item)
+                let key = resolvePoolMergeKey(for: item, existingKeys: orderedKeys)
+                let bare = normalizeTitle(item.vodName)
+                if key != bare, map[bare] != nil {
+                    if map[key] == nil {
+                        map[key] = map[bare]
+                        if !orderedKeys.contains(key) {
+                            orderedKeys.append(key)
+                        }
+                    }
+                    map[bare] = nil
+                    orderedKeys.removeAll { $0 == bare }
+                }
                 if map[key] == nil {
                     orderedKeys.append(key)
                     map[key] = item
@@ -209,14 +294,26 @@ enum HomeFeed {
         if isFirstBatch {
             consume(pool, overwrite: true)
             consume(incoming, overwrite: true)
-            return orderedKeys.prefix(fetchSize).compactMap { map[$0] }
+            let merged = orderedKeys.compactMap { map[$0] }
+            return Array(sortByUpdatedDesc(merged).prefix(fetchSize))
         }
 
         consume(pool, overwrite: false)
         consume(incoming, overwrite: false)
-        let existing = Set(pool.map { mergeKey(for: $0) })
-        let newcomers = orderedKeys.filter { !existing.contains($0) }
-        return pool + newcomers.prefix(fetchSize).compactMap { map[$0] }
+        var seen = Set<String>()
+        var combined: [VodItem] = []
+        for item in pool {
+            let key = resolvePoolMergeKey(for: item, existingKeys: orderedKeys)
+            guard seen.insert(key).inserted else { continue }
+            combined.append(map[key] ?? item)
+        }
+        for key in orderedKeys where !seen.contains(key) {
+            guard let item = map[key] else { continue }
+            guard seen.insert(key).inserted else { continue }
+            combined.append(item)
+            if combined.count >= pool.count + fetchSize { break }
+        }
+        return sortByUpdatedDesc(combined)
     }
 }
 
@@ -230,15 +327,15 @@ struct HomeFeedSnapshot: Equatable {
 struct HomeFeedCache {
     private var storage: [String: HomeFeedSnapshot] = [:]
 
-    static func key(for typeId: Int?) -> String {
-        typeId.map(String.init) ?? "all"
+    static func key(for slug: String?) -> String {
+        slug ?? "all"
     }
 
-    mutating func save(_ snapshot: HomeFeedSnapshot, typeId: Int?) {
-        storage[Self.key(for: typeId)] = snapshot
+    mutating func save(_ snapshot: HomeFeedSnapshot, slug: String?) {
+        storage[Self.key(for: slug)] = snapshot
     }
 
-    func snapshot(for typeId: Int?) -> HomeFeedSnapshot? {
-        storage[Self.key(for: typeId)]
+    func snapshot(for slug: String?) -> HomeFeedSnapshot? {
+        storage[Self.key(for: slug)]
     }
 }

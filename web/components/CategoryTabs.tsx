@@ -1,14 +1,19 @@
 "use client";
 
-import type { CategoryDef } from "@/lib/categoryTree";
+export interface SlugCategory {
+  slug: string;
+  label: string;
+}
 
 interface CategoryTabsProps {
-  primary: CategoryDef[];
-  secondary: CategoryDef[];
-  activeTypeId: number | null;
-  activeParentId: number | null;
+  primary: SlugCategory[];
+  secondary: SlugCategory[];
+  activeSlug: string | null;
+  activeParentSlug: string | null;
   pending?: boolean;
-  onSelect: (typeId: number | null) => void;
+  /** When true, null slug means 推荐 feed; otherwise 全部 */
+  feedMode?: boolean;
+  onSelect: (slug: string | null) => void;
 }
 
 function TabButton({
@@ -45,33 +50,34 @@ function TabButton({
 export default function CategoryTabs({
   primary,
   secondary,
-  activeTypeId,
-  activeParentId,
+  activeSlug,
+  activeParentSlug,
   pending = false,
+  feedMode = false,
   onSelect,
 }: CategoryTabsProps) {
-  const showSecondary = secondary.length > 0 && activeParentId !== null;
+  const showSecondary = secondary.length > 0 && activeParentSlug !== null;
 
   return (
     <div className="space-y-3">
       <div className="-mx-4 overflow-x-auto px-4 pb-1">
         <div className="flex w-max min-w-full gap-2">
           <TabButton
-            label="全部"
-            active={activeTypeId === null}
+            label={feedMode ? "推荐" : "全部"}
+            active={activeSlug === null}
             disabled={pending}
             onClick={() => onSelect(null)}
           />
           {primary.map((category) => (
             <TabButton
-              key={category.typeId}
+              key={category.slug}
               label={category.label}
               active={
-                activeTypeId === category.typeId ||
-                activeParentId === category.typeId
+                activeSlug === category.slug ||
+                activeParentSlug === category.slug
               }
               disabled={pending}
-              onClick={() => onSelect(category.typeId)}
+              onClick={() => onSelect(category.slug)}
             />
           ))}
         </div>
@@ -82,19 +88,19 @@ export default function CategoryTabs({
           <div className="flex w-max min-w-full gap-2">
             <TabButton
               label="全部"
-              active={activeTypeId === activeParentId}
+              active={activeSlug === activeParentSlug}
               disabled={pending}
               size="sm"
-              onClick={() => onSelect(activeParentId)}
+              onClick={() => onSelect(activeParentSlug)}
             />
             {secondary.map((category) => (
               <TabButton
-                key={category.typeId}
+                key={category.slug}
                 label={category.label}
-                active={activeTypeId === category.typeId}
+                active={activeSlug === category.slug}
                 disabled={pending}
                 size="sm"
-                onClick={() => onSelect(category.typeId)}
+                onClick={() => onSelect(category.slug)}
               />
             ))}
           </div>

@@ -1,5 +1,6 @@
 import type { Source, PlaySource, Episode, ParseResult, VodItem } from "./types";
 import { formatPlaySourceName } from "./playSourceNames";
+import { annotatePlaySource, sortPlaySources } from "./playLineWeights";
 
 const DEFAULT_HEADERS = {
   "User-Agent":
@@ -41,11 +42,17 @@ export function parsePlayUrl(vodPlayFrom: string, vodPlayUrl: string): PlaySourc
         };
       });
 
-    return {
-      name: formatPlaySourceName(name, index),
-      key: name.trim() || `line-${index + 1}`,
-      episodes,
-    };
+    const key = name.trim() || `line-${index + 1}`;
+    return annotatePlaySource(
+      {
+        name: formatPlaySourceName(name, index),
+        key,
+        episodes,
+        mode: "direct",
+        playFrom: key,
+      },
+      key
+    );
   });
 }
 
@@ -73,12 +80,15 @@ export function mergePlaySourcesFromVods(
     for (const line of parsed) {
       const key = `${source.id}:${line.name}`;
       const name = displayPlaySourceName(source.name, line.name);
-      const incoming: PlaySource = {
-        ...line,
-        key,
-        name,
-        sourceId: source.id,
-      };
+      const incoming = annotatePlaySource(
+        {
+          ...line,
+          key,
+          name,
+          sourceId: source.id,
+        },
+        line.playFrom ?? line.key
+      );
       const existing = merged.get(key);
       if (!existing) {
         merged.set(key, incoming);
@@ -96,7 +106,7 @@ export function mergePlaySourcesFromVods(
     }
   }
 
-  return Array.from(merged.values());
+  return sortPlaySources(Array.from(merged.values()));
 }
 
 export async function parsePlayAddress(
@@ -104,7 +114,7 @@ export async function parsePlayAddress(
   playUrl: string
 ): Promise<ParseResult> {
   if (!source.jx_url) {
-    return { url: playUrl, parsed: false };
+    return { url: playUrl, parsed: false, mode: "direct" };
   }
 
   const parseEndpoint = `${source.jx_url}${encodeURIComponent(playUrl)}`;
@@ -117,30 +127,30 @@ export async function parsePlayAddress(
     });
 
     if (!response.ok) {
-      return { url: playUrl, parsed: false };
+      return { url: playUrl, parsed: false, mode: "direct" };
     }
 
     const contentType = response.headers.get("content-type") ?? "";
     if (contentType.includes("application/json")) {
       const data = await response.json();
       if (typeof data === "string" && data.startsWith("http")) {
-        return { url: data.trim(), parsed: true };
+        return { url: data.trim(), parsed: true, mode: "direct" };
       }
       if (data?.url && typeof data.url === "string") {
-        return { url: data.url, parsed: true };
+        return { url: data.url, parsed: true, mode: "direct" };
       }
       if (data?.data?.url && typeof data.data.url === "string") {
-        return { url: data.data.url, parsed: true };
+        return { url: data.data.url, parsed: true, mode: "direct" };
       }
     } else {
       const text = (await response.text()).trim();
       if (text.startsWith("http")) {
-        return { url: text, parsed: true };
+        return { url: text, parsed: true, mode: "direct" };
       }
     }
   } catch {
     // fall through to raw url
   }
 
-  return { url: playUrl, parsed: false };
+  return { url: playUrl, parsed: false, mode: "direct" };
 }

@@ -13,6 +13,9 @@ import (
 	"github.com/heibaimiao/multilivetv/api-go/internal/repository"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/admin"
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/auth"
+	"github.com/heibaimiao/multilivetv/api-go/internal/service/bpz5"
+	"github.com/heibaimiao/multilivetv/api-go/internal/service/parser"
+	"github.com/heibaimiao/multilivetv/api-go/internal/service/unified"
 )
 
 func main() {
@@ -21,6 +24,12 @@ func main() {
 	sources, err := config.NewSourceStore(cfg.SourcesPath)
 	if err != nil {
 		log.Fatalf("load sources: %v", err)
+	}
+	if err := parser.LoadWeightsFile(cfg.WeightsPath); err != nil {
+		log.Printf("play-line-weights: using defaults (%v)", err)
+	}
+	if err := unified.LoadFile(cfg.CategoriesPath); err != nil {
+		log.Printf("unified-categories: unavailable (%v)", err)
 	}
 
 	db, err := repository.Connect(cfg.DatabaseURL)
@@ -34,7 +43,10 @@ func main() {
 	r.Use(middleware.CORSWithOrigin(cfg.AdminCORSOrigin))
 	r.Use(middleware.RequestLogger(requestLog))
 
-	h := handler.New(sources)
+	h := handler.NewWithBPZ5(sources, bpz5.New(cfg.BPZ5BaseURL, cfg.BPZ5HMACSecret))
+	if cfg.BPZ5HMACSecret == "" {
+		log.Println("BPZ5_HMAC_SECRET not set — play/resolve ticket mode disabled")
+	}
 
 	v1 := r.Group("/api/v1")
 	{
@@ -43,8 +55,10 @@ func main() {
 		v1.GET("/vod/detail", h.GetVodDetail)
 		v1.GET("/vod/search", h.SearchVod)
 		v1.GET("/vod/types", h.GetVodTypes)
+		v1.GET("/vod/categories", h.GetUnifiedCategories)
 		v1.GET("/vod/pic", h.GetVodPic)
 		v1.GET("/play/parse", h.ParsePlay)
+		v1.POST("/play/resolve", h.ResolvePlay)
 
 		if db != nil {
 			authSvc := auth.NewService(db, cfg.JWTSecret)

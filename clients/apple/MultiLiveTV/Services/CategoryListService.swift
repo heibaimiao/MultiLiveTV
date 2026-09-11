@@ -130,18 +130,20 @@ enum CategoryListService {
         source: Source,
         typeId: Int?,
         page: Int,
-        knownChildTypeIds: [Int] = []
+        knownChildTypeIds: [Int] = [],
+        hours: Int? = nil
     ) async throws -> ListResult {
         if typeId == nil {
-            let data = try await MacCMSClient.fetchList(source: source, page: page, typeId: nil)
+            let data = try await SourceCollector.list(source: source, page: page, typeId: nil, hours: hours)
+            let items = data.list.map { $0.toVodItemRaw() }
             return ListResult(
-                code: data.code,
-                msg: data.msg,
+                code: 1,
+                msg: "ok",
                 page: data.page,
                 pageCount: data.pageCount,
-                limit: data.limit,
+                limit: String(items.count),
                 total: data.total,
-                list: mergeListItems(store: store, source: source, items: data.list)
+                list: mergeListItems(store: store, source: source, items: items)
             )
         }
 
@@ -150,34 +152,36 @@ enum CategoryListService {
                 store: store,
                 source: source,
                 page: page,
-                childIds: knownChildTypeIds
+                childIds: knownChildTypeIds,
+                hours: hours
             )
         }
 
-        let direct = try await MacCMSClient.fetchList(source: source, page: page, typeId: typeId)
-        if !direct.list.isEmpty || direct.total > 0 {
+        let direct = try await SourceCollector.list(source: source, page: page, typeId: typeId, hours: hours)
+        let directItems = direct.list.map { $0.toVodItemRaw() }
+        if !directItems.isEmpty || direct.total > 0 {
             return ListResult(
-                code: direct.code,
-                msg: direct.msg,
+                code: 1,
+                msg: "ok",
                 page: direct.page,
                 pageCount: direct.pageCount,
-                limit: direct.limit,
+                limit: String(directItems.count),
                 total: direct.total,
-                list: mergeListItems(store: store, source: source, items: direct.list)
+                list: mergeListItems(store: store, source: source, items: directItems)
             )
         }
 
-        let types = try await MacCMSClient.fetchTypes(source: source)
+        let types = try await SourceCollector.fetchTypes(source: source)
         let childIds = MacCMSCategoryService.getChildTypeIds(types: types, parentId: typeId!)
         if childIds.isEmpty {
             return ListResult(
-                code: direct.code,
-                msg: direct.msg,
+                code: 1,
+                msg: "ok",
                 page: direct.page,
                 pageCount: direct.pageCount,
-                limit: direct.limit,
+                limit: String(directItems.count),
                 total: direct.total,
-                list: mergeListItems(store: store, source: source, items: direct.list)
+                list: mergeListItems(store: store, source: source, items: directItems)
             )
         }
 
@@ -185,7 +189,8 @@ enum CategoryListService {
             store: store,
             source: source,
             page: page,
-            childIds: childIds
+            childIds: childIds,
+            hours: hours
         )
     }
 
@@ -193,17 +198,23 @@ enum CategoryListService {
         store: SourceStore,
         source: Source,
         page: Int,
-        childIds: [Int]
+        childIds: [Int],
+        hours: Int? = nil
     ) async -> ListResult {
         let pages: [ChildListPage] = await withTaskGroup(of: ChildListPage?.self) { group in
             for childId in childIds {
                 group.addTask {
-                    guard let data = try? await MacCMSClient.fetchList(source: source, page: page, typeId: childId) else {
+                    guard let data = try? await SourceCollector.list(
+                        source: source,
+                        page: page,
+                        typeId: childId,
+                        hours: hours
+                    ) else {
                         return nil
                     }
                     return ChildListPage(
                         childId: childId,
-                        list: data.list,
+                        list: data.list.map { $0.toVodItemRaw() },
                         pageCount: data.pageCount,
                         total: data.total
                     )
@@ -226,6 +237,113 @@ enum CategoryListService {
             pageCount: flattened.pageCount,
             limit: String(list.count),
             total: flattened.total,
+            list: list
+        )
+    }
+
+    private static let maxFanout = 8
+
+    /// 统一分类：按 slug 映射多源并行拉取并合并。slug == nil 时拉各源「最新」页。
+    /// - Parameter hours: MacCMS `h`，最近 N 小时内更新；nil / ≤0 不传。
+    static func fetchUnifiedList(
+        store: SourceStore,
+        slug: String?,
+        page: Int,
+        hours: Int? = nil
+    ) async throws -> ListResult {
+        let enabled = store.collectable(capability: \.category)
+        guard !enabled.isEmpty else {
+            throw URLError(.resourceUnavailable)
+        }
+
+        let jobs: [(source: Source, typeId: Int?)]
+        if let slug {
+            let enabledIds = Set(enabled.map(\.id))
+            let mappings = UnifiedCategories.mappings(for: slug)
+                .filter { enabledIds.contains($0.sourceId) }
+            jobs = mappings.compactMap { mapping in
+                guard let source = store.byID(mapping.sourceId) else { return nil }
+                return (source, Optional(mapping.typeId))
+            }
+            .sorted {
+                store.metadataPriority(for: $0.source.id) > store.metadataPriority(for: $1.source.id)
+            }
+            if jobs.isEmpty {
+                return ListResult(
+                    code: 1,
+                    msg: "ok",
+                    page: page,
+                    pageCount: 1,
+                    limit: "0",
+                    total: 0,
+                    list: []
+                )
+            }
+        } else {
+            jobs = enabled
+                .sorted {
+                    store.metadataPriority(for: $0.id) > store.metadataPriority(for: $1.id)
+                }
+                .map { ($0, nil) }
+        }
+
+        // Try higher-priority sources first, but keep a wide pool so one flaky tier
+        // cannot shrink the home/category grid to a handful of posters.
+        let limited = Array(jobs.prefix(max(maxFanout * 4, maxFanout)))
+        var mergeable: [MergeableVodItem] = []
+        var pageCount = 1
+        var total = 0
+
+        await withTaskGroup(of: (items: [MergeableVodItem], pageCount: Int, total: Int)?.self) { group in
+            var inFlight = 0
+            var index = 0
+            func enqueue() {
+                while inFlight < maxFanout, index < limited.count {
+                    let job = limited[index]
+                    index += 1
+                    inFlight += 1
+                    group.addTask {
+                        guard let data = try? await SourceCollector.list(
+                            source: job.source,
+                            page: page,
+                            typeId: job.typeId,
+                            hours: hours
+                        ), !data.list.isEmpty else {
+                            return nil
+                        }
+                        let items = data.list.map {
+                            MergeableVodItem(
+                                item: $0.toVodItemRaw(),
+                                sourceId: job.source.id,
+                                sourceName: job.source.name
+                            )
+                        }
+                        return (items, data.pageCount, data.total)
+                    }
+                }
+            }
+            enqueue()
+            for await result in group {
+                inFlight -= 1
+                if let result {
+                    mergeable.append(contentsOf: result.items)
+                    pageCount = max(pageCount, result.pageCount)
+                    total += result.total
+                }
+                enqueue()
+            }
+        }
+
+        let list = VodMergeService.sortMergedByUpdatedDesc(
+            VodMergeService.mergeVodItems(mergeable, store: store)
+        )
+        return ListResult(
+            code: 1,
+            msg: "ok",
+            page: page,
+            pageCount: pageCount,
+            limit: String(list.count),
+            total: total,
             list: list
         )
     }

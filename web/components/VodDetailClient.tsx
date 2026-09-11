@@ -1,11 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import EpisodeList from "@/components/EpisodeList";
 import SourceTabs from "@/components/SourceTabs";
-import { getVariantSourceNames } from "@/lib/vodMerge";
+import { formatSourceMetaLabel } from "@/lib/vodMerge";
+import {
+  nextPlayableIndexes,
+  preferredPlayableIndex,
+  sortPlaySources,
+} from "@/lib/playLineWeights";
 import type { PlaySource, VodItem, VodVariant } from "@/lib/types";
 import { setCachedPic } from "@/lib/vodPicCache";
 
@@ -24,6 +29,7 @@ interface VodDetailClientProps {
   sourceId: number;
   sourceName: string;
   variants?: VodVariant[];
+  ticketEnabled?: boolean;
 }
 
 export default function VodDetailClient({
@@ -32,19 +38,44 @@ export default function VodDetailClient({
   sourceId,
   sourceName,
   variants = [],
+  ticketEnabled = false,
 }: VodDetailClientProps) {
-  const [sourceIndex, setSourceIndex] = useState(0);
+  const orderedSources = useMemo(
+    () => sortPlaySources(playSources),
+    [playSources]
+  );
+  const [sourceIndex, setSourceIndex] = useState(() =>
+    preferredPlayableIndex(orderedSources, { ticketEnabled })
+  );
   const [episodeIndex, setEpisodeIndex] = useState(0);
   const [playUrl, setPlayUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Auto path allows weight fallback; manual line pick does not. */
+  const allowFallbackRef = useRef(true);
 
-  const currentSource = playSources[sourceIndex];
+  useEffect(() => {
+    allowFallbackRef.current = true;
+    setSourceIndex(
+      preferredPlayableIndex(orderedSources, { ticketEnabled, episodeIndex: 0 })
+    );
+    setEpisodeIndex(0);
+  }, [orderedSources, ticketEnabled]);
+
+  const currentSource = orderedSources[sourceIndex];
   const currentEpisode = currentSource?.episodes[episodeIndex];
   const parseSourceId = currentSource?.sourceId ?? sourceId;
-  const availableSources = variants.length
-    ? getVariantSourceNames({ ...vod, variants, primarySourceId: sourceId })
-    : [sourceName];
+  const sourceMeta =
+    variants.length > 0
+      ? formatSourceMetaLabel(
+          {
+            ...vod,
+            variants,
+            primarySourceId: sourceId,
+          },
+          3
+        )
+      : sourceName;
 
   const storageKey = useMemo(
     () =>
@@ -59,28 +90,71 @@ export default function VodDetailClient({
   }, [sourceId, vod.vod_id, vod.vod_pic]);
 
   useEffect(() => {
-    if (!currentEpisode?.url) {
+    if (!currentEpisode?.url && !currentSource?.ticket) {
       setPlayUrl("");
       return;
     }
 
     let cancelled = false;
 
+    async function resolveOne(source: PlaySource, epIndex: number) {
+      const episode = source.episodes[epIndex] ?? source.episodes[0];
+      const episodeUrl = episode?.url || "";
+      const isTicket =
+        source.mode === "ticket" ||
+        episodeUrl.startsWith("resolve://") ||
+        Boolean(source.ticket);
+      const res = await fetch("/api/play/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: isTicket ? "ticket" : "direct",
+          sourceId: source.sourceId ?? sourceId,
+          url: episodeUrl,
+          jx: true,
+          ticket: source.ticket || undefined,
+          providerId: source.providerId,
+          playFrom: source.playFrom,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "解析失败");
+      return data.url as string;
+    }
+
     async function resolveUrl() {
       setLoading(true);
       setError(null);
 
       try {
-        const res = await fetch(
-          `/api/play/parse?sourceId=${parseSourceId}&url=${encodeURIComponent(currentEpisode.url)}`
-        );
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "解析失败");
-        if (!cancelled) setPlayUrl(data.url);
+        if (!currentSource) throw new Error("无可用线路");
+        const url = await resolveOne(currentSource, episodeIndex);
+        if (!cancelled) setPlayUrl(url);
       } catch (err) {
+        if (cancelled) return;
+        if (allowFallbackRef.current && currentSource) {
+          const fallbacks = nextPlayableIndexes(orderedSources, sourceIndex, {
+            episodeIndex,
+            ticketEnabled,
+            maxTries: 3,
+          });
+          for (const nextIndex of fallbacks) {
+            try {
+              const next = orderedSources[nextIndex];
+              const url = await resolveOne(next, episodeIndex);
+              if (cancelled) return;
+              setSourceIndex(nextIndex);
+              setPlayUrl(url);
+              setError(null);
+              return;
+            } catch {
+              // try next
+            }
+          }
+        }
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "播放地址获取失败");
-          setPlayUrl(currentEpisode.url);
+          setPlayUrl(currentEpisode?.url || "");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -93,7 +167,16 @@ export default function VodDetailClient({
       setPlayUrl("");
       setLoading(false);
     };
-  }, [currentEpisode?.url, parseSourceId]);
+  }, [
+    currentEpisode?.url,
+    currentSource,
+    episodeIndex,
+    orderedSources,
+    parseSourceId,
+    sourceId,
+    sourceIndex,
+    ticketEnabled,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -112,7 +195,7 @@ export default function VodDetailClient({
         <div className="space-y-3">
           <h1 className="text-2xl font-bold">{vod.vod_name}</h1>
           <p className="text-sm text-[var(--muted)]">
-            {[availableSources.join(" · "), vod.vod_year, vod.vod_area, vod.type_name]
+            {[sourceMeta, vod.vod_year, vod.vod_area, vod.type_name]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -129,12 +212,13 @@ export default function VodDetailClient({
         </div>
       </div>
 
-      {playSources.length > 0 && (
+      {orderedSources.length > 0 && (
         <div className="space-y-4">
           <SourceTabs
-            playSources={playSources}
+            playSources={orderedSources}
             activeIndex={sourceIndex}
             onSelect={(index) => {
+              allowFallbackRef.current = false;
               setSourceIndex(index);
               setEpisodeIndex(0);
             }}
@@ -142,7 +226,10 @@ export default function VodDetailClient({
           <EpisodeList
             episodes={currentSource?.episodes ?? []}
             activeIndex={episodeIndex}
-            onSelect={setEpisodeIndex}
+            onSelect={(index) => {
+              allowFallbackRef.current = false;
+              setEpisodeIndex(index);
+            }}
           />
         </div>
       )}
@@ -160,11 +247,7 @@ export default function VodDetailClient({
       )}
 
       {playUrl && !loading && (
-        <VideoPlayer
-          url={playUrl}
-          title={vod.vod_name}
-          storageKey={storageKey}
-        />
+        <VideoPlayer url={playUrl} storageKey={storageKey} />
       )}
     </div>
   );

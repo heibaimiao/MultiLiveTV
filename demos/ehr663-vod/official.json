@@ -1,0 +1,110 @@
+{
+  "spider": "",
+  "sites": [
+    {
+      "key": "py_qq",
+      "name": "腾讯视频",
+      "type": 3,
+      "api": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
+      "key": "py_youku",
+      "name": "优酷",
+      "type": 3,
+      "api": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E4%BC%98%E9%85%B7%E8%A7%86%E9%A2%91.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
+      "key": "py_qiyi",
+      "name": "爱奇艺",
+      "type": 3,
+      "api": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E7%88%B1%E5%A5%87%E8%89%BA.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
+      "key": "py_mgtv",
+      "name": "芒果TV",
+      "type": 3,
+      "api": "https://raw.githubusercontent.com/FGBLH/EHR663/refs/heads/main/py/%E8%8A%92%E6%9E%9CTV.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    }
+  ],
+  "parses": [
+    {
+      "name": "解析cc",
+      "type": 0,
+      "url": "https://jx.xmflv.cc/?url=",
+      "ext": {
+        "flag": [
+          "qq",
+          "腾讯",
+          "腾讯视频",
+          "qiyi",
+          "爱奇艺",
+          "youku",
+          "优酷",
+          "mgtv",
+          "芒果",
+          "芒果TV"
+        ]
+      }
+    },
+    {
+      "name": "解析m3u8",
+      "type": 0,
+      "url": "https://jx.m3u8.tv/jiexi/?url=",
+      "ext": {
+        "flag": [
+          "qq",
+          "腾讯",
+          "腾讯视频",
+          "qiyi",
+          "爱奇艺",
+          "youku",
+          "优酷",
+          "mgtv",
+          "芒果",
+          "芒果TV"
+        ]
+      }
+    }
+  ],
+  "flags": [
+    "qq",
+    "腾讯",
+    "腾讯视频",
+    "qiyi",
+    "爱奇艺",
+    "youku",
+    "优酷",
+    "mgtv",
+    "芒果",
+    "芒果TV"
+  ],
+  "ijk": [
+    {
+      "group": "软解码",
+      "options": [
+        {
+          "category": 4,
+          "name": "opensles",
+          "value": "0"
+        }
+      ]
+    }
+  ],
+  "ads": []
+}

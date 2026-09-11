@@ -9,6 +9,8 @@ struct DetailView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var selectedSourceIndex = 0
+    @State private var sourcesExpanded = false
+    @State private var allowResolveFallback = true
     @State private var playbackRequest: PlaybackRequest?
     @State private var showDownloadPicker = false
     @FocusState private var focusedEpisode: String?
@@ -35,7 +37,7 @@ struct DetailView: View {
         #endif
         .task { await loadDetail() }
         .fullScreenCover(item: $playbackRequest) { request in
-            PlayerView(sourceId: request.sourceId, episode: request.episode)
+            PlayerView(candidates: request.candidates)
                 .environmentObject(vod)
                 .environmentObject(downloads)
         }
@@ -60,8 +62,16 @@ struct DetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 cinematicHeader(detail)
-                sourcePicker(detail.playSources)
-                episodeSection(detail)
+                if detail.playSources.isEmpty {
+                    Text("暂无播放线路")
+                        .font(.headline)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .padding(.horizontal, AppTheme.screenPadding)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    sourcePicker(detail.playSources)
+                    episodeSection(detail)
+                }
             }
             .padding(.bottom, AppTheme.screenPadding)
         }
@@ -115,8 +125,9 @@ struct DetailView: View {
                             .frame(maxWidth: 720, alignment: .leading)
                     }
 
-                    HStack(spacing: 16) {
-                        if let first = currentPlaySource(detail)?.episodes.first {
+                    if let playSource = currentPlaySource(detail),
+                       let first = playSource.episodes.first {
+                        HStack(spacing: 16) {
                             CinemaActionButton(
                                 title: "播放",
                                 systemImage: "play.fill",
@@ -124,25 +135,24 @@ struct DetailView: View {
                                 isFocused: focusedAction == "play"
                             ) {
                                 playbackRequest = PlaybackRequest(
-                                    sourceId: episodeSourceId(detail),
-                                    episode: first
+                                    candidates: playbackCandidates(detail: detail, episode: first)
                                 )
                             }
                             .focused($focusedAction, equals: "play")
-                        }
 
-                        CinemaActionButton(
-                            title: "下载",
-                            systemImage: "arrow.down.circle",
-                            kind: .secondary,
-                            isFocused: focusedAction == "download"
-                        ) {
-                            showDownloadPicker = true
+                            CinemaActionButton(
+                                title: "下载",
+                                systemImage: "arrow.down.circle",
+                                kind: .secondary,
+                                isFocused: focusedAction == "download"
+                            ) {
+                                showDownloadPicker = true
+                            }
+                            .focused($focusedAction, equals: "download")
                         }
-                        .focused($focusedAction, equals: "download")
+                        .padding(.top, 4)
+                        .tvFocusSection()
                     }
-                    .padding(.top, 4)
-                    .tvFocusSection()
                 }
                 .padding(.bottom, headerTextBottom)
             }
@@ -178,8 +188,7 @@ struct DetailView: View {
                             isFocused: focusedEpisode == ep.id
                         ) {
                             playbackRequest = PlaybackRequest(
-                                sourceId: episodeSourceId(detail),
-                                episode: ep
+                                candidates: playbackCandidates(detail: detail, episode: ep)
                             )
                         }
                         .focused($focusedEpisode, equals: ep.id)
@@ -194,17 +203,31 @@ struct DetailView: View {
 
     @ViewBuilder
     private func sourcePicker(_ sources: [PlaySource]) -> some View {
+        let limit = 8
+        let visible = sourcesExpanded || sources.count <= limit
+            ? sources
+            : Array(sources.prefix(limit))
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(Array(sources.enumerated()), id: \.offset) { index, source in
+                ForEach(Array(visible.enumerated()), id: \.offset) { index, source in
                     CategoryTabButton(
                         label: source.name,
                         isActive: selectedSourceIndex == index,
                         isFocused: focusedSource == index
                     ) {
+                        allowResolveFallback = false
                         selectedSourceIndex = index
                     }
                     .tvChipFocused($focusedSource, equals: index)
+                }
+                if !sourcesExpanded && sources.count > limit {
+                    CategoryTabButton(
+                        label: "更多线路",
+                        isActive: false,
+                        isFocused: focusedSource == -1
+                    ) {
+                        sourcesExpanded = true
+                    }
                 }
             }
             .padding(.horizontal, AppTheme.screenPadding)
@@ -293,13 +316,24 @@ struct DetailView: View {
         return detail.playSources[selectedSourceIndex].sourceId ?? item.resolvedSourceId
     }
 
+    private func playbackCandidates(detail: DetailResponse, episode: Episode) -> [PlaybackCandidate] {
+        VodPlaybackFailover.candidates(
+            playSources: detail.playSources,
+            selectedIndex: selectedSourceIndex,
+            episode: episode,
+            fallbackSourceId: item.resolvedSourceId
+        )
+    }
+
     private func preferredSourceIndex(for sources: [PlaySource]) -> Int {
-        if let index = sources.firstIndex(where: { source in
-            source.episodes.contains { PlaybackSupport.isDirectMediaURL($0.url) }
-        }) {
-            return index
+        let index = PlayLineWeighting.preferredPlayableIndex(
+            in: sources,
+            ticketEnabled: PlayLineWeighting.ticketEnabled
+        )
+        if index >= 8 {
+            sourcesExpanded = true
         }
-        return 0
+        return index
     }
 
     private func loadDetail() async {
@@ -323,17 +357,23 @@ struct DetailView: View {
     }
 
     private func applyDetail(_ response: DetailResponse, resetSelection: Bool) {
+        let filtered = DetailResponse(
+            vod: response.vod,
+            playSources: PlayLineWeighting.forDetailDisplay(response.playSources),
+            variants: response.variants,
+            merged: response.merged
+        )
         let previousKey: String? = {
             guard !resetSelection,
                   let detail,
                   selectedSourceIndex < detail.playSources.count else { return nil }
             return detail.playSources[selectedSourceIndex].key
         }()
-        detail = response
-        if let previousKey, let index = response.playSources.firstIndex(where: { $0.key == previousKey }) {
+        detail = filtered
+        if let previousKey, let index = filtered.playSources.firstIndex(where: { $0.key == previousKey }) {
             selectedSourceIndex = index
-        } else if resetSelection || selectedSourceIndex >= response.playSources.count {
-            selectedSourceIndex = preferredSourceIndex(for: response.playSources)
+        } else if resetSelection || selectedSourceIndex >= filtered.playSources.count {
+            selectedSourceIndex = preferredSourceIndex(for: filtered.playSources)
         }
     }
 

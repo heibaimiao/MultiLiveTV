@@ -10,13 +10,20 @@ enum PlaybackSupport {
         #endif
     }
 
+    /// True only for real media paths (e.g. `…/index.m3u8`), not jiexi hosts like `jx.m3u8.tv`.
     static func isDirectMediaURL(_ url: String) -> Bool {
-        let lower = url.lowercased()
-        return lower.contains(".m3u8")
-            || lower.contains(".mp4")
-            || lower.contains(".mkv")
-            || lower.contains(".flv")
-            || lower.contains(".mov")
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let parsed = URL(string: trimmed), let scheme = parsed.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else {
+            return false
+        }
+        let path = parsed.path.lowercased()
+        return path.hasSuffix(".m3u8")
+            || path.hasSuffix(".mp4")
+            || path.hasSuffix(".mkv")
+            || path.hasSuffix(".flv")
+            || path.hasSuffix(".mov")
+            || path.hasSuffix(".m3u")
     }
 
     static func referer(for source: Source) -> String? {
@@ -25,13 +32,16 @@ enum PlaybackSupport {
     }
 
     static func httpHeaders(for source: Source, playbackURL: URL) -> [String: String] {
+        // Prefer the media CDN origin. Using the MacCMS API host as Referer breaks some CDNs.
         var headers = ["User-Agent": NetworkConfig.userAgent]
-        if let referer = referer(for: source) {
+        if let host = playbackURL.host {
+            let origin = "\(playbackURL.scheme ?? "https")://\(host)/"
+            headers["Referer"] = origin
+            headers["Origin"] = origin
+        } else if let referer = referer(for: source) {
             headers["Referer"] = referer
-        } else if let host = playbackURL.host {
-            headers["Referer"] = "\(playbackURL.scheme ?? "https")://\(host)/"
+            headers["Origin"] = referer
         }
-        headers["Origin"] = headers["Referer"]
         return headers
     }
 

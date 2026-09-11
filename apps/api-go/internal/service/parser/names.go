@@ -15,9 +15,19 @@ var playSourceNames = map[string]string{
 	"bfzym3u8": "暴风", "hnm3u8": "红牛", "hnyun": "红牛", "bjm3u8": "八戒",
 	"wolong": "卧龙", "maotai": "茅台", "maoyan": "猫眼", "kcm3u8": "快车",
 	"xlm3u8": "新浪", "dbm3u8": "豆瓣", "hkm3u8": "华为", "yym3u8": "丫丫",
-	"ckm3u8": "CK", "dym3u8": "电影", "ukm3u8": "UK", "lsm3u8": "乐视",
+	"ckm3u8": "CK", "dym3u8": "电影", "ukm3u8": "U酷", "lsm3u8": "乐视",
 	"qhm3u8": "奇虎", "ysm3u8": "影视", "huyam3u8": "虎牙", "tpm3u8": "淘片",
 	"tkm3u8": "天空", "1080zyk": "1080看", "zuidam3u8": "最大", "kuaikan": "快看",
+	"wsym3u8": "无印", "xiguam3u8": "西瓜", "xigua": "西瓜", "hhm3u8": "豪华",
+	"hhyun": "豪华", "rym3u8": "如意", "ruyi": "如意", "ukyun": "U酷",
+	"iqym3u8": "奇艺", "jinyingm3u8": "金鹰", "jinyingyun": "金鹰",
+	"dyttm3u8": "天堂", "dytt": "天堂", "nnm3u8": "牛牛", "360zy": "360",
+	"xlyun": "新浪", "dbyun": "豆瓣",
+	// bpz5 官方票
+	"huo": "1080P-官方V", "lv2": "1080P-官方Z", "rrys": "1080P-官方R",
+	"bytedance": "高清-官方B", "cloudflare": "高清-官方C", "cloudflare-4k": "4K-官方C",
+	"dong": "1080P-官方D", "qq": "腾讯视频", "qiyi": "爱奇艺", "youku": "优酷",
+	"mgtv": "芒果TV", "bilibili": "哔哩哔哩",
 }
 
 var playSourcePrefixNames = map[string]string{
@@ -25,10 +35,12 @@ var playSourcePrefixNames = map[string]string{
 	"gs": "光速", "mt": "茅台", "my": "猫眼", "hy": "虎牙", "modu": "魔都",
 	"jp": "极品", "js": "极速", "sub": "速播", "bfzy": "暴风", "hn": "红牛",
 	"bj": "八戒", "kc": "快车", "xl": "新浪", "db": "豆瓣", "hk": "华为",
-	"yy": "丫丫", "ck": "CK", "dy": "电影", "uk": "UK", "ls": "乐视",
+	"yy": "丫丫", "ck": "CK", "dy": "电影", "uk": "U酷", "ls": "乐视",
 	"qh": "奇虎", "ys": "影视", "tp": "淘片", "tk": "天空", "wolong": "卧龙",
 	"feifan": "非凡", "maotai": "茅台", "maoyan": "猫眼", "gsyun": "光速",
 	"mtyun": "茅台", "hyyun": "虎牙", "liangzi": "量子", "jsyun": "极速", "subyun": "速播",
+	"wsy": "无印", "xigua": "西瓜", "hh": "豪华", "ry": "如意", "iqy": "奇艺",
+	"jinying": "金鹰", "nn": "牛牛", "360zy": "360", "dytt": "天堂",
 }
 
 var lineNamePattern = regexp.MustCompile(`(?i)^线路\d+$`)

@@ -7,6 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		170AB80D95934C5FA69FC8F0 /* SourceMovie.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */; };
+		B2FDB5E734774560B510664E /* SourceMovie.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */; };
+		9945D29CFA29449A9744CF83 /* SourceHealthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */; };
+		595BFAB922014427856B4D99 /* SourceHealthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */; };
+		02E7BCB22DA445508BBCF90A /* SourceAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFBF230CFE0347AA8A22FC59 /* SourceAdapter.swift */; };
+		D6A57AD24FE843D98C3240A2 /* SourceAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFBF230CFE0347AA8A22FC59 /* SourceAdapter.swift */; };
+		B3E0E660BA7A4B71B1668CC6 /* source-registry.json in Resources */ = {isa = PBXBuildFile; fileRef = 52A009FB248D4D37A7CEB5F0 /* source-registry.json */; };
+		A860AD2128E447039E4B4D2E /* source-registry.json in Resources */ = {isa = PBXBuildFile; fileRef = 52A009FB248D4D37A7CEB5F0 /* source-registry.json */; };
+		C3D4E5F60718293A4B5C6D7E /* UnifiedCategories.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* UnifiedCategories.swift */; };
+		D4E5F60718293A4B5C6D7E8F /* UnifiedCategories.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* UnifiedCategories.swift */; };
+		E5F60718293A4B5C6D7E8F90 /* unified-categories.json in Resources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* unified-categories.json */; };
+		F60718293A4B5C6D7E8F901A /* unified-categories.json in Resources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* unified-categories.json */; };
+		018934378659CE306A8E71CB /* play-line-weights.json in Resources */ = {isa = PBXBuildFile; fileRef = C742F62EDF128ED722E7F54D /* play-line-weights.json */; };
 		040769629337CD46B503D36E /* CategoryTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D36209B9219AA1AF5EA53A /* CategoryTree.swift */; };
 		04D5DC9920A050CEC84BB8F8 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D030031B9AD901C375C115 /* PlayerView.swift */; };
 		0892D836F6BD11304673417D /* DownloadMediaKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */; };
@@ -18,6 +31,7 @@
 		165665E3005E14BA2A7646CE /* HLSPlaylistDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C48BC043833D7193718CADD /* HLSPlaylistDownloadEngine.swift */; };
 		16CFAAF85CBEE3F91EA0F846 /* HomeLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 018139FC242A4D94B1051B7F /* HomeLaunch.swift */; };
 		17B1F1B77029B180EDB0AEE4 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */; };
+		187C484DA863F0A41F4D6659 /* PlayLineWeights.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE943B88394CBCBE33B02CC1 /* PlayLineWeights.swift */; };
 		18825A15E98D9751DCCBC548 /* M3UPlaylistParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */; };
 		192DDBD831B164E8D6560AAC /* VodShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7068BC535EC251781DEE5CD /* VodShelf.swift */; };
 		1C7D3667F69E0960D097CB29 /* HomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */; };
@@ -55,9 +69,12 @@
 		56034409DCE14D1EAFB0C526 /* LivePlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD47C1A1C0277867AD483C34 /* LivePlaybackSession.swift */; };
 		594F70FACD05F4F695A15F9D /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7369D567255A92D5D18970E0 /* SearchView.swift */; };
 		598447B1A7123B65AF95B413 /* TopShelfStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */; };
+		5D03DB9F1E83C3FB62BE9FE5 /* PlayLineWeights.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE943B88394CBCBE33B02CC1 /* PlayLineWeights.swift */; };
 		5EF747B5E34B6723CEB8159C /* LiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E653A62633B56BBCBEDEBD1D /* LiveView.swift */; };
 		635ED733EAA4C1991A87AB64 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */; };
 		652606D1DDA97AFED5356754 /* LaunchLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E00AF33D28B3B5B773DDC3 /* LaunchLoadingView.swift */; };
+		D7DD41C0C3B343A2AAE66924 /* VodPlaybackFailover.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9044E9189B24B8BB163BF73 /* VodPlaybackFailover.swift */; };
+		FF267F4BEC0742C09150655A /* VodPlaybackFailover.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9044E9189B24B8BB163BF73 /* VodPlaybackFailover.swift */; };
 		6601D7F7DE0387FA7450BB60 /* PlaybackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BBB0664590164724BDC67A /* PlaybackSupport.swift */; };
 		660EF80460EB80AE26B971AF /* CategoryTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D36209B9219AA1AF5EA53A /* CategoryTree.swift */; };
 		667919E6342C3ECEAC2E33FF /* VodDisplayFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A196D30F1A2BC73ADD0E84B7 /* VodDisplayFormatter.swift */; };
@@ -115,6 +132,7 @@
 		CE6FB0C99073FC50F77381CD /* MultiLiveTVTopShelf.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 82978569B894FD485E9521FA /* MultiLiveTVTopShelf.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CF0B8F8A67297C628DCDC4BB /* RemoteImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0CB16529127B18D10AF105 /* RemoteImageView.swift */; };
 		CF98AF560C4239A1940F8F58 /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3E1967438E2460789F8C25 /* NetworkConfig.swift */; };
+		D0D2B72C37802C4AD5808CB1 /* play-line-weights.json in Resources */ = {isa = PBXBuildFile; fileRef = C742F62EDF128ED722E7F54D /* play-line-weights.json */; };
 		D3BC4BD11BD99BEDE5B417A7 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED2825D88B50211383CC816 /* DetailView.swift */; };
 		D652B17F709FAAD763A223AF /* M3UPlaylistParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */; };
 		D68817863576A66CFCDED5B7 /* CinemaChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16AC19BCF6ECB61F0D1500 /* CinemaChrome.swift */; };
@@ -167,6 +185,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceMovie.swift; sourceTree = "<group>"; };
+		63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceHealthStore.swift; sourceTree = "<group>"; };
+		CFBF230CFE0347AA8A22FC59 /* SourceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceAdapter.swift; sourceTree = "<group>"; };
+		52A009FB248D4D37A7CEB5F0 /* source-registry.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "source-registry.json"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* UnifiedCategories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedCategories.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* unified-categories.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "unified-categories.json"; sourceTree = "<group>"; };
 		018139FC242A4D94B1051B7F /* HomeLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeLaunch.swift; sourceTree = "<group>"; };
 		08B0D244576AB6B669951D67 /* CategoryListService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryListService.swift; sourceTree = "<group>"; };
 		0A0407D5270FCA87D0A909EF /* StateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateViews.swift; sourceTree = "<group>"; };
@@ -174,16 +198,20 @@
 		0FA3F2F4865FCEC0A1675BE0 /* HLSPlaylistProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSPlaylistProbe.swift; sourceTree = "<group>"; };
 		10D8A94ADE489AFC7DEC2D34 /* HLSPlaylistLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSPlaylistLocalizer.swift; sourceTree = "<group>"; };
 		13A9986F2D2ADE3C921BDE89 /* VodCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodCard.swift; sourceTree = "<group>"; };
+		13F7AB2457A257E9CCB3F586 /* Pods-MultiLiveTV-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-tvOS.release.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS.release.xcconfig"; sourceTree = "<group>"; };
 		15D36209B9219AA1AF5EA53A /* CategoryTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryTree.swift; sourceTree = "<group>"; };
+		201B5CAE4EDD887CC1D557F0 /* Pods-MultiLiveTV-iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-iOS.release.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS.release.xcconfig"; sourceTree = "<group>"; };
 		203C4FA6CEDFC1CB68D974BE /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
+		20AEEF8316F724BFA51757A1 /* Pods_MultiLiveTV_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiLiveTV_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C0CB16529127B18D10AF105 /* RemoteImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImageView.swift; sourceTree = "<group>"; };
-		2E6874A9C4E2EFA63F0616F5 /* Pods_MultiLiveTV_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiLiveTV_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F86008EAF83BAE6633A9884 /* DownloadRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRecord.swift; sourceTree = "<group>"; };
+		C9044E9189B24B8BB163BF73 /* VodPlaybackFailover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodPlaybackFailover.swift; sourceTree = "<group>"; };
 		31BBB0664590164724BDC67A /* PlaybackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackSupport.swift; sourceTree = "<group>"; };
 		325928130DD0490CEACDB893 /* MultiLiveTV-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "MultiLiveTV-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		36648814CB64C171472B679E /* LiveVideoStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveVideoStage.swift; sourceTree = "<group>"; };
 		3A117EFC61E1E353968E843F /* HLSDownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSDownloadEngine.swift; sourceTree = "<group>"; };
 		3A21AE43A6E02F841FDE380C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		3A694A931279D6A026E2D323 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		44F0B1684AEA4CB648E0036A /* DownloadGlyphButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadGlyphButton.swift; sourceTree = "<group>"; };
 		4660D4DCF4CE7B62B3E996F3 /* TopShelfStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopShelfStore.swift; sourceTree = "<group>"; };
 		51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadMediaKind.swift; sourceTree = "<group>"; };
@@ -198,11 +226,10 @@
 		8213C2D88133680FCCCE4AD4 /* BrandLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandLogo.swift; sourceTree = "<group>"; };
 		82978569B894FD485E9521FA /* MultiLiveTVTopShelf.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MultiLiveTVTopShelf.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		847E09F44B2A2BE18BFCBFE4 /* MultiLiveTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiLiveTVApp.swift; sourceTree = "<group>"; };
+		87D48CACA21DF496FADD173E /* Pods-MultiLiveTV-iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-iOS.debug.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS.debug.xcconfig"; sourceTree = "<group>"; };
 		88B498A26E994459FA67D88B /* DownloadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadStore.swift; sourceTree = "<group>"; };
 		8CABF9770EF3536391C69DD9 /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProvider.swift; sourceTree = "<group>"; };
-		8CB3812DB8CC624190BEBB65 /* Pods-MultiLiveTV-iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-iOS.release.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS.release.xcconfig"; sourceTree = "<group>"; };
 		8F40C815C5F6B8A3A42B8B31 /* LiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStore.swift; sourceTree = "<group>"; };
-		9380F4E647F1AD015F6EA831 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		98C9E57FA4E1CF502A09A637 /* TVDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVDesign.swift; sourceTree = "<group>"; };
 		99C98C8C6B40F76714B9A0FC /* VodPosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodPosterView.swift; sourceTree = "<group>"; };
 		9B107467C4B72304AA9EAD52 /* RemoteImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImageLoader.swift; sourceTree = "<group>"; };
@@ -211,8 +238,8 @@
 		A2B9FA80507BFD460E402CE5 /* TopShelfSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopShelfSnapshot.swift; sourceTree = "<group>"; };
 		A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		A34061A30D585A243CEFC20C /* LiveModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveModels.swift; sourceTree = "<group>"; };
-		A9B4C843241A0092C0F0F4C5 /* Pods-MultiLiveTV-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-tvOS.release.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS.release.xcconfig"; sourceTree = "<group>"; };
 		ACDBE1A6C1762D7E75A1E003 /* DownloadEnqueuePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEnqueuePolicy.swift; sourceTree = "<group>"; };
+		B040EE75DE239F906521C01E /* Pods_MultiLiveTV_tvOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiLiveTV_tvOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7B063055DF7671C8C304931 /* M3UPlaylistParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3UPlaylistParser.swift; sourceTree = "<group>"; };
 		B9B10F2B225FC9AFC5F602DC /* LiveGuideOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGuideOverlay.swift; sourceTree = "<group>"; };
 		BF53CF4126ACD5F052BB4EC2 /* LiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveService.swift; sourceTree = "<group>"; };
@@ -220,7 +247,9 @@
 		C3F139E06244EF24231B11CF /* SourceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceStore.swift; sourceTree = "<group>"; };
 		C45343F567AC1D3CC105166A /* CategoryMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryMatch.swift; sourceTree = "<group>"; };
 		C7068BC535EC251781DEE5CD /* VodShelf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodShelf.swift; sourceTree = "<group>"; };
+		C742F62EDF128ED722E7F54D /* play-line-weights.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "play-line-weights.json"; sourceTree = "<group>"; };
 		CD40321A3E9AFEDE770F840F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CE943B88394CBCBE33B02CC1 /* PlayLineWeights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayLineWeights.swift; sourceTree = "<group>"; };
 		D37F7E942B3B37D28D922076 /* MacCMSClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCMSClient.swift; sourceTree = "<group>"; };
 		D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
 		D9E00AF33D28B3B5B773DDC3 /* LaunchLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchLoadingView.swift; sourceTree = "<group>"; };
@@ -230,11 +259,9 @@
 		DB3E1967438E2460789F8C25 /* NetworkConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConfig.swift; sourceTree = "<group>"; };
 		DD16AC19BCF6ECB61F0D1500 /* CinemaChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinemaChrome.swift; sourceTree = "<group>"; };
 		E33D39663314E6A296325AB3 /* VLCLivePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLCLivePlayer.swift; sourceTree = "<group>"; };
-		E646633A35D9158FD5E3387E /* Pods_MultiLiveTV_tvOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiLiveTV_tvOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E653A62633B56BBCBEDEBD1D /* LiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveView.swift; sourceTree = "<group>"; };
 		E73E8027AB111620ABFF7310 /* AppDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDeepLink.swift; sourceTree = "<group>"; };
 		E8CC89DEDC555ACC4574A5F5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		EA2186A345ACF22B38E8BDB8 /* Pods-MultiLiveTV-iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiLiveTV-iOS.debug.xcconfig"; path = "Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS.debug.xcconfig"; sourceTree = "<group>"; };
 		F35B6973F6635478FB36F6C3 /* PlayParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayParser.swift; sourceTree = "<group>"; };
 		F8B913CD283679B2B6B65469 /* VodMergeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VodMergeService.swift; sourceTree = "<group>"; };
 		FA8CE142B3E1D6E7CF966468 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
@@ -244,14 +271,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		757FF01C39CFCE5E39BC876C /* Frameworks */ = {
+		077F738FBDC2A189279397DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		828A76CE09E0D66C0374E243 /* Frameworks */ = {
+		C024CE015F70765A1461DEE5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -329,12 +356,24 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		626A32140EEA959B5C2D866B /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				87D48CACA21DF496FADD173E /* Pods-MultiLiveTV-iOS.debug.xcconfig */,
+				201B5CAE4EDD887CC1D557F0 /* Pods-MultiLiveTV-iOS.release.xcconfig */,
+				3A694A931279D6A026E2D323 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */,
+				13F7AB2457A257E9CCB3F586 /* Pods-MultiLiveTV-tvOS.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		6B37D5392ED10B3EDB162912 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				FA8CE142B3E1D6E7CF966468 /* TVServices.framework */,
-				2E6874A9C4E2EFA63F0616F5 /* Pods_MultiLiveTV_iOS.framework */,
-				E646633A35D9158FD5E3387E /* Pods_MultiLiveTV_tvOS.framework */,
+				20AEEF8316F724BFA51757A1 /* Pods_MultiLiveTV_iOS.framework */,
+				B040EE75DE239F906521C01E /* Pods_MultiLiveTV_tvOS.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -346,7 +385,7 @@
 				A000A9C41F10EA67785971FA /* MultiLiveTVTopShelf */,
 				6B37D5392ED10B3EDB162912 /* Frameworks */,
 				76CCD28D5D4035DC0B8D6D29 /* Products */,
-				E55B861EEB780D63BCF44C5C /* Pods */,
+				626A32140EEA959B5C2D866B /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -379,13 +418,19 @@
 				08B0D244576AB6B669951D67 /* CategoryListService.swift */,
 				C45343F567AC1D3CC105166A /* CategoryMatch.swift */,
 				15D36209B9219AA1AF5EA53A /* CategoryTree.swift */,
+				A1B2C3D4E5F60718293A4B5C /* UnifiedCategories.swift */,
 				A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */,
 				68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */,
 				018139FC242A4D94B1051B7F /* HomeLaunch.swift */,
+				F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */,
+				63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */,
+				CFBF230CFE0347AA8A22FC59 /* SourceAdapter.swift */,
 				D37F7E942B3B37D28D922076 /* MacCMSClient.swift */,
 				5BA465E9AE431265CA8AF4E8 /* MacCMSModels.swift */,
 				DB3E1967438E2460789F8C25 /* NetworkConfig.swift */,
+				C9044E9189B24B8BB163BF73 /* VodPlaybackFailover.swift */,
 				31BBB0664590164724BDC67A /* PlaybackSupport.swift */,
+				CE943B88394CBCBE33B02CC1 /* PlayLineWeights.swift */,
 				F35B6973F6635478FB36F6C3 /* PlayParser.swift */,
 				9B107467C4B72304AA9EAD52 /* RemoteImageLoader.swift */,
 				C3F139E06244EF24231B11CF /* SourceStore.swift */,
@@ -411,6 +456,9 @@
 			isa = PBXGroup;
 			children = (
 				65973C09D8A24E43EAE804D8 /* lives.json */,
+				C742F62EDF128ED722E7F54D /* play-line-weights.json */,
+				B2C3D4E5F60718293A4B5C6D /* unified-categories.json */,
+				52A009FB248D4D37A7CEB5F0 /* source-registry.json */,
 				7F02CA9D028B34FBF45BFCC6 /* sources.json */,
 			);
 			path = Resources;
@@ -442,18 +490,6 @@
 			path = Download;
 			sourceTree = "<group>";
 		};
-		E55B861EEB780D63BCF44C5C /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				EA2186A345ACF22B38E8BDB8 /* Pods-MultiLiveTV-iOS.debug.xcconfig */,
-				8CB3812DB8CC624190BEBB65 /* Pods-MultiLiveTV-iOS.release.xcconfig */,
-				9380F4E647F1AD015F6EA831 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */,
-				A9B4C843241A0092C0F0F4C5 /* Pods-MultiLiveTV-tvOS.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -461,12 +497,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 38B30609A13BD5A17B758E56 /* Build configuration list for PBXNativeTarget "MultiLiveTV-iOS" */;
 			buildPhases = (
-				70E6FF882CCC22AE47C63D20 /* [CP] Check Pods Manifest.lock */,
+				C125EED5FF63F8D542D3C036 /* [CP] Check Pods Manifest.lock */,
 				D1872DB8F3C0573B492AC536 /* Copy VLCKit XCFramework slice */,
 				3D218FBA25AF4F093A19A321 /* Sources */,
 				05CF083FC006F9CA73B90650 /* Resources */,
-				828A76CE09E0D66C0374E243 /* Frameworks */,
-				BDADC17D457E00294ECE53A5 /* [CP] Embed Pods Frameworks */,
+				C024CE015F70765A1461DEE5 /* Frameworks */,
+				BDCAF68FBC7423DA3E1AFDDE /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -497,13 +533,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4C31ED03E01FAF0108EB9893 /* Build configuration list for PBXNativeTarget "MultiLiveTV-tvOS" */;
 			buildPhases = (
-				CE10DCC5D179D0888FD59EF9 /* [CP] Check Pods Manifest.lock */,
+				C8DFCD8B1D1B78FDD336CCF8 /* [CP] Check Pods Manifest.lock */,
 				73FC91E81FFD9A6F45603A45 /* Copy VLCKit XCFramework slice */,
 				F3F0A947ADA457CE829C661B /* Sources */,
 				2D2467E1D8B099C52735A768 /* Resources */,
 				973EBD3ABC0BD7A52789A7AC /* Embed Foundation Extensions */,
-				757FF01C39CFCE5E39BC876C /* Frameworks */,
-				A1A9396C569D2AE37C02E97B /* [CP] Embed Pods Frameworks */,
+				077F738FBDC2A189279397DB /* Frameworks */,
+				556B04E365E0DF3279487D6B /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -566,6 +602,9 @@
 			files = (
 				95DF40B338513E94049DDB55 /* Assets.xcassets in Resources */,
 				78164399D2B26F913F3A3B89 /* lives.json in Resources */,
+				018934378659CE306A8E71CB /* play-line-weights.json in Resources */,
+				E5F60718293A4B5C6D7E8F90 /* unified-categories.json in Resources */,
+				B3E0E660BA7A4B71B1668CC6 /* source-registry.json in Resources */,
 				F6C3FE4D2975592664595AAD /* sources.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -576,6 +615,9 @@
 			files = (
 				8A44F2F1749FDD836028D5C5 /* Assets.xcassets in Resources */,
 				509F639BD765E64E59CA49A5 /* lives.json in Resources */,
+				D0D2B72C37802C4AD5808CB1 /* play-line-weights.json in Resources */,
+				F60718293A4B5C6D7E8F901A /* unified-categories.json in Resources */,
+				A860AD2128E447039E4B4D2E /* source-registry.json in Resources */,
 				9A61E0E68337002727EA72D7 /* sources.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -583,7 +625,58 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		70E6FF882CCC22AE47C63D20 /* [CP] Check Pods Manifest.lock */ = {
+		556B04E365E0DF3279487D6B /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		73FC91E81FFD9A6F45603A45 /* Copy VLCKit XCFramework slice */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy VLCKit XCFramework slice";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/bin/sh\n# Copy the matching VLCKit xcframework slice into XCFrameworkIntermediates.\n# CocoaPods 1.17 does not add a native target dependency on Pods-MultiLiveTV-*,\n# so [CP] Copy XCFrameworks never runs unless the app target does this itself.\nset -euo pipefail\n\nif [ -z \"${PODS_ROOT:-}\" ] || [ -z \"${PODS_XCFRAMEWORKS_BUILD_DIR:-}\" ]; then\n  echo \"error: CocoaPods build settings missing. Open MultiLiveTV.xcworkspace after pod install.\" >&2\n  exit 1\nfi\n\ncase \"${PLATFORM_NAME}\" in\n  appletvsimulator)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64_x86_64-simulator\"\n    ;;\n  appletvos)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64\"\n    ;;\n  iphonesimulator)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_i386_x86_64-simulator\"\n    ;;\n  iphoneos)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_armv7_armv7s\"\n    ;;\n  *)\n    echo \"note: skipping VLCKit slice copy for ${PLATFORM_NAME}\"\n    exit 0\n    ;;\nesac\n\nif [ ! -d \"${slice}\" ]; then\n  echo \"error: missing ${slice}. Run pod install in clients/apple.\" >&2\n  exit 1\nfi\n\ndest=\"${PODS_XCFRAMEWORKS_BUILD_DIR}/${name}\"\nmkdir -p \"${dest}\"\nrsync -a --delete \"${slice}/\" \"${dest}/\"\necho \"Copied ${slice} -> ${dest}\"\n";
+		};
+		BDCAF68FBC7423DA3E1AFDDE /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		C125EED5FF63F8D542D3C036 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -606,58 +699,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		73FC91E81FFD9A6F45603A45 /* Copy VLCKit XCFramework slice */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Copy VLCKit XCFramework slice";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "#!/bin/sh\n# Copy the matching VLCKit xcframework slice into XCFrameworkIntermediates.\n# CocoaPods 1.17 does not add a native target dependency on Pods-MultiLiveTV-*,\n# so [CP] Copy XCFrameworks never runs unless the app target does this itself.\nset -euo pipefail\n\nif [ -z \"${PODS_ROOT:-}\" ] || [ -z \"${PODS_XCFRAMEWORKS_BUILD_DIR:-}\" ]; then\n  echo \"error: CocoaPods build settings missing. Open MultiLiveTV.xcworkspace after pod install.\" >&2\n  exit 1\nfi\n\ncase \"${PLATFORM_NAME}\" in\n  appletvsimulator)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64_x86_64-simulator\"\n    ;;\n  appletvos)\n    name=TVVLCKit\n    slice=\"${PODS_ROOT}/TVVLCKit/TVVLCKit.xcframework/tvos-arm64\"\n    ;;\n  iphonesimulator)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_i386_x86_64-simulator\"\n    ;;\n  iphoneos)\n    name=MobileVLCKit\n    slice=\"${PODS_ROOT}/MobileVLCKit/MobileVLCKit.xcframework/ios-arm64_armv7_armv7s\"\n    ;;\n  *)\n    echo \"note: skipping VLCKit slice copy for ${PLATFORM_NAME}\"\n    exit 0\n    ;;\nesac\n\nif [ ! -d \"${slice}\" ]; then\n  echo \"error: missing ${slice}. Run pod install in clients/apple.\" >&2\n  exit 1\nfi\n\ndest=\"${PODS_XCFRAMEWORKS_BUILD_DIR}/${name}\"\nmkdir -p \"${dest}\"\nrsync -a --delete \"${slice}/\" \"${dest}/\"\necho \"Copied ${slice} -> ${dest}\"\n";
-		};
-		A1A9396C569D2AE37C02E97B /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiLiveTV-tvOS/Pods-MultiLiveTV-tvOS-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		BDADC17D457E00294ECE53A5 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiLiveTV-iOS/Pods-MultiLiveTV-iOS-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		CE10DCC5D179D0888FD59EF9 /* [CP] Check Pods Manifest.lock */ = {
+		C8DFCD8B1D1B78FDD336CCF8 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -725,6 +767,7 @@
 				B4F289A204BBBB1EAAF2B992 /* CategoryMatch.swift in Sources */,
 				8AE07D67310DFEF984D9C48F /* CategoryTabs.swift in Sources */,
 				660EF80460EB80AE26B971AF /* CategoryTree.swift in Sources */,
+				C3D4E5F60718293A4B5C6D7E /* UnifiedCategories.swift in Sources */,
 				D68817863576A66CFCDED5B7 /* CinemaChrome.swift in Sources */,
 				17B1F1B77029B180EDB0AEE4 /* DeepLinkRouter.swift in Sources */,
 				D3BC4BD11BD99BEDE5B417A7 /* DetailView.swift in Sources */,
@@ -760,12 +803,17 @@
 				720172B7EBF953319625C4A6 /* Models.swift in Sources */,
 				985004BE4AF6DBC0D9787EC3 /* MultiLiveTVApp.swift in Sources */,
 				CF98AF560C4239A1940F8F58 /* NetworkConfig.swift in Sources */,
+				187C484DA863F0A41F4D6659 /* PlayLineWeights.swift in Sources */,
 				830AB69F9C8874FEB14FF7E3 /* PlayParser.swift in Sources */,
+				D7DD41C0C3B343A2AAE66924 /* VodPlaybackFailover.swift in Sources */,
 				6601D7F7DE0387FA7450BB60 /* PlaybackSupport.swift in Sources */,
 				04D5DC9920A050CEC84BB8F8 /* PlayerView.swift in Sources */,
 				8E183071DD14BD06CFDF885F /* RemoteImageLoader.swift in Sources */,
 				8F68024B78976D959D30BAC0 /* RemoteImageView.swift in Sources */,
 				DE4E0E67140A96321E832024 /* SearchView.swift in Sources */,
+				170AB80D95934C5FA69FC8F0 /* SourceMovie.swift in Sources */,
+				9945D29CFA29449A9744CF83 /* SourceHealthStore.swift in Sources */,
+				02E7BCB22DA445508BBCF90A /* SourceAdapter.swift in Sources */,
 				E8CFE67CD6D9C0676E2C14CC /* SourceStore.swift in Sources */,
 				282DB0B69B5AAE297D5D6A12 /* StateViews.swift in Sources */,
 				255BDF8FB04ACD076AEFE3F8 /* TVDesign.swift in Sources */,
@@ -792,6 +840,7 @@
 				81D9E9AEA6DACC535D35358A /* CategoryMatch.swift in Sources */,
 				84F1D61294ABF49E4759303F /* CategoryTabs.swift in Sources */,
 				040769629337CD46B503D36E /* CategoryTree.swift in Sources */,
+				D4E5F60718293A4B5C6D7E8F /* UnifiedCategories.swift in Sources */,
 				36DBC8D4E3DD5B2B58236C85 /* CinemaChrome.swift in Sources */,
 				B0F230420B545DA296296EF3 /* DeepLinkRouter.swift in Sources */,
 				927C15155A8EB88717C16598 /* DetailView.swift in Sources */,
@@ -827,12 +876,17 @@
 				472566DDA7A651457945EF79 /* Models.swift in Sources */,
 				73BE26A584A1E82AF4C79742 /* MultiLiveTVApp.swift in Sources */,
 				F7B95BB9E2E4EB96890900BE /* NetworkConfig.swift in Sources */,
+				5D03DB9F1E83C3FB62BE9FE5 /* PlayLineWeights.swift in Sources */,
 				0C6FFD2B9C6571EC077DFDBA /* PlayParser.swift in Sources */,
+				FF267F4BEC0742C09150655A /* VodPlaybackFailover.swift in Sources */,
 				FC7632CF1698E1532D80DBA1 /* PlaybackSupport.swift in Sources */,
 				529DA5A8CEE673BE76462AD7 /* PlayerView.swift in Sources */,
 				556CA11FB76DD0017488ADBD /* RemoteImageLoader.swift in Sources */,
 				CF0B8F8A67297C628DCDC4BB /* RemoteImageView.swift in Sources */,
 				594F70FACD05F4F695A15F9D /* SearchView.swift in Sources */,
+				B2FDB5E734774560B510664E /* SourceMovie.swift in Sources */,
+				595BFAB922014427856B4D99 /* SourceHealthStore.swift in Sources */,
+				D6A57AD24FE843D98C3240A2 /* SourceAdapter.swift in Sources */,
 				E31E4B131ACD7C949A847203 /* SourceStore.swift in Sources */,
 				70D59FD533CA5B3573BE681C /* StateViews.swift in Sources */,
 				7A6794C15B1AFA742B3021CD /* TVDesign.swift in Sources */,
@@ -880,7 +934,7 @@
 		};
 		4255450349C74100576E09C5 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EA2186A345ACF22B38E8BDB8 /* Pods-MultiLiveTV-iOS.debug.xcconfig */;
+			baseConfigurationReference = 87D48CACA21DF496FADD173E /* Pods-MultiLiveTV-iOS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
@@ -900,7 +954,7 @@
 		};
 		4A7234BA8BEC8E0CD8017991 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A9B4C843241A0092C0F0F4C5 /* Pods-MultiLiveTV-tvOS.release.xcconfig */;
+			baseConfigurationReference = 13F7AB2457A257E9CCB3F586 /* Pods-MultiLiveTV-tvOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
@@ -979,7 +1033,7 @@
 		};
 		75010118C8AE11B1D98AF4BD /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8CB3812DB8CC624190BEBB65 /* Pods-MultiLiveTV-iOS.release.xcconfig */;
+			baseConfigurationReference = 201B5CAE4EDD887CC1D557F0 /* Pods-MultiLiveTV-iOS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
@@ -1084,7 +1138,7 @@
 		};
 		DA4DA79B64482FA88B545CC5 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9380F4E647F1AD015F6EA831 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */;
+			baseConfigurationReference = 3A694A931279D6A026E2D323 /* Pods-MultiLiveTV-tvOS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";

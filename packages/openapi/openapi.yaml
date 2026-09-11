@@ -27,8 +27,12 @@ paths:
           schema: { type: integer, default: 1 }
         - name: t
           in: query
-          description: Category type id
+          description: Category type id (single-source)
           schema: { type: integer }
+        - name: cat
+          in: query
+          description: Unified category slug (multi-source; takes precedence over t)
+          schema: { type: string }
       responses:
         "200":
           description: OK
@@ -77,6 +81,13 @@ paths:
       responses:
         "200":
           description: OK
+  /vod/categories:
+    get:
+      summary: Unified cross-source category tree (slug based)
+      tags: [VOD]
+      responses:
+        "200":
+          description: OK
   /vod/pic:
     get:
       summary: Poster URL for a VOD
@@ -109,6 +120,50 @@ paths:
       responses:
         "200":
           description: OK
+  /play/resolve:
+    post:
+      summary: Unified play resolve (direct MacCMS / ticket via bpz5)
+      description: |
+        Resolve a single selected play line. Clients should pick the preferred
+        playable line from detail playSources (sorted by weight; skip ticket
+        when ticket mode is disabled) then call this endpoint.
+      tags: [Play]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode:
+                  type: string
+                  enum: [direct, ticket]
+                sourceId: { type: integer }
+                url: { type: string }
+                jx: { type: boolean, default: true }
+                ticket: { type: string }
+                providerId: { type: string }
+                playFrom: { type: string }
+      responses:
+        "200":
+          description: Resolved playable URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string }
+                  parsed: { type: boolean }
+                  mode: { type: string }
+                  playFrom: { type: string }
+                  expiresAt:
+                    type: integer
+                    nullable: true
+        "501":
+          description: ticket mode disabled (BPZ5_HMAC_SECRET not set)
+        "502":
+          description: bpz5 upstream failure
   /auth/register:
     post:
       summary: Register user

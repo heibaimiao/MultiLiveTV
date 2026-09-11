@@ -15,7 +15,7 @@ func vod(_ id: String, _ name: String, time: Int = 0, typeName: String? = nil, v
     VodItem(vodId: id, vodName: name, vodPic: "", typeName: typeName, vodClass: vodClass, vodYear: year, vodTime: time)
 }
 
-func raw(_ id: String, _ name: String, year: String = "") -> VodItemRaw {
+func raw(_ id: String, _ name: String, year: String = "", time: Int = 0) -> VodItemRaw {
     VodItemRaw(
         vodId: id,
         vodName: name,
@@ -30,18 +30,35 @@ func raw(_ id: String, _ name: String, year: String = "") -> VodItemRaw {
         vodPlayURL: "",
         typeId: 0,
         typeName: "",
-        vodTime: 0
+        vodTime: time
     )
 }
 
-func source(_ id: Int, _ name: String) -> Source {
-    Source(id: id, name: name, url: "https://example.com/\(id)/", flag: 0, jxUrl: nil, vipOnly: false)
+func source(
+    _ id: Int,
+    _ name: String,
+    enabled: Bool = true,
+    capabilities: SourceCapabilities = .cmsDefaults,
+    metadataPriority: Int = 100,
+    playPriority: Int = 100
+) -> Source {
+    Source(
+        id: id,
+        name: name,
+        url: "https://example.com/\(id)/",
+        flag: enabled ? 0 : 1,
+        jxUrl: nil,
+        vipOnly: false,
+        capabilities: capabilities,
+        metadataPriority: metadataPriority,
+        playPriority: playPriority
+    )
 }
 
 func testMergeIntoPoolPreservesIncomingOrder() {
-    let incoming = (1...5).map { vod("id-\($0)", "片名\($0)") }
+    let incoming = (1...5).map { vod("id-\($0)", "片名\($0)", time: 100 - $0) }
     let names = HomeFeed.mergeIntoPool(pool: [], incoming: incoming, isFirstBatch: true).map(\.vodName)
-    assertEqual(names, incoming.map(\.vodName), "first batch should keep API order")
+    assertEqual(names, incoming.map(\.vodName), "first batch should keep newest-first API order")
 }
 
 func testMergeIntoPoolKeepsFirstSeenPositionWhenTitleDuplicates() {
@@ -59,7 +76,8 @@ func testMergeKeyKeepsHomonymousFilmsWithDifferentYears() {
     let hk = vod("1", "兄弟", typeName: "动作片", year: "2007")
     let us = vod("2", "兄弟", typeName: "剧情片", year: "2009")
     let merged = HomeFeed.mergeIntoPool(pool: [], incoming: [hk, us], isFirstBatch: true)
-    assertEqual(merged.map(\.vodId), ["1", "2"], "two films titled 兄弟 in different years must both stay in the list")
+    assertEqual(Set(merged.map(\.vodId)), Set(["1", "2"]), "two films titled 兄弟 in different years must both stay in the list")
+    assertEqual(merged.map(\.vodId), ["2", "1"], "newer release year should rank first when times are equal")
 }
 
 func testMergeKeyStillCollapsesSameTitleAndYear() {
@@ -85,12 +103,134 @@ func testVodMergeKeepsHomonymousFilmsWithDifferentYears() {
     assertEqual(merged.map(\.vodId), ["1", "2"], "search merge must not fold two 兄弟 films from different years")
 }
 
+func testUnifiedMergeSortsByVodTimeDesc() {
+    let store = SourceStore(sources: [
+        source(1, "A"),
+        source(2, "B"),
+    ])
+    let items = [
+        MergeableVodItem(item: raw("1", "旧片", time: 100), sourceId: 1, sourceName: "A"),
+        MergeableVodItem(item: raw("2", "新片", time: 300), sourceId: 1, sourceName: "A"),
+        MergeableVodItem(item: raw("3", "新片", time: 200), sourceId: 2, sourceName: "B"),
+    ]
+    let merged = VodMergeService.sortMergedByUpdatedDesc(
+        VodMergeService.mergeVodItems(items, store: store)
+    )
+    let names = merged.map(\.item.vodName)
+    assertEqual(names, ["新片", "旧片"], "unified category list should be newest first")
+    assertEqual(merged[0].item.vodTime, 300, "group should keep the latest variant vodTime")
+}
+
+func testMergeFoldsEmptyYearIntoConcreteYear() {
+    let store = SourceStore(sources: [source(1, "A"), source(2, "B")])
+    let items = [
+        MergeableVodItem(item: raw("1", "热血部落", year: "", time: 100), sourceId: 1, sourceName: "A"),
+        MergeableVodItem(item: raw("2", "热血部落", year: "2024", time: 200), sourceId: 2, sourceName: "B"),
+    ]
+    let merged = VodMergeService.mergeVodItems(items, store: store)
+    assertEqual(merged.count, 1, "empty-year and concrete-year same title must collapse")
+    assertEqual(merged[0].item.vodTime, 200, "collapsed group keeps newest vodTime")
+    assertEqual(merged[0].variants.count, 2, "both sources remain as variants")
+}
+
+func testMergeKeepsDistinctYearsSeparate() {
+    let store = SourceStore(sources: [source(1, "A")])
+    let items = [
+        MergeableVodItem(item: raw("1", "兄弟", year: "2007", time: 100), sourceId: 1, sourceName: "A"),
+        MergeableVodItem(item: raw("2", "兄弟", year: "2009", time: 200), sourceId: 1, sourceName: "A"),
+        MergeableVodItem(item: raw("3", "兄弟", year: "", time: 300), sourceId: 1, sourceName: "A"),
+    ]
+    let merged = VodMergeService.sortMergedByUpdatedDesc(
+        VodMergeService.mergeVodItems(items, store: store)
+    )
+    assertEqual(merged.count, 2, "two concrete years stay separate; empty year folds into newest")
+    assertEqual(merged.map(\.item.vodYear).sorted(), ["2007", "2009"], "both concrete years survive")
+}
+
+func testSortPrefersReleaseYearOverUpdateTime() {
+    let pool = [
+        vod("1", "旧片新更", time: 900, year: "2020"),
+        vod("2", "新片旧更", time: 100, year: "2026"),
+        vod("3", "无年份", time: 999),
+    ]
+    assertEqual(
+        HomeFeed.sortByUpdatedDesc(pool).map(\.vodId),
+        ["2", "1", "3"],
+        "release year must rank above vodTime; missing year goes last"
+    )
+}
+
+func testNormalizeYearRejectsFuturePlaceholder() {
+    assertEqual(HomeFeed.normalizeYear("2030"), "", "placeholder years beyond next calendar year must not display")
+    assertEqual(HomeFeed.normalizeYear("1899"), "", "pre-cinema years must not display")
+    let current = Calendar(identifier: .gregorian).component(.year, from: Date())
+    assertEqual(HomeFeed.normalizeYear(String(current)), String(current), "current year must stay")
+    assertEqual(HomeFeed.normalizeYear(String(current + 1)), String(current + 1), "next year remains allowed for unreleased titles")
+    assertEqual(HomeFeed.normalizeYear(String(current + 2)), "", "year+2 must not display")
+}
+
+func testFuturePlaceholderKeepsRecentFilmsNearTop() {
+    let current = Calendar(identifier: .gregorian).component(.year, from: Date())
+    // Dirty CMS year 2030 should still rank as this year (display still hides it).
+    let recent = vod("1", "热血部落", time: 1_700_000_000, year: "2030")
+    let older = vod("2", "老片", time: 1_600_000_000, year: "2020")
+    assertEqual(
+        HomeFeed.sortYearValue("2030", vodTime: 1_700_000_000),
+        current,
+        "future placeholder should rank as current year, not sink to missing"
+    )
+    assertEqual(
+        HomeFeed.sortByUpdatedDesc([older, recent]).map(\.vodId),
+        ["1", "2"],
+        "2030-placeholder titles must stay ahead of older real years"
+    )
+}
+
+func testSortBreaksYearTiesWithNewerUpdateTime() {
+    let pool = [
+        vod("1", "甲", time: 100, year: "2026"),
+        vod("2", "乙", time: 300, year: "2026"),
+    ]
+    assertEqual(
+        HomeFeed.sortByUpdatedDesc(pool).map(\.vodId),
+        ["2", "1"],
+        "same year should fall back to newer vodTime"
+    )
+}
+
+func testVodItemIdIncludesSource() {
+    let a = VodItem(vodId: "10", vodName: "甲", vodPic: "", primarySourceId: 33, vodTime: 1)
+    let b = VodItem(vodId: "10", vodName: "乙", vodPic: "", primarySourceId: 125, vodTime: 1)
+    assertEqual(a.id == b.id, false, "same vodId from different sources must not share SwiftUI identity")
+}
+
 func testMergeIntoPoolAppendsNewcomersAfterExistingPool() {
-    let pool = [vod("1", "甲"), vod("2", "乙")]
-    let incoming = [vod("3", "丙"), vod("2-new", "乙"), vod("4", "丁")]
+    let pool = [
+        vod("1", "甲", time: 100),
+        vod("2", "乙", time: 90),
+    ]
+    let incoming = [
+        vod("3", "丙", time: 95),
+        vod("2-new", "乙", time: 80),
+        vod("4", "丁", time: 200),
+    ]
     let merged = HomeFeed.mergeIntoPool(pool: pool, incoming: incoming, isFirstBatch: false)
-    assertEqual(merged.map(\.vodName), ["甲", "乙", "丙", "丁"], "pool order should stay, newcomers append in incoming order")
-    assertEqual(merged[1].vodId, "2", "existing pool items should not be reordered or replaced by later pages")
+    assertEqual(
+        merged.map(\.vodName),
+        ["丁", "甲", "丙", "乙"],
+        "after pagination merge, pool must stay newest vodTime first"
+    )
+    assertEqual(merged[3].vodId, "2", "existing pool item should keep identity when not overwritten")
+}
+
+func testMergeIntoPoolFirstBatchSortsByVodTimeDesc() {
+    let incoming = [
+        vod("1", "旧", time: 10),
+        vod("2", "新", time: 30),
+        vod("3", "中", time: 20),
+    ]
+    let merged = HomeFeed.mergeIntoPool(pool: [], incoming: incoming, isFirstBatch: true)
+    assertEqual(merged.map(\.vodName), ["新", "中", "旧"], "first batch should be newest first")
 }
 
 func testContentPhasePrefersLoadingOverEmpty() {
@@ -144,7 +284,7 @@ func testShouldRetriggerLoadMoreFooterWhenDisplayCountChanges() {
     }
 }
 
-func testHomeFeedCacheRestoresSnapshotByTypeId() {
+func testHomeFeedCacheRestoresSnapshotBySlug() {
     var cache = HomeFeedCache()
     let movies = HomeFeedSnapshot(
         pool: [vod("m1", "电影甲"), vod("m2", "电影乙")],
@@ -152,33 +292,33 @@ func testHomeFeedCacheRestoresSnapshotByTypeId() {
         apiPage: 1,
         pageCount: 4
     )
-    cache.save(movies, typeId: 20)
+    cache.save(movies, slug: "movie")
     cache.save(
         HomeFeedSnapshot(pool: [vod("a1", "动作")], displayCount: 1, apiPage: 1, pageCount: 2),
-        typeId: 21
+        slug: "movie-action"
     )
 
-    let restored = cache.snapshot(for: 20)
-    assertEqual(restored?.pool.map(\.vodId) ?? [], ["m1", "m2"], "cache hit should restore the matching typeId pool")
+    let restored = cache.snapshot(for: "movie")
+    assertEqual(restored?.pool.map(\.vodId) ?? [], ["m1", "m2"], "cache hit should restore the matching slug pool")
     assertEqual(restored?.displayCount ?? 0, 2, "cache hit should restore displayCount")
     assertEqual(restored?.pageCount ?? 0, 4, "cache hit should restore pageCount")
 }
 
-func testHomeFeedCacheTreatsNilTypeIdAsAllCategory() {
+func testHomeFeedCacheTreatsNilSlugAsAllCategory() {
     var cache = HomeFeedCache()
     cache.save(
         HomeFeedSnapshot(pool: [vod("all", "首页")], displayCount: 1, apiPage: 1, pageCount: 1),
-        typeId: nil
+        slug: nil
     )
     cache.save(
         HomeFeedSnapshot(pool: [vod("m1", "电影")], displayCount: 1, apiPage: 1, pageCount: 1),
-        typeId: 20
+        slug: "movie"
     )
 
     let all = cache.snapshot(for: nil)
-    assertEqual(all?.pool.map(\.vodId) ?? [], ["all"], "nil typeId should be the 全部 bucket, not collide with a numeric typeId")
-    if cache.snapshot(for: 99) != nil {
-        fail("unknown typeId should be a cache miss")
+    assertEqual(all?.pool.map(\.vodId) ?? [], ["all"], "nil slug should be the 全部 bucket, not collide with movie")
+    if cache.snapshot(for: "unknown") != nil {
+        fail("unknown slug should be a cache miss")
     }
 }
 
@@ -204,32 +344,33 @@ func testContentPhaseKeepsContentWhileRefreshingCachedPool() {
 }
 
 func testHotRecentSplitUsesFirstSixAsHotAndSortsRecentByTime() {
-    let pool = (1...20).map { vod("\($0)", "片\($0)", time: $0) }
+    // Pool stored newest-first (as mergeIntoPool guarantees).
+    let pool = (1...20).reversed().map { vod("\($0)", "片\($0)", time: $0) }
     let hot = HomeFeed.hotItems(pool)
     let recent = HomeFeed.recentItems(pool)
     let all = HomeFeed.allItems(pool)
-    assertEqual(hot.map(\.vodId), (1...6).map(String.init), "hot shelf should keep the first 6 items in API order")
-    assertEqual(recent.map(\.vodId), (15...20).reversed().map(String.init), "recent shelf should be the newest 6 leftovers")
-    assertEqual(all.map(\.vodId), (7...14).reversed().map(String.init), "all section should continue newest-first after recent")
+    assertEqual(hot.map(\.vodId), (15...20).reversed().map(String.init), "hot shelf should be the newest 6")
+    assertEqual(recent.map(\.vodId), (9...14).reversed().map(String.init), "recent shelf should be the next 6 newest")
+    assertEqual(all.map(\.vodId), (1...8).reversed().map(String.init), "all section should continue newest-first after recent")
 }
 
 func testRecentCapsAtSixAndAllKeepsNewestFirst() {
-    let pool = (1...50).map { vod("\($0)", "片\($0)", time: $0) }
+    let pool = (1...50).reversed().map { vod("\($0)", "片\($0)", time: $0) }
     let recent = HomeFeed.recentItems(pool)
     let all = HomeFeed.allItems(pool)
-    assertEqual(recent.map(\.vodId), (45...50).reversed().map(String.init), "recent should keep only the newest 6 leftovers")
-    assertEqual(all.map(\.vodId), (7...44).reversed().map(String.init), "all should be the remaining leftovers, newest vodTime first")
+    assertEqual(recent.map(\.vodId), (39...44).reversed().map(String.init), "recent should keep only the next 6 after hot")
+    assertEqual(all.map(\.vodId), (1...38).reversed().map(String.init), "all should be the remaining leftovers, newest vodTime first")
     assertEqual(all.count, 38, "50-item pool should leave 38 items for the all section")
 }
 
 func testAllWindowRevealsSixAtATime() {
-    let pool = (1...50).map { vod("\($0)", "片\($0)", time: $0) }
+    let pool = (1...50).reversed().map { vod("\($0)", "片\($0)", time: $0) }
     let all = HomeFeed.allItems(pool)
     let first = HomeFeed.initialAllDisplayCount(allLength: all.count)
     assertEqual(first, 6, "all section should start with one row of 6")
     let rows = HomeFeed.allRows(items: all, displayCount: first)
     assertEqual(rows.count, 1, "first paint should be a single all row")
-    assertEqual(rows.first?.map(\.vodId) ?? [], (39...44).reversed().map(String.init), "first all row should be the next 6 newest leftovers")
+    assertEqual(rows.first?.map(\.vodId) ?? [], (33...38).reversed().map(String.init), "first all row should be the next 6 newest leftovers")
 
     let next = HomeFeed.nextAllDisplayCount(current: first, allLength: all.count)
     assertEqual(next, 12, "scrolling down should reveal another 6")
@@ -260,14 +401,17 @@ func testNextAllLoadMoreRevealsBeforeFetching() {
 }
 
 func testRecentEmptyWhenPoolFitsInHot() {
-    let pool = (1...5).map { vod("\($0)", "片\($0)", time: $0) }
-    assertEqual(HomeFeed.hotItems(pool).map(\.vodId), (1...5).map(String.init), "undersized pool should all sit on the hot shelf")
+    let pool = (1...5).reversed().map { vod("\($0)", "片\($0)", time: $0) }
+    assertEqual(HomeFeed.hotItems(pool).map(\.vodId), (1...5).reversed().map(String.init), "undersized pool should all sit on the hot shelf")
     assertEqual(HomeFeed.recentItems(pool).isEmpty, true, "recent shelf should stay hidden until there are more than 6 items")
     assertEqual(HomeFeed.allItems(pool).isEmpty, true, "all section should stay hidden until leftovers exceed the recent cap")
 }
 
 func testRecentKeepsOriginalOrderWhenTimesTie() {
-    let pool = (1...12).map { vod("\($0)", "片\($0)", time: $0 <= 6 ? $0 : 100) }
+    // Newest-first pool: hot = first 6, recent = next 6 with equal times — keep stable order.
+    let hot = (1...6).map { vod("\($0)", "片\($0)", time: 200 - $0) }
+    let tied = (7...12).map { vod("\($0)", "片\($0)", time: 100) }
+    let pool = hot + tied
     let recent = HomeFeed.recentItems(pool)
     assertEqual(recent.map(\.vodId), ["7", "8", "9", "10", "11", "12"], "equal vodTime should keep incoming order")
 }
@@ -332,22 +476,14 @@ func testMergeVodItemsPreservesFirstSeenOrder() {
     assertEqual(merged.map(\.vodName), ["甲", "乙", "丙"], "search/list merge should keep first-seen title order")
 }
 
-func testDefaultPrimaryTypeIdPrefersMovies() {
-    let tree = CategoryTreeBuilder.build(from: [
-        CategoryDef(typeId: 12, label: "剧集"),
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 20, label: "动作片"),
-        CategoryDef(typeId: 13, label: "综艺"),
-    ])
-    assertEqual(CategoryTreeBuilder.defaultTypeId(in: tree), 6, "home should open on 电影 instead of unfiltered 全部")
+func testDefaultPrimarySlugPrefersMovies() {
+    let tree = CategoryTreeBuilder.build(from: sampleUnifiedCatalog())
+    assertEqual(CategoryTreeBuilder.defaultSlug(in: tree), "movie", "home should open on 电影 instead of unfiltered 全部")
 }
 
-func testDefaultPrimaryTypeIdFallsBackToFirstPrimaryWhenMoviesMissing() {
-    let tree = CategoryTreeBuilder.build(from: [
-        CategoryDef(typeId: 12, label: "剧集"),
-        CategoryDef(typeId: 13, label: "综艺"),
-    ])
-    assertEqual(CategoryTreeBuilder.defaultTypeId(in: tree), 12, "without 电影, use the first primary category")
+func testDefaultPrimarySlugFallsBackToFirstPrimaryWhenMoviesMissing() {
+    let tree = CategoryTreeBuilder.build(from: sampleUnifiedCatalog(includeMovie: false))
+    assertEqual(CategoryTreeBuilder.defaultSlug(in: tree), "tv", "without 电影, use the first primary category")
 }
 
 func testEthicalCategoryIsHiddenFromMovieTabsAndChildren() {
@@ -362,26 +498,11 @@ func testEthicalCategoryIsHiddenFromMovieTabsAndChildren() {
         VodTypeRaw(typeId: 21, typeName: "伦理片"),
     ])
     assertEqual(categories.map(\.label).contains("伦理片"), false, "buildCategories should drop 伦理片")
-    let tree = CategoryTreeBuilder.build(from: categories)
-    assertEqual(
-        tree.childrenByParent[6]?.map(\.label) ?? [],
-        ["动作片"],
-        "电影 children should not include 伦理片"
-    )
 }
 
 func testEthicalCategoryIsDroppedEvenWhenAlreadyInTheTreeDefs() {
-    let tree = CategoryTreeBuilder.build(from: [
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 20, label: "动作片"),
-        CategoryDef(typeId: 21, label: "伦理片"),
-        CategoryDef(typeId: 22, label: "倫理片"),
-    ])
-    assertEqual(
-        tree.childrenByParent[6]?.map(\.label) ?? [],
-        ["动作片"],
-        "iPad/tvOS trees must drop 伦理 even if a source skipped buildCategories"
-    )
+    assertEqual(MacCMSCategoryService.isTypeVisible("伦理片"), false, "伦理片 stays hidden")
+    assertEqual(MacCMSCategoryService.isTypeVisible("倫理片"), false, "traditional 倫理片 stays hidden")
 }
 
 func testEthicalItemsAreHiddenFromMovieGridAndSearch() {
@@ -392,7 +513,7 @@ func testEthicalItemsAreHiddenFromMovieGridAndSearch() {
         vod("3", "电影里的伦理", typeName: "电影", vodClass: "伦理,剧情"),
         vod("4", "喜剧片丁", typeName: "喜剧片"),
     ]
-    let movieAll = CategoryMatch.filter(items, selectedTypeId: 6, tree: tree)
+    let movieAll = CategoryMatch.filter(items, selectedSlug: "movie", tree: tree)
     assertEqual(
         movieAll.map(\.vodName),
         ["动作片甲", "喜剧片丁"],
@@ -466,42 +587,217 @@ func testMergePlaySourcesPrefersDirectURLWhenCollapsingDuplicates() {
     assertEqual(merged[0].episodes.first?.url, "https://cdn.example/1.m3u8", "keep the direct m3u8 line when collapsing")
 }
 
-func testPrimaryTabsKeepOnlyTheFourParentCategories() {
-    let tree = CategoryTreeBuilder.build(from: [
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 12, label: "剧集"),
-        CategoryDef(typeId: 13, label: "综艺"),
-        CategoryDef(typeId: 4, label: "动漫"),
-        CategoryDef(typeId: 20, label: "动作片"),
-        CategoryDef(typeId: 21, label: "国产剧"),
-        CategoryDef(typeId: 30, label: "体育"),
-        CategoryDef(typeId: 31, label: "NBA"),
-        CategoryDef(typeId: 32, label: "家庭篇"),
-        CategoryDef(typeId: 33, label: "足球"),
-        CategoryDef(typeId: 34, label: "篮球"),
-        CategoryDef(typeId: 35, label: "未分类"),
-    ])
+func testPlayLineWeightsOrderOfficialBeforeMacCMS() {
+    let sources = [
+        PlayLineWeighting.annotate(PlaySource(name: "红牛", key: "hn", episodes: [Episode(name: "1", url: "https://a.com/a.m3u8")], sourceId: 1, playFrom: "hnm3u8"), rawPlayFrom: "hnm3u8"),
+        PlayLineWeighting.annotate(PlaySource(name: "腾讯", key: "qq", episodes: [Episode(name: "1", url: "resolve://x")], sourceId: nil, mode: "ticket", playFrom: "qq"), rawPlayFrom: "qq"),
+        PlayLineWeighting.annotate(PlaySource(name: "4K", key: "c4k", episodes: [Episode(name: "1", url: "resolve://y")], sourceId: nil, mode: "ticket", playFrom: "cloudflare-4k"), rawPlayFrom: "cloudflare-4k"),
+        PlayLineWeighting.annotate(PlaySource(name: "官方C", key: "c", episodes: [Episode(name: "1", url: "resolve://z")], sourceId: nil, mode: "ticket", playFrom: "cloudflare"), rawPlayFrom: "cloudflare"),
+    ]
+    let sorted = PlayLineWeighting.sort(sources)
+    assertEqual(sorted.map(\.key), ["qq", "c", "c4k", "hn"], "platform official > bpz5 CDN > MacCMS")
+    PlayLineWeighting.ticketEnabled = true
     assertEqual(
-        tree.primary.map(\.label),
-        ["电影", "剧集", "综艺", "动漫"],
-        "top tabs should keep only the four parent categories"
+        PlayLineWeighting.preferredPlayableIndex(in: sources, ticketEnabled: true),
+        1,
+        "with ticket enabled prefer highest official line (qq)"
     )
     assertEqual(
-        tree.childrenByParent[6]?.map(\.label) ?? [],
-        ["动作片"],
+        PlayLineWeighting.preferredPlayableIndex(in: sources, ticketEnabled: false),
+        0,
+        "without ticket skip official and pick hnm3u8"
+    )
+    PlayLineWeighting.ticketEnabled = true
+}
+
+func testDisplayPlaySourcesKeepsWeightedOrder() {
+    PlayLineWeighting.table = PlayLineWeights(
+        version: 2,
+        defaultWeight: 100,
+        byPlayFrom: ["qq": 2000, "hnm3u8": 500],
+        byProviderId: [:],
+        bySourceId: nil
+    )
+    PlayLineWeighting.playPriorityBySourceId = [:]
+    PlayLineWeighting.healthStore = SourceHealthStore()
+    defer {
+        PlayLineWeighting.table = .bundled
+        PlayLineWeighting.healthStore = .shared
+    }
+
+    let sources = [
+        PlaySource(name: "红牛", key: "hn", episodes: [Episode(name: "1", url: "https://a.com/a.m3u8")], sourceId: 1, mode: "direct", playFrom: "hnm3u8"),
+        PlaySource(name: "腾讯", key: "official-qq", episodes: [Episode(name: "1", url: "https://v.qq.com/x/cover/a/b.html")], sourceId: 901, mode: "direct", playFrom: "qq"),
+    ]
+    let annotated = sources.map { PlayLineWeighting.annotate($0) }
+    let display = PlayLineWeighting.forDetailDisplay(annotated)
+    assertEqual(display.map(\.key), ["official-qq", "hn"], "detail shows all lines, official first by weight")
+    assertEqual(PlayLineWeighting.forDetailDisplay([]).count, 0, "empty stays empty")
+}
+
+func testDirectMediaURLRequiresPathExtension() {
+    assertEqual(
+        PlaybackSupport.isDirectMediaURL("https://cdn.example/2026/index.m3u8"),
+        true,
+        "real m3u8 path is direct"
+    )
+    assertEqual(
+        PlaybackSupport.isDirectMediaURL("https://cdn.example/play/abc.mp4?token=1"),
+        true,
+        "mp4 path with query is direct"
+    )
+    assertEqual(
+        PlaybackSupport.isDirectMediaURL("https://jx.m3u8.tv/jiexi/?url=https://v.qq.com/x/cover/a/b.html"),
+        false,
+        "jiexi host containing m3u8 must not count as direct media"
+    )
+    assertEqual(
+        PlaybackSupport.isDirectMediaURL("https://vod.example/share/abcdef"),
+        false,
+        "share page is not direct media"
+    )
+    assertEqual(
+        PlaybackSupport.isDirectMediaURL("https://v.qq.com/x/cover/cid/vid.html"),
+        false,
+        "official html page is not direct media"
+    )
+}
+
+func testPreferredPlayableIndexSkipsSharePages() {
+    let sources = [
+        PlaySource(
+            name: "分享线",
+            key: "share",
+            episodes: [Episode(name: "1", url: "https://vod.example/share/abc")],
+            sourceId: 1,
+            weight: 900,
+            mode: "direct",
+            playFrom: "share"
+        ),
+        PlaySource(
+            name: "直链",
+            key: "m3u8",
+            episodes: [Episode(name: "1", url: "https://vod.example/a/index.m3u8")],
+            sourceId: 2,
+            weight: 100,
+            mode: "direct",
+            playFrom: "m3u8"
+        ),
+    ]
+    let index = PlayLineWeighting.preferredPlayableIndex(in: sources, ticketEnabled: false)
+    assertEqual(index, 1, "skip high-weight share page; pick real m3u8 line")
+}
+
+func testVodPlaybackFailoverBuildsBackupCandidates() {
+    let sources = [
+        PlaySource(
+            name: "高权坏线",
+            key: "a",
+            episodes: [Episode(name: "1", url: "https://a.example/1/index.m3u8")],
+            sourceId: 10,
+            weight: 800,
+            playFrom: "a"
+        ),
+        PlaySource(
+            name: "备用好线",
+            key: "b",
+            episodes: [Episode(name: "1", url: "https://b.example/1/index.m3u8")],
+            sourceId: 20,
+            weight: 200,
+            playFrom: "b"
+        ),
+        PlaySource(
+            name: "分享不可播",
+            key: "c",
+            episodes: [Episode(name: "1", url: "https://c.example/share/x")],
+            sourceId: 30,
+            weight: 900,
+            playFrom: "c"
+        ),
+    ]
+    let episode = sources[0].episodes[0]
+    let candidates = VodPlaybackFailover.candidates(
+        playSources: sources,
+        selectedIndex: 0,
+        episode: episode,
+        fallbackSourceId: 10,
+        maxCandidates: 4
+    )
+    assertEqual(candidates.map(\.sourceId), [10, 20], "primary then other direct m3u8; skip share")
+    assertEqual(VodPlaybackFailover.nextIndex(after: 0, count: 2), 1, "can advance to backup")
+    assertEqual(VodPlaybackFailover.nextIndex(after: 1, count: 2) == nil, true, "stop after last candidate")
+}
+
+func testPlayLineWeightsSourceIdFallback() {
+    PlayLineWeighting.table = PlayLineWeights(
+        version: 2,
+        defaultWeight: 100,
+        byPlayFrom: [:],
+        byProviderId: [:],
+        bySourceId: ["33": 480, "178": 210]
+    )
+    PlayLineWeighting.playPriorityBySourceId = [:]
+    PlayLineWeighting.healthStore = SourceHealthStore()
+    defer {
+        PlayLineWeighting.table = .bundled
+        PlayLineWeighting.healthStore = .shared
+    }
+
+    let low = PlayLineWeighting.annotate(
+        PlaySource(name: "最大", key: "a", episodes: [Episode(name: "1", url: "https://a.com/a.m3u8")], sourceId: 178, playFrom: "unknownx"),
+        rawPlayFrom: "unknownx"
+    )
+    let high = PlayLineWeighting.annotate(
+        PlaySource(name: "无忧", key: "b", episodes: [Episode(name: "1", url: "https://b.com/b.m3u8")], sourceId: 33, playFrom: "unknowny"),
+        rawPlayFrom: "unknowny"
+    )
+    let sorted = PlayLineWeighting.sort([low, high])
+    assertEqual(sorted.map(\.key), ["b", "a"], "higher bySourceId weight first")
+}
+
+func testPrimaryTabsKeepOnlyUnifiedParents() {
+    let tree = CategoryTreeBuilder.build(from: sampleUnifiedCatalog(includeShort: true))
+    assertEqual(
+        tree.primary.map(\.label),
+        ["电影", "剧集", "综艺", "动漫", "短剧"],
+        "top tabs should keep only the unified parent categories"
+    )
+    assertEqual(
+        tree.childrenByParent["movie"]?.map(\.label) ?? [],
+        ["动作片", "喜剧片"],
         "movie children should still nest under 电影"
     )
 }
 
-func movieCategoryTree() -> CategoryTree {
-    CategoryTreeBuilder.build(from: [
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 12, label: "剧集"),
-        CategoryDef(typeId: 20, label: "动作片"),
-        CategoryDef(typeId: 21, label: "喜剧片"),
-        CategoryDef(typeId: 22, label: "国产剧"),
-    ])
+func sampleUnifiedCatalog(
+    includeMovie: Bool = true,
+    movieChildren: [(String, String)] = [("movie-action", "动作片"), ("movie-comedy", "喜剧片")],
+    includeShort: Bool = false
+) -> UnifiedCatalogFile {
+    var tree: [UnifiedCategoryNode] = []
+    if includeMovie {
+        tree.append(UnifiedCategoryNode(
+            slug: "movie",
+            label: "电影",
+            sources: ["33": 6],
+            children: movieChildren.map { UnifiedCategoryNode(slug: $0.0, label: $0.1, sources: [:], children: []) }
+        ))
+    }
+    tree.append(UnifiedCategoryNode(slug: "tv", label: "剧集", sources: ["33": 12], children: [
+        UnifiedCategoryNode(slug: "tv-cn", label: "国产剧", sources: [:], children: [])
+    ]))
+    tree.append(UnifiedCategoryNode(slug: "variety", label: "综艺", sources: [:], children: []))
+    tree.append(UnifiedCategoryNode(slug: "anime", label: "动漫", sources: [:], children: []))
+    if includeShort {
+        tree.append(UnifiedCategoryNode(slug: "short", label: "短剧", sources: [:], children: []))
+    }
+    return UnifiedCatalogFile(version: 1, generatedAt: nil, aliases: nil, defaultSlug: "movie", tree: tree)
 }
+
+func movieCategoryTree() -> CategoryTree {
+    CategoryTreeBuilder.build(from: sampleUnifiedCatalog())
+}
+
 
 func testCategoryMatchDropsComedyFromActionList() {
     let tree = movieCategoryTree()
@@ -510,7 +806,7 @@ func testCategoryMatchDropsComedyFromActionList() {
         vod("2", "喜剧片乙", typeName: "喜剧片"),
         vod("3", "动作片丙", vodClass: "动作,冒险"),
     ]
-    let filtered = CategoryMatch.filter(items, selectedTypeId: 20, tree: tree)
+    let filtered = CategoryMatch.filter(items, selectedSlug: "movie-action", tree: tree)
     assertEqual(filtered.map(\.vodName), ["动作片甲", "动作片丙"], "comedy must not remain in the 动作片 pool")
 }
 
@@ -521,42 +817,40 @@ func testCategoryMatchParentKeepsAllMovieChildren() {
         vod("2", "喜剧片乙", typeName: "喜剧片"),
         vod("3", "剧集丙", typeName: "国产剧"),
     ]
-    let filtered = CategoryMatch.filter(items, selectedTypeId: 6, tree: tree)
+    let filtered = CategoryMatch.filter(items, selectedSlug: "movie", tree: tree)
     assertEqual(filtered.map(\.vodName), ["动作片甲", "喜剧片乙"], "电影/全部 should keep movie children and drop TV series")
 }
 
 func testCategoryMatchKeepsUnknownItemsRatherThanEmptyingTheShelf() {
     let tree = movieCategoryTree()
     let items = [vod("1", "无类名片")]
-    let filtered = CategoryMatch.filter(items, selectedTypeId: 20, tree: tree)
+    let filtered = CategoryMatch.filter(items, selectedSlug: "movie-action", tree: tree)
     assertEqual(filtered.map(\.vodName), ["无类名片"], "items with no type metadata should stay so a bad CMS tag does not blank the row")
 }
 
-func testChildTypeIdsOnlyWhenSelectingAParentCategory() {
+func testParentSlugLookupForUnifiedTree() {
     let tree = movieCategoryTree()
-    assertEqual(HomeLaunch.childTypeIds(tree: tree, typeId: 6), [20, 21], "电影 should fetch known child type ids")
-    assertEqual(HomeLaunch.childTypeIds(tree: tree, typeId: 20), [], "动作片 is a leaf and must not fan-out to sibling categories")
+    assertEqual(CategoryTreeBuilder.parentSlug(tree: tree, slug: "movie"), "movie", "movie is its own parent")
+    assertEqual(CategoryTreeBuilder.parentSlug(tree: tree, slug: "movie-action"), "movie", "action nests under movie")
 }
 
 func testHomeLaunchPayloadDropsOffCategoryItemsFromMoviePool() {
-    let categories = [
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 20, label: "动作片"),
-        CategoryDef(typeId: 22, label: "国产剧"),
-    ]
+    let tree = CategoryTreeBuilder.build(from: sampleUnifiedCatalog(
+        movieChildren: [("movie-action", "动作片")]
+    ))
     let payload = HomeLaunch.makePayload(
-        categories: categories,
+        tree: tree,
         items: [
             vod("1", "动作片甲", typeName: "动作片"),
             vod("2", "剧集乙", typeName: "国产剧"),
         ],
         page: 1,
         pageCount: 1,
-        sourceId: 33,
+        selectedSlug: "movie",
         tvDisplay: false
     )
     assertEqual(payload.snapshot.pool.map(\.vodName), ["动作片甲"], "movie launch pool should drop TV series that leaked into the page")
-    assertEqual(payload.sourceId, 33, "payload should carry the catalog source id")
+    assertEqual(payload.selectedSlug, "movie", "payload should open on movie slug")
 }
 
 func testCatalogAndSearchRequestsAskForDetailSoPostersAreIncluded() {
@@ -564,6 +858,9 @@ func testCatalogAndSearchRequestsAskForDetailSoPostersAreIncluded() {
     assertEqual(catalog["ac"] ?? "", "detail", "MacCMS list omits vod_pic; catalog must request ac=detail")
     assertEqual(catalog["pg"] ?? "", "2", "catalog page must be forwarded")
     assertEqual(catalog["t"] ?? "", "5", "catalog type id must be forwarded")
+    if catalog["h"] != nil {
+        fail("catalog without hours must not send h")
+    }
 
     let home = MacCMSClient.catalogParams(page: 1, typeId: nil)
     assertEqual(home["ac"] ?? "", "detail", "home catalog must also request posters")
@@ -575,6 +872,29 @@ func testCatalogAndSearchRequestsAskForDetailSoPostersAreIncluded() {
     assertEqual(search["ac"] ?? "", "detail", "search list also omits vod_pic unless ac=detail")
     assertEqual(search["wd"] ?? "", "鲨笼", "search keyword must be forwarded")
     assertEqual(search["pg"] ?? "", "3", "search page must be forwarded")
+}
+
+func testCatalogParamsForwardsHoursWhenPositive() {
+    let recent = MacCMSClient.catalogParams(page: 1, typeId: 1, hours: 24)
+    assertEqual(recent["ac"] ?? "", "detail", "hours filter still uses ac=detail")
+    assertEqual(recent["t"] ?? "", "1", "type id kept with hours")
+    assertEqual(recent["pg"] ?? "", "1", "page kept with hours")
+    assertEqual(recent["h"] ?? "", "24", "MacCMS h = recent N hours")
+
+    let allRecent = MacCMSClient.catalogParams(page: 2, typeId: nil, hours: 12)
+    assertEqual(allRecent["h"] ?? "", "12", "hours works without type id")
+    if allRecent["t"] != nil {
+        fail("hours-only catalog must not invent a type id")
+    }
+
+    let ignored = MacCMSClient.catalogParams(page: 1, typeId: 3, hours: 0)
+    if ignored["h"] != nil {
+        fail("hours <= 0 must omit h")
+    }
+    let ignoredNeg = MacCMSClient.catalogParams(page: 1, typeId: 3, hours: -1)
+    if ignoredNeg["h"] != nil {
+        fail("negative hours must omit h")
+    }
 }
 
 func withTempDirectory(_ body: (URL) -> Void) {
@@ -1609,23 +1929,18 @@ func testHomeLaunchEntersMainWhenFirstPageSucceedsEvenIfEmpty() {
     assertEqual(HomeLaunch.shouldEnterMain(didSucceed: false), false, "failed home fetch should stay on the launch screen")
 }
 
-func testHomeLaunchPayloadUsesMovieTypeAndTVAllWindow() {
-    let categories = [
-        CategoryDef(typeId: 12, label: "剧集"),
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 20, label: "动作片"),
-    ]
+func testHomeLaunchPayloadUsesMovieSlugAndTVAllWindow() {
+    let tree = CategoryTreeBuilder.build(from: sampleUnifiedCatalog())
     let items = (1...20).map { vod("id-\($0)", "片名\($0)") }
     let payload = HomeLaunch.makePayload(
-        categories: categories,
+        tree: tree,
         items: items,
         page: 1,
         pageCount: 5,
-        sourceId: 33,
+        selectedSlug: "movie",
         tvDisplay: true
     )
-    assertEqual(payload.selectedTypeId, 6, "launch payload should open on 电影")
-    assertEqual(payload.sourceId, 33, "launch payload must keep the catalog source that built the category tree")
+    assertEqual(payload.selectedSlug, "movie", "launch payload should open on 电影")
     assertEqual(payload.snapshot.pool.count, 20, "first page should become the home pool")
     assertEqual(payload.snapshot.apiPage, 1, "launch snapshot should keep page 1")
     assertEqual(payload.snapshot.pageCount, 5, "launch snapshot should keep the API page count")
@@ -1636,34 +1951,24 @@ func testHomeLaunchPayloadUsesMovieTypeAndTVAllWindow() {
     )
 }
 
-func testHomeLaunchLoadFetchesDefaultTypeChildrenThenBuildsPayload() {
-    let categories = [
-        CategoryDef(typeId: 12, label: "剧集"),
-        CategoryDef(typeId: 6, label: "电影"),
-        CategoryDef(typeId: 20, label: "动作片"),
-    ]
-    var requestedTypeId: Int?
-    var requestedChildIds: [Int] = []
+func testHomeLaunchLoadFetchesDefaultSlugThenBuildsPayload() {
+    var requestedSlug: String?
     let items = [vod("1", "甲"), vod("2", "乙")]
 
     runAsync {
         let payload = try await HomeLaunch.load(
-            fetchCategories: { categories },
-            fetchList: { typeId, childIds in
-                requestedTypeId = typeId
-                requestedChildIds = childIds
+            fetchList: { slug in
+                requestedSlug = slug
                 return HomeLaunch.ListPage(items: items, page: 1, pageCount: 3)
             },
-            sourceId: 125,
             tvDisplay: true
         )
         assertEqual(payload.snapshot.pool.map(\.vodName), ["甲", "乙"], "launch load should keep first-page order")
         assertEqual(payload.snapshot.pageCount, 3, "launch load should keep pageCount from the list response")
-        assertEqual(payload.sourceId, 125, "launch load should pin the source that won the race")
+        assertEqual(payload.selectedSlug, "movie", "launch load should select default movie slug")
     }
 
-    assertEqual(requestedTypeId, 6, "launch load should request the default 电影 category")
-    assertEqual(requestedChildIds, [20], "launch load should pass known child type ids for 电影")
+    assertEqual(requestedSlug, "movie", "launch load should request the default 电影 category")
 }
 
 func testRequestFailureMapsTimedOutToChinese() {
@@ -1828,6 +2133,219 @@ func testDisplayBlurbReturnsNilWhenOnlyTagsRemain() {
     }
 }
 
+func testSourceRegistryDecodesDualIdAndCapabilities() {
+    let json = """
+    {
+      "version": 1,
+      "sources": [
+        {
+          "source_id": "cms-143",
+          "numericId": 143,
+          "name": "虎牙",
+          "type": "cms",
+          "protocol": "json",
+          "enabled": true,
+          "inApp": true,
+          "vip_only": false,
+          "connection": {
+            "endpoint": "https://www.huyaapi.com/api.php/provide/vod/at/json",
+            "jx_url": "https://www.playm3u8.cn/jiexi.php?url="
+          },
+          "capabilities": {
+            "search": true,
+            "category": true,
+            "detail": true,
+            "play": true,
+            "pagination": true,
+            "live": false
+          },
+          "adapter": { "type": "cms_json", "parser": "default_cms_parser" },
+          "priority": { "metadata_priority": 460, "play_priority": 460 }
+        }
+      ]
+    }
+    """.data(using: .utf8)!
+    guard let doc = try? JSONDecoder().decode(SourceRegistryDocument.self, from: json) else {
+        fail("registry JSON should decode")
+    }
+    assertEqual(doc.sources.count, 1, "registry should decode one source")
+    let source = doc.sources[0]
+    assertEqual(source.sourceId, "cms-143", "string source_id")
+    assertEqual(source.numericId, 143, "numericId")
+    assertEqual(source.id, 143, "Identifiable id aliases numericId")
+    assertEqual(source.url, "https://www.huyaapi.com/api.php/provide/vod/at/json", "url compat")
+    assertEqual(source.jxUrl ?? "", "https://www.playm3u8.cn/jiexi.php?url=", "jx_url compat")
+    assertEqual(source.capabilities.search, true, "search capability")
+    assertEqual(source.adapter.type, "cms_json", "adapter type")
+    assertEqual(source.priority.metadataPriority, 460, "metadata priority")
+}
+
+func testSourceStoreEnabledVsConfiguredAndCollectable() {
+    let disabled = source(10, "关", enabled: false)
+    let noSearch = source(
+        11,
+        "无搜",
+        capabilities: SourceCapabilities(search: false, category: true, detail: true, play: true, pagination: true, live: false)
+    )
+    let ok = source(12, "开", metadataPriority: 200, playPriority: 150)
+    let store = SourceStore(sources: [disabled, noSearch, ok])
+
+    assertEqual(store.configured(id: 10)?.name, "关", "configured sees disabled sources")
+    assertEqual(store.byID(10) == nil, true, "byID skips disabled")
+    assertEqual(store.enabled().map(\.id), [11, 12], "enabled excludes disabled")
+    assertEqual(store.collectable(capability: \.search).map(\.id), [12], "search collectable skips capability=false")
+    assertEqual(store.collectable(capability: \.category).map(\.id), [11, 12], "category still available")
+    assertEqual(store.bySourceID("cms-12")?.name, "开", "lookup by string source_id")
+    assertEqual(store.metadataPriority(for: 12), 200, "metadata priority from registry")
+    assertEqual(store.playPriority(for: 12), 150, "play priority from registry")
+}
+
+func testSourceCollectorRejectsDisabledSearchCapability() {
+    let src = source(
+        99,
+        "无搜",
+        capabilities: SourceCapabilities(search: false, category: true, detail: true, play: true, pagination: true, live: false)
+    )
+    let sem = DispatchSemaphore(value: 0)
+    var threw = false
+    Task {
+        do {
+            _ = try await SourceCollector.search(source: src, keyword: "庆余年", page: 1)
+        } catch {
+            threw = true
+        }
+        sem.signal()
+    }
+    _ = sem.wait(timeout: .now() + 2)
+    assertEqual(threw, true, "search with capability=false must not call adapter")
+}
+
+func testMacCMSSourceParserBuildsSourceMovie() {
+    let src = source(143, "虎牙")
+    let raw = VodItemRaw(
+        vodId: "12345",
+        vodName: "庆余年第二季",
+        vodPic: "https://pic.example/a.jpg",
+        vodRemarks: "更新至10集",
+        vodYear: "2024",
+        vodArea: "大陆",
+        vodClass: "剧集",
+        vodBlurb: "简介",
+        vodContent: "长简介",
+        vodActor: "张若昀,李沁",
+        vodDirector: "孙皓",
+        vodPlayFrom: "hym3u8",
+        vodPlayURL: "第1集$https://cdn.example/1.m3u8",
+        typeId: 2,
+        typeName: "剧集",
+        vodTime: 1_700_000_000
+    )
+    let movie = MacCMSSourceParser.toSourceMovie(source: src, raw: raw)
+    assertEqual(movie.sourceId, "cms-143", "source_id on SourceMovie")
+    assertEqual(movie.sourceMovieId, "12345", "per-source movie id")
+    assertEqual(movie.title, "庆余年第二季", "title")
+    assertEqual(movie.year, "2024", "year")
+    assertEqual(movie.actors, ["张若昀", "李沁"], "actors split")
+    assertEqual(movie.director, "孙皓", "director")
+    assertEqual(movie.toVodItemRaw().vodId, "12345", "round-trip to VodItemRaw")
+}
+
+func testMergeMetadataPrefersHigherPriorityThenCompleteness() {
+    let store = SourceStore(sources: [
+        source(1, "A", metadataPriority: 90, playPriority: 40),
+        source(2, "B", metadataPriority: 50, playPriority: 90),
+        source(3, "C", metadataPriority: 50, playPriority: 50),
+    ])
+    let items = [
+        MergeableVodItem(
+            item: VodItemRaw(
+                vodId: "a", vodName: "庆余年", vodPic: "", vodRemarks: "", vodYear: "2024",
+                vodArea: "", vodClass: "", vodBlurb: "", vodContent: "", vodActor: "",
+                vodDirector: "", vodPlayFrom: "", vodPlayURL: "", typeId: 1, typeName: "", vodTime: 1
+            ),
+            sourceId: 1, sourceName: "A"
+        ),
+        MergeableVodItem(
+            item: VodItemRaw(
+                vodId: "b", vodName: "庆余年", vodPic: "https://b.example/p.jpg", vodRemarks: "", vodYear: "2024",
+                vodArea: "", vodClass: "", vodBlurb: "", vodContent: "", vodActor: "张三,李四",
+                vodDirector: "", vodPlayFrom: "", vodPlayURL: "", typeId: 1, typeName: "", vodTime: 1
+            ),
+            sourceId: 2, sourceName: "B"
+        ),
+        MergeableVodItem(
+            item: VodItemRaw(
+                vodId: "c", vodName: "庆余年", vodPic: "https://c.example/p.jpg", vodRemarks: "", vodYear: "2024",
+                vodArea: "", vodClass: "", vodBlurb: "", vodContent: "很长的简介内容", vodActor: "张三,李四,王五",
+                vodDirector: "", vodPlayFrom: "", vodPlayURL: "", typeId: 1, typeName: "", vodTime: 1
+            ),
+            sourceId: 3, sourceName: "C"
+        ),
+    ]
+    let merged = VodMergeService.mergeMetadataFields(items, store: store, primary: items[0].item)
+    assertEqual(merged.vodPic.contains("c.example") || merged.vodPic.contains("b.example"), true, "pic from priority/completeness")
+    assertEqual(merged.vodActor, "张三,李四,王五", "actors prefer more complete at same priority")
+    assertEqual(merged.vodContent, "很长的简介内容", "content from more complete source")
+}
+
+func testSourceHealthFailureThresholdDoesNotDisable() {
+    let health = SourceHealthStore()
+    for _ in 0..<4 {
+        health.recordFailure(numericId: 143)
+        assertEqual(health.status(for: 143).healthy, true, "under threshold still healthy")
+    }
+    health.recordFailure(numericId: 143)
+    let status = health.status(for: 143)
+    assertEqual(status.healthy, false, "5 failures → unhealthy")
+    assertEqual(status.errorCount, 5, "error_count tracked")
+
+    let src = source(143, "虎牙", enabled: true)
+    assertEqual(src.enabled, true, "config enabled stays true when unhealthy")
+
+    health.recordSuccess(numericId: 143)
+    assertEqual(health.status(for: 143).healthy, true, "success clears unhealthy")
+    assertEqual(health.status(for: 143).errorCount, 0, "success resets error_count")
+}
+
+func testEffectivePlayScoreAppliesHealthPenalty() {
+    let health = SourceHealthStore()
+    for _ in 0..<5 { health.recordFailure(numericId: 33) }
+    PlayLineWeighting.healthStore = health
+    PlayLineWeighting.table = PlayLineWeights(
+        version: 2,
+        defaultWeight: 100,
+        byPlayFrom: [:],
+        byProviderId: [:],
+        bySourceId: ["33": 480, "125": 470]
+    )
+    PlayLineWeighting.playPriorityBySourceId = [:]
+    defer {
+        PlayLineWeighting.healthStore = .shared
+        PlayLineWeighting.table = .bundled
+    }
+
+    let unhealthy = PlayLineWeighting.annotate(
+        PlaySource(name: "无忧", key: "a", episodes: [Episode(name: "1", url: "https://a.com/a.m3u8")], sourceId: 33),
+        rawPlayFrom: "unknown"
+    )
+    let healthy = PlayLineWeighting.annotate(
+        PlaySource(name: "猫眼", key: "b", episodes: [Episode(name: "1", url: "https://b.com/b.m3u8")], sourceId: 125),
+        rawPlayFrom: "unknown"
+    )
+    assertEqual(unhealthy.weight < healthy.weight, true, "unhealthy source should rank below healthy despite higher base priority")
+    let sorted = PlayLineWeighting.sort([unhealthy, healthy])
+    assertEqual(sorted.map(\.key), ["b", "a"], "health penalty flips play order")
+}
+
+func testAppDeepLinkStillUsesNumericSourceId() {
+    guard let url = AppDeepLink.vodURL(sourceId: 143, vodId: "999") else {
+        fail("deep link should build")
+    }
+    assertEqual(url.absoluteString, "multilivetv://vod/143/999", "deep link keeps numeric source id")
+    let parsed = AppDeepLink.parse(url)
+    assertEqual(parsed?.sourceId ?? -1, 143, "parsed numeric sourceId")
+}
+
 func testUserFacingErrorRewritesATSFailure() {
     let message = PlaybackSupport.userFacingError(
         for: "http://a.example/live.m3u8",
@@ -1848,14 +2366,15 @@ enum LogicTests {
         testMergeKeyStillCollapsesSameTitleAndYear()
         testMergeKeyTreatsYearSuffixAsTheSameYear()
         testMergeIntoPoolAppendsNewcomersAfterExistingPool()
+        testMergeIntoPoolFirstBatchSortsByVodTimeDesc()
         testContentPhasePrefersLoadingOverEmpty()
         testContentPhaseEmptyOnlyWhenIdle()
         testLoadMoreRevealsBeforeFetching()
         testLoadMoreFetchesNextPageWhenPoolExhausted()
         testLoadMoreIdleWhileBusy()
         testShouldRetriggerLoadMoreFooterWhenDisplayCountChanges()
-        testHomeFeedCacheRestoresSnapshotByTypeId()
-        testHomeFeedCacheTreatsNilTypeIdAsAllCategory()
+        testHomeFeedCacheRestoresSnapshotBySlug()
+        testHomeFeedCacheTreatsNilSlugAsAllCategory()
         testReplaceFirstPageDropsLeftoverItemsFromPreviousCategory()
         testReplaceFirstPageDedupesAndCapsAtFetchSize()
         testContentPhaseKeepsContentWhileRefreshingCachedPool()
@@ -1871,9 +2390,17 @@ enum LogicTests {
         testFlattenChildPagesKeepsKnownChildIdOrderNotArrivalOrder()
         testMergeVodItemsPreservesFirstSeenOrder()
         testVodMergeKeepsHomonymousFilmsWithDifferentYears()
-        testDefaultPrimaryTypeIdPrefersMovies()
-        testDefaultPrimaryTypeIdFallsBackToFirstPrimaryWhenMoviesMissing()
-        testPrimaryTabsKeepOnlyTheFourParentCategories()
+        testUnifiedMergeSortsByVodTimeDesc()
+        testMergeFoldsEmptyYearIntoConcreteYear()
+        testMergeKeepsDistinctYearsSeparate()
+        testSortPrefersReleaseYearOverUpdateTime()
+        testNormalizeYearRejectsFuturePlaceholder()
+        testFuturePlaceholderKeepsRecentFilmsNearTop()
+        testSortBreaksYearTiesWithNewerUpdateTime()
+        testVodItemIdIncludesSource()
+        testDefaultPrimarySlugPrefersMovies()
+        testDefaultPrimarySlugFallsBackToFirstPrimaryWhenMoviesMissing()
+        testPrimaryTabsKeepOnlyUnifiedParents()
         testEthicalCategoryIsHiddenFromMovieTabsAndChildren()
         testEthicalCategoryIsDroppedEvenWhenAlreadyInTheTreeDefs()
         testEthicalItemsAreHiddenFromMovieGridAndSearch()
@@ -1881,12 +2408,19 @@ enum LogicTests {
         testMergePlaySourcesKeepsSitePrefixWhenLineDiffers()
         testMergePlaySourcesCollapsesYunAndM3U8Duplicates()
         testMergePlaySourcesPrefersDirectURLWhenCollapsingDuplicates()
+        testPlayLineWeightsOrderOfficialBeforeMacCMS()
+        testDisplayPlaySourcesKeepsWeightedOrder()
+        testDirectMediaURLRequiresPathExtension()
+        testPreferredPlayableIndexSkipsSharePages()
+        testVodPlaybackFailoverBuildsBackupCandidates()
+        testPlayLineWeightsSourceIdFallback()
         testCategoryMatchDropsComedyFromActionList()
         testCategoryMatchParentKeepsAllMovieChildren()
         testCategoryMatchKeepsUnknownItemsRatherThanEmptyingTheShelf()
-        testChildTypeIdsOnlyWhenSelectingAParentCategory()
+        testParentSlugLookupForUnifiedTree()
         testHomeLaunchPayloadDropsOffCategoryItemsFromMoviePool()
         testCatalogAndSearchRequestsAskForDetailSoPostersAreIncluded()
+        testCatalogParamsForwardsHoursWhenPositive()
         testAppDeepLinkRoundTripsSourceAndVodId()
         testAppDeepLinkEncodesSpecialCharactersInVodId()
         testAppDeepLinkRejectsWrongSchemeAndEmptyId()
@@ -1966,8 +2500,8 @@ enum LogicTests {
         testLivePlaybackManualCycleWrapsWhileFailoverDoesNot()
         testLiveHTTPAcceptsOnly2xx()
         testHomeLaunchEntersMainWhenFirstPageSucceedsEvenIfEmpty()
-        testHomeLaunchPayloadUsesMovieTypeAndTVAllWindow()
-        testHomeLaunchLoadFetchesDefaultTypeChildrenThenBuildsPayload()
+        testHomeLaunchPayloadUsesMovieSlugAndTVAllWindow()
+        testHomeLaunchLoadFetchesDefaultSlugThenBuildsPayload()
         testRequestFailureMapsTimedOutToChinese()
         testRequestFailureMapsNSErrorTimedOutToChinese()
         testRequestFailureMapsOfflineToChinese()
@@ -1980,6 +2514,14 @@ enum LogicTests {
         testDisplayBlurbStripsTagsFromFallbackBlurb()
         testDisplayBlurbJoinsAdjacentParagraphsWithSpace()
         testDisplayBlurbReturnsNilWhenOnlyTagsRemain()
+        testSourceRegistryDecodesDualIdAndCapabilities()
+        testSourceStoreEnabledVsConfiguredAndCollectable()
+        testSourceCollectorRejectsDisabledSearchCapability()
+        testMacCMSSourceParserBuildsSourceMovie()
+        testMergeMetadataPrefersHigherPriorityThenCompleteness()
+        testSourceHealthFailureThresholdDoesNotDisable()
+        testEffectivePlayScoreAppliesHealthPenalty()
+        testAppDeepLinkStillUsesNumericSourceId()
         print("VERIFY CLIENT LOGIC PASSED")
     }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import VodDetailClient from "@/components/VodDetailClient";
+import { bpz5Configured } from "@/lib/bpz5";
 import { fetchMergedVodDetail } from "@/lib/vodMerge";
 import { getSourceById } from "@/lib/sources";
 
@@ -58,6 +59,7 @@ export default async function VodPage({ params, searchParams }: VodPageProps) {
         sourceId={merged.primarySourceId}
         sourceName={source.name}
         variants={merged.variants}
+        ticketEnabled={bpz5Configured()}
       />
     );
   } catch {

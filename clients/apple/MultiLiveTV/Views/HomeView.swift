@@ -7,7 +7,7 @@ struct HomeView: View {
     @EnvironmentObject private var vod: VodService
     @EnvironmentObject private var deepLink: DeepLinkRouter
     @State private var categoryTree: CategoryTree
-    @State private var selectedTypeId: Int?
+    @State private var selectedSlug: String?
     @State private var pool: [VodItem]
     @State private var displayCount: Int
     @State private var apiPage: Int
@@ -20,7 +20,6 @@ struct HomeView: View {
     @State private var loadTask: Task<Void, Never>?
     @State private var skipBootstrap: Bool
     @State private var categoryFocusRequest = 0
-    @State private var catalogSourceId: Int?
     #if os(tvOS)
     @State private var showSearch = false
     @State private var returnFocusToCategories = false
@@ -31,20 +30,20 @@ struct HomeView: View {
     init(launch: HomeLaunchPayload? = nil) {
         if let launch {
             _categoryTree = State(initialValue: launch.categoryTree)
-            _selectedTypeId = State(initialValue: launch.selectedTypeId)
+            _selectedSlug = State(initialValue: launch.selectedSlug)
             _pool = State(initialValue: launch.snapshot.pool)
             _displayCount = State(initialValue: launch.snapshot.displayCount)
             _apiPage = State(initialValue: launch.snapshot.apiPage)
             _pageCount = State(initialValue: launch.snapshot.pageCount)
             _isLoading = State(initialValue: false)
             var cache = HomeFeedCache()
-            cache.save(launch.snapshot, typeId: launch.selectedTypeId)
+            cache.save(launch.snapshot, slug: launch.selectedSlug)
             _feedCache = State(initialValue: cache)
             _skipBootstrap = State(initialValue: true)
-            _catalogSourceId = State(initialValue: launch.sourceId)
+            
         } else {
             _categoryTree = State(initialValue: .empty)
-            _selectedTypeId = State(initialValue: nil)
+            _selectedSlug = State(initialValue: nil)
             _pool = State(initialValue: [])
             _displayCount = State(initialValue: 0)
             _apiPage = State(initialValue: 1)
@@ -52,18 +51,17 @@ struct HomeView: View {
             _isLoading = State(initialValue: true)
             _feedCache = State(initialValue: HomeFeedCache())
             _skipBootstrap = State(initialValue: false)
-            _catalogSourceId = State(initialValue: nil)
+            
         }
     }
 
-    private var activeParentId: Int? {
-        CategoryTreeBuilder.parentTypeId(tree: categoryTree, typeId: selectedTypeId)
+    private var activeParentSlug: String? {
+        CategoryTreeBuilder.parentSlug(tree: categoryTree, slug: selectedSlug)
     }
 
-    private var secondaryCategories: [CategoryDef] {
-        guard let parentId = activeParentId else { return [] }
-        return (categoryTree.childrenByParent[parentId] ?? [])
-            .filter { MacCMSCategoryService.isTypeVisible($0.label) }
+    private var secondaryCategories: [SlugCategory] {
+        guard let parentSlug = activeParentSlug else { return [] }
+        return categoryTree.childrenByParent[parentSlug] ?? []
     }
 
     var body: some View {
@@ -72,8 +70,8 @@ struct HomeView: View {
                 CategoryTabs(
                     primary: categoryTree.primary,
                     secondary: secondaryCategories,
-                    activeTypeId: selectedTypeId,
-                    activeParentId: activeParentId,
+                    activeSlug: selectedSlug,
+                    activeParentSlug: activeParentSlug,
                     focusRequest: categoryFocusRequest,
                     focusedId: $focusedId,
                     onSearch: tvOpenSearch,
@@ -149,9 +147,9 @@ struct HomeView: View {
         returnFocusToCategories = true
         let key = CategoryFocus.preferredKey(
             primary: categoryTree.primary,
-            activeTypeId: selectedTypeId,
-            activeParentId: activeParentId,
-            showSecondary: !secondaryCategories.isEmpty && activeParentId != nil
+            activeSlug: selectedSlug,
+            activeParentSlug: activeParentSlug,
+            showSecondary: !secondaryCategories.isEmpty && activeParentSlug != nil
         )
         categoryFocusRequest += 1
         Task { @MainActor in
@@ -166,16 +164,16 @@ struct HomeView: View {
         deepLink.pendingVod = nil
     }
 
-    private func selectCategory(_ typeId: Int?) {
-        guard typeId != selectedTypeId || errorMessage != nil else { return }
+    private func selectCategory(_ slug: String?) {
+        guard slug != selectedSlug || errorMessage != nil else { return }
         if pool.isEmpty == false {
-            feedCache.save(currentSnapshot(), typeId: selectedTypeId)
+            feedCache.save(currentSnapshot(), slug: selectedSlug)
         }
-        selectedTypeId = typeId
+        selectedSlug = slug
         loadGeneration += 1
         loadTask?.cancel()
         errorMessage = nil
-        if let snapshot = feedCache.snapshot(for: typeId) {
+        if let snapshot = feedCache.snapshot(for: slug) {
             applySnapshot(snapshot)
         } else {
             pool = []
@@ -373,10 +371,6 @@ struct HomeView: View {
     }
     #endif
 
-    private var knownChildTypeIds: [Int] {
-        HomeLaunch.childTypeIds(tree: categoryTree, typeId: selectedTypeId)
-    }
-
     private func currentSnapshot() -> HomeFeedSnapshot {
         HomeFeedSnapshot(pool: pool, displayCount: displayCount, apiPage: apiPage, pageCount: pageCount)
     }
@@ -409,10 +403,9 @@ struct HomeView: View {
 
     private func applyLaunch(_ payload: HomeLaunchPayload) {
         categoryTree = payload.categoryTree
-        selectedTypeId = payload.selectedTypeId
-        catalogSourceId = payload.sourceId
+        selectedSlug = payload.selectedSlug
         applySnapshot(payload.snapshot)
-        feedCache.save(payload.snapshot, typeId: payload.selectedTypeId)
+        feedCache.save(payload.snapshot, slug: payload.selectedSlug)
         errorMessage = nil
         isLoading = false
         #if os(tvOS)
@@ -458,8 +451,7 @@ struct HomeView: View {
     }
 
     private func fetchPage(page: Int, isFirst: Bool, generation: Int) async {
-        let typeId = selectedTypeId
-        let childTypeIds = knownChildTypeIds
+        let slug = selectedSlug
         isLoading = true
         defer {
             if generation == loadGeneration {
@@ -467,16 +459,13 @@ struct HomeView: View {
             }
         }
         do {
-            let resp = try await vod.fetchList(
-                page: page,
-                typeId: typeId,
-                sourceId: catalogSourceId,
-                knownChildTypeIds: childTypeIds
-            )
+            let resp = try await vod.fetchList(page: page, slug: slug)
             guard !Task.isCancelled, generation == loadGeneration else { return }
             apiPage = page
             pageCount = max(resp.pagecount, 1)
-            let incoming = CategoryMatch.filter(resp.list, selectedTypeId: typeId, tree: categoryTree)
+            let incoming = HomeFeed.sortByUpdatedDesc(
+                CategoryMatch.filter(resp.list, selectedSlug: slug, tree: categoryTree)
+            )
             if isFirst {
                 pool = HomeFeed.replaceFirstPage(pool: pool, incoming: incoming)
                 #if os(tvOS)
@@ -496,7 +485,7 @@ struct HomeView: View {
                 displayCount = HomeFeed.nextDisplayCount(current: displayCount, poolLength: pool.count)
                 #endif
             }
-            feedCache.save(currentSnapshot(), typeId: typeId)
+            feedCache.save(currentSnapshot(), slug: slug)
         } catch {
             guard !Task.isCancelled, generation == loadGeneration else { return }
             errorMessage = RequestFailure.userFacingMessage(for: error)

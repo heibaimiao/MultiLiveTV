@@ -2,8 +2,10 @@ package merge
 
 import (
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/heibaimiao/multilivetv/api-go/internal/config"
 	"github.com/heibaimiao/multilivetv/api-go/internal/model"
@@ -11,7 +13,7 @@ import (
 	"github.com/heibaimiao/multilivetv/api-go/internal/service/parser"
 )
 
-const maxVariants = 10
+const maxVariants = 16
 
 var spaceRe = regexp.MustCompile(`\s+`)
 var punctRe = regexp.MustCompile(`[·・:：\-—_]`)
@@ -27,8 +29,93 @@ func NormalizeVodTitle(name string) string {
 	return name
 }
 
+var yearRe = regexp.MustCompile(`\d{4}`)
+
+func currentCalendarYear() int {
+	return time.Now().In(time.FixedZone("CST", 8*3600)).Year()
+}
+
+func maxPlausibleReleaseYear() int {
+	return currentCalendarYear() + 1
+}
+
+func IsDisplayableReleaseYear(year int) bool {
+	return year >= 1900 && year <= maxPlausibleReleaseYear()
+}
+
+func rawYearDigits(year string) string {
+	year = strings.TrimSpace(year)
+	if year == "" {
+		return ""
+	}
+	return yearRe.FindString(year)
+}
+
+func yearFromVodTime(vodTime int64, fallback int) int {
+	if vodTime <= 0 {
+		return fallback
+	}
+	return time.Unix(vodTime, 0).In(time.FixedZone("CST", 8*3600)).Year()
+}
+
+// SortYearValue ranks titles. Future placeholders (e.g. 2030) use the current
+// calendar year so recently-added films still surface with this year's content.
+func SortYearValue(year string, vodTime int64) int {
+	current := currentCalendarYear()
+	digits := rawYearDigits(year)
+	if digits != "" {
+		if n, err := strconv.Atoi(digits); err == nil {
+			if n >= 1900 && n <= current+1 {
+				return n
+			}
+			if n > current+1 {
+				return current
+			}
+		}
+	}
+	return yearFromVodTime(vodTime, 0)
+}
+
+func NormalizeVodYear(year string) string {
+	digits := rawYearDigits(year)
+	if digits == "" {
+		return ""
+	}
+	n, err := strconv.Atoi(digits)
+	if err != nil || !IsDisplayableReleaseYear(n) {
+		return ""
+	}
+	return digits
+}
+
+func YearValue(year string) int {
+	y := NormalizeVodYear(year)
+	if y == "" {
+		return 0
+	}
+	n, err := strconv.Atoi(y)
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
 func BuildVodMergeKey(item model.VodItem) string {
 	return NormalizeVodTitle(item.VodName)
+}
+
+// IsCompatibleVodMatch is used for detail cross-source search: same title,
+// and years match when both sides have a concrete year.
+func IsCompatibleVodMatch(primary, candidate model.VodItem) bool {
+	if NormalizeVodTitle(primary.VodName) != NormalizeVodTitle(candidate.VodName) {
+		return false
+	}
+	py := NormalizeVodYear(primary.VodYear)
+	cy := NormalizeVodYear(candidate.VodYear)
+	if py == "" || cy == "" {
+		return true
+	}
+	return py == cy
 }
 
 func countPlayLines(item model.VodItem) int {
@@ -70,6 +157,14 @@ func pickPrimaryItem(items []model.MergeableVodItem, sourceOrder map[int]int) mo
 		bPic := boolToInt(item.VodPic != "")
 		if bPic != aPic {
 			if bPic > aPic {
+				best = item
+			}
+			continue
+		}
+		aWeight := parser.SourceWeight(best.SourceID)
+		bWeight := parser.SourceWeight(item.SourceID)
+		if bWeight != aWeight {
+			if bWeight > aWeight {
 				best = item
 			}
 			continue
@@ -150,6 +245,9 @@ func buildVariants(items []model.MergeableVodItem) []model.VodVariant {
 			VodID:      vodID,
 		})
 	}
+	sort.SliceStable(variants, func(i, j int) bool {
+		return parser.SourceWeight(variants[i].SourceID) > parser.SourceWeight(variants[j].SourceID)
+	})
 	return variants
 }
 
@@ -159,28 +257,158 @@ func matchKey(sourceID int, vodID string) string {
 
 func MergeVodItems(items []model.MergeableVodItem, store *config.SourceStore) []model.MergedVodItem {
 	sourceOrder := getSourceOrder(store)
-	groups := make(map[string][]model.MergeableVodItem)
+	groups, order := groupMergeableItems(items)
 
-	for _, item := range items {
-		key := BuildVodMergeKey(item.VodItem)
-		groups[key] = append(groups[key], item)
-	}
-
-	merged := make([]model.MergedVodItem, 0, len(groups))
-	for _, group := range groups {
+	merged := make([]model.MergedVodItem, 0, len(order))
+	for _, key := range order {
+		group := groups[key]
 		primary := pickPrimaryItem(group, sourceOrder)
 		variants := buildVariants(group)
 		primarySourceID := primary.SourceID
 		if primarySourceID == 0 && len(variants) > 0 {
 			primarySourceID = variants[0].SourceID
 		}
+		vod := primary.VodItem
+		if latest := latestVodTime(group); latest > vod.VodTime {
+			vod.VodTime = latest
+		}
+		if y := bestYear(group); y != "" && NormalizeVodYear(vod.VodYear) == "" {
+			vod.VodYear = y
+		}
 		merged = append(merged, model.MergedVodItem{
-			VodItem:         primary.VodItem,
+			VodItem:         vod,
 			Variants:        variants,
 			PrimarySourceID: primarySourceID,
 		})
 	}
 	return merged
+}
+
+func bestYear(items []model.MergeableVodItem) string {
+	best := ""
+	bestN := 0
+	for _, item := range items {
+		y := NormalizeVodYear(item.VodYear)
+		if y == "" {
+			continue
+		}
+		n := YearValue(y)
+		if n >= bestN {
+			bestN = n
+			best = y
+		}
+	}
+	return best
+}
+
+// groupMergeableItems groups by title; keeps distinct concrete years apart;
+// folds empty-year rows into the only / newest year bucket.
+func groupMergeableItems(items []model.MergeableVodItem) (map[string][]model.MergeableVodItem, []string) {
+	byTitle := make(map[string][]model.MergeableVodItem)
+	titleOrder := make([]string, 0)
+	for _, item := range items {
+		title := NormalizeVodTitle(item.VodName)
+		if title == "" {
+			continue
+		}
+		if _, ok := byTitle[title]; !ok {
+			titleOrder = append(titleOrder, title)
+		}
+		byTitle[title] = append(byTitle[title], item)
+	}
+
+	groups := make(map[string][]model.MergeableVodItem)
+	order := make([]string, 0)
+	for _, title := range titleOrder {
+		group := byTitle[title]
+		concreteYears := orderedUniqueYears(group)
+		if len(concreteYears) <= 1 {
+			key := title
+			if len(concreteYears) == 1 {
+				key = title + "|" + concreteYears[0]
+			}
+			order = append(order, key)
+			groups[key] = group
+			continue
+		}
+
+		byYear := make(map[string][]model.MergeableVodItem)
+		yearOrder := make([]string, 0)
+		emptyYear := make([]model.MergeableVodItem, 0)
+		for _, entry := range group {
+			year := NormalizeVodYear(entry.VodYear)
+			if year == "" {
+				emptyYear = append(emptyYear, entry)
+				continue
+			}
+			if _, ok := byYear[year]; !ok {
+				yearOrder = append(yearOrder, year)
+			}
+			byYear[year] = append(byYear[year], entry)
+		}
+
+		if len(emptyYear) > 0 {
+			target := yearOrder[0]
+			bestTime := latestVodTime(byYear[target])
+			for _, year := range yearOrder[1:] {
+				if t := latestVodTime(byYear[year]); t > bestTime {
+					bestTime = t
+					target = year
+				}
+			}
+			byYear[target] = append(byYear[target], emptyYear...)
+		}
+
+		for _, year := range yearOrder {
+			key := title + "|" + year
+			order = append(order, key)
+			groups[key] = byYear[year]
+		}
+	}
+	return groups, order
+}
+
+func orderedUniqueYears(group []model.MergeableVodItem) []string {
+	seen := make(map[string]struct{})
+	years := make([]string, 0)
+	for _, entry := range group {
+		year := NormalizeVodYear(entry.VodYear)
+		if year == "" {
+			continue
+		}
+		if _, ok := seen[year]; ok {
+			continue
+		}
+		seen[year] = struct{}{}
+		years = append(years, year)
+	}
+	return years
+}
+
+func latestVodTime(items []model.MergeableVodItem) int64 {
+	var best int64
+	for _, item := range items {
+		if t := model.VodUpdatedAtSec(item.VodItem); t > best {
+			best = t
+		}
+	}
+	return best
+}
+
+// SortMergedByUpdatedDesc sorts by release year first, then update time.
+// Future placeholder years rank using the update-time year.
+func SortMergedByUpdatedDesc(items []model.MergedVodItem) []model.MergedVodItem {
+	out := make([]model.MergedVodItem, len(items))
+	copy(out, items)
+	sort.SliceStable(out, func(i, j int) bool {
+		iy := SortYearValue(out[i].VodYear, model.VodUpdatedAtSec(out[i].VodItem))
+		jy := SortYearValue(out[j].VodYear, model.VodUpdatedAtSec(out[j].VodItem))
+		if iy != jy {
+			return iy > jy
+		}
+		return model.VodUpdatedAtSec(out[i].VodItem) > model.VodUpdatedAtSec(out[j].VodItem)
+	})
+	return out
 }
 
 type MergedVodDetailResult struct {
@@ -199,7 +427,6 @@ func FetchMergedVodDetail(store *config.SourceStore, source model.Source, vodID 
 		return nil, nil
 	}
 	primary := primaryData.List[0]
-	mergeKey := BuildVodMergeKey(primary)
 
 	type match struct {
 		source model.Source
@@ -228,7 +455,7 @@ func FetchMergedVodDetail(store *config.SourceStore, source model.Source, vodID 
 			continue
 		}
 		for _, item := range data.List {
-			if BuildVodMergeKey(item) != mergeKey {
+			if !IsCompatibleVodMatch(primary, item) {
 				continue
 			}
 			addMatch(searchSource, item.VodID)
@@ -251,6 +478,9 @@ func FetchMergedVodDetail(store *config.SourceStore, source model.Source, vodID 
 		}
 		data, err := maccms.FetchVodDetail(m.source, m.vodID)
 		if err != nil || len(data.List) == 0 {
+			continue
+		}
+		if !IsCompatibleVodMatch(primary, data.List[0]) {
 			continue
 		}
 		vodsWithSource = append(vodsWithSource, parser.VodWithSource{Source: m.source, Vod: data.List[0]})

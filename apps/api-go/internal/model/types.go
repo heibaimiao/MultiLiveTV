@@ -28,8 +28,10 @@ type VodItem struct {
 	VodContent  string `json:"vod_content,omitempty"`
 	VodPlayFrom string `json:"vod_play_from,omitempty"`
 	VodPlayURL  string `json:"vod_play_url,omitempty"`
-	TypeID      int    `json:"type_id,omitempty"`
-	TypeName    string `json:"type_name,omitempty"`
+	// VodTime is unix seconds from MacCMS vod_time / vod_time_add.
+	VodTime  int64 `json:"vod_time,omitempty"`
+	TypeID   int   `json:"type_id,omitempty"`
+	TypeName string `json:"type_name,omitempty"`
 }
 
 type VodVariant struct {
@@ -56,10 +58,34 @@ type Episode struct {
 }
 
 type PlaySource struct {
-	Name     string    `json:"name"`
-	Key      string    `json:"key"`
-	Episodes []Episode `json:"episodes"`
-	SourceID int       `json:"sourceId,omitempty"`
+	Name         string    `json:"name"`
+	Key          string    `json:"key"`
+	Episodes     []Episode `json:"episodes"`
+	SourceID     int       `json:"sourceId,omitempty"`
+	Weight       int       `json:"weight"`
+	Mode         string    `json:"mode"`
+	PlayFrom     string    `json:"playFrom,omitempty"`
+	ProviderID   string    `json:"providerId,omitempty"`
+	Ticket       string    `json:"ticket,omitempty"`
+	RequiresAuth bool      `json:"requiresAuth,omitempty"`
+}
+
+type PlayResolveRequest struct {
+	Mode       string `json:"mode"`
+	SourceID   int    `json:"sourceId,omitempty"`
+	URL        string `json:"url,omitempty"`
+	Jx         *bool  `json:"jx,omitempty"`
+	Ticket     string `json:"ticket,omitempty"`
+	ProviderID string `json:"providerId,omitempty"`
+	PlayFrom   string `json:"playFrom,omitempty"`
+}
+
+type ParseResult struct {
+	URL       string `json:"url"`
+	Parsed    bool   `json:"parsed"`
+	Mode      string `json:"mode,omitempty"`
+	PlayFrom  string `json:"playFrom,omitempty"`
+	ExpiresAt *int64 `json:"expiresAt"`
 }
 
 type MacCmsListResponse struct {
@@ -77,11 +103,6 @@ type MacCmsDetailResponse struct {
 	Code int       `json:"code"`
 	Msg  string    `json:"msg"`
 	List []VodItem `json:"list"`
-}
-
-type ParseResult struct {
-	URL    string `json:"url"`
-	Parsed bool   `json:"parsed"`
 }
 
 type CategoryDef struct {

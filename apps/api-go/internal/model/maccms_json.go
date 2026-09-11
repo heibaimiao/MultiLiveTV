@@ -65,11 +65,17 @@ type MacCmsVodItem struct {
 	VodContent  string     `json:"vod_content"`
 	VodPlayFrom string     `json:"vod_play_from"`
 	VodPlayURL  string     `json:"vod_play_url"`
+	VodTime     FlexString `json:"vod_time"`
+	VodTimeAdd  FlexString `json:"vod_time_add"`
 	TypeID      int        `json:"type_id"`
 	TypeName    string     `json:"type_name"`
 }
 
 func (m MacCmsVodItem) ToVodItem() VodItem {
+	vodTime := ParseVodTimeSec(m.VodTime.String())
+	if add := ParseVodTimeSec(m.VodTimeAdd.String()); add > vodTime {
+		vodTime = add
+	}
 	return VodItem{
 		VodID:       m.VodID.String(),
 		VodName:     m.VodName,
@@ -82,6 +88,7 @@ func (m MacCmsVodItem) ToVodItem() VodItem {
 		VodContent:  m.VodContent,
 		VodPlayFrom: m.VodPlayFrom,
 		VodPlayURL:  m.VodPlayURL,
+		VodTime:     vodTime,
 		TypeID:      m.TypeID,
 		TypeName:    m.TypeName,
 	}

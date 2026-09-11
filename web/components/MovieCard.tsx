@@ -7,7 +7,7 @@ import { fetchAndCachePic, getCachedPic } from "@/lib/vodPicCache";
 import { normalizeTypeName } from "@/lib/categories";
 import {
   getPrimaryVariant,
-  getVariantSourceNames,
+  formatSourceMetaLabel,
 } from "@/lib/vodMerge";
 import type { MergedVodItem, VodItem } from "@/lib/types";
 
@@ -32,11 +32,11 @@ export default function MovieCard({
   const linkSourceId =
     primaryVariant?.sourceId ?? merged?.primarySourceId ?? sourceId ?? 0;
   const linkVodId = primaryVariant?.vodId ?? item.vod_id;
-  const sourceLabels = merged
-    ? getVariantSourceNames(merged)
-    : sourceName
-      ? [sourceName]
-      : [];
+  const sourceCount = merged?.variants.length ?? (sourceName ? 1 : 0);
+  const sourceLabel = merged
+    ? formatSourceMetaLabel(merged, 2)
+    : sourceName || "";
+  const remarks = item.vod_remarks?.trim();
 
   useEffect(() => {
     let cancelled = false;
@@ -80,14 +80,14 @@ export default function MovieCard({
           unoptimized
           onError={() => setPic("/placeholder.svg")}
         />
-        {item.vod_remarks && (
+        {remarks && (
           <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-xs text-white">
-            {item.vod_remarks}
+            {remarks}
           </span>
         )}
-        {sourceLabels.length > 1 && (
+        {sourceCount > 1 && (
           <span className="absolute left-2 top-2 rounded bg-[var(--accent)]/90 px-2 py-0.5 text-xs text-white">
-            {sourceLabels.length} 个源
+            {sourceCount} 个源
           </span>
         )}
       </div>
@@ -95,7 +95,8 @@ export default function MovieCard({
         <h3 className="line-clamp-2 text-sm font-medium">{item.vod_name}</h3>
         <p className="mt-1 text-xs text-[var(--muted)]">
           {[
-            sourceLabels.length > 0 ? sourceLabels.join(" · ") : sourceName,
+            remarks || sourceLabel,
+            remarks && sourceLabel ? sourceLabel : null,
             item.type_name && normalizeTypeName(item.type_name),
             item.vod_year,
           ]

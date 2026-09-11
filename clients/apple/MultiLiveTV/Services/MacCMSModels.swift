@@ -20,11 +20,49 @@ struct VodItemRaw {
     let vodClass: String
     let vodBlurb: String
     let vodContent: String
+    let vodActor: String
+    let vodDirector: String
     let vodPlayFrom: String
     let vodPlayURL: String
     let typeId: Int
     let typeName: String
     let vodTime: Int
+
+    init(
+        vodId: String,
+        vodName: String,
+        vodPic: String,
+        vodRemarks: String,
+        vodYear: String,
+        vodArea: String,
+        vodClass: String,
+        vodBlurb: String,
+        vodContent: String,
+        vodActor: String = "",
+        vodDirector: String = "",
+        vodPlayFrom: String,
+        vodPlayURL: String,
+        typeId: Int,
+        typeName: String,
+        vodTime: Int
+    ) {
+        self.vodId = vodId
+        self.vodName = vodName
+        self.vodPic = vodPic
+        self.vodRemarks = vodRemarks
+        self.vodYear = vodYear
+        self.vodArea = vodArea
+        self.vodClass = vodClass
+        self.vodBlurb = vodBlurb
+        self.vodContent = vodContent
+        self.vodActor = vodActor
+        self.vodDirector = vodDirector
+        self.vodPlayFrom = vodPlayFrom
+        self.vodPlayURL = vodPlayURL
+        self.typeId = typeId
+        self.typeName = typeName
+        self.vodTime = vodTime
+    }
 
     func toVodItem(variants: [VodVariant]? = nil, primarySourceId: Int? = nil) -> VodItem {
         VodItem(
@@ -40,6 +78,27 @@ struct VodItemRaw {
             variants: variants,
             primarySourceId: primarySourceId,
             vodTime: vodTime
+        )
+    }
+
+    func withVodTime(_ time: Int) -> VodItemRaw {
+        VodItemRaw(
+            vodId: vodId,
+            vodName: vodName,
+            vodPic: vodPic,
+            vodRemarks: vodRemarks,
+            vodYear: vodYear,
+            vodArea: vodArea,
+            vodClass: vodClass,
+            vodBlurb: vodBlurb,
+            vodContent: vodContent,
+            vodActor: vodActor,
+            vodDirector: vodDirector,
+            vodPlayFrom: vodPlayFrom,
+            vodPlayURL: vodPlayURL,
+            typeId: typeId,
+            typeName: typeName,
+            vodTime: time
         )
     }
 }
@@ -126,6 +185,8 @@ enum MacCMSJSONParser {
             vodClass: dict["vod_class"] as? String ?? "",
             vodBlurb: dict["vod_blurb"] as? String ?? "",
             vodContent: dict["vod_content"] as? String ?? "",
+            vodActor: dict["vod_actor"] as? String ?? "",
+            vodDirector: dict["vod_director"] as? String ?? "",
             vodPlayFrom: dict["vod_play_from"] as? String ?? "",
             vodPlayURL: dict["vod_play_url"] as? String ?? "",
             typeId: flexInt(dict["type_id"]) ?? 0,

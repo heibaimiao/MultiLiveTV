@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>影视 Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <style>
+    :root {
+      --bg: #12141a;
+      --panel: #1c2028;
+      --text: #f3efe6;
+      --muted: #9aa3b2;
+      --line: #2b3140;
+      --accent: #e8b86d;
+      --accent-dim: #8a6a3a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: "PingFang SC", "Noto Sans SC", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+      padding: 16px 24px; background: rgba(18,20,26,.92); border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    .brand { font-weight: 700; letter-spacing: .08em; color: var(--accent); white-space: nowrap; }
+    .search { display: flex; flex: 1; min-width: 240px; gap: 8px; }
+    .search input {
+      flex: 1; height: 40px; border: 1px solid var(--line); border-radius: 8px;
+      background: var(--panel); color: var(--text); padding: 0 12px; font-size: 15px;
+    }
+    button, .btn {
+      height: 40px; border: 0; border-radius: 8px; padding: 0 16px; cursor: pointer;
+      background: var(--accent); color: #1a140c; font-weight: 600;
+    }
+    .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 24px 0; }
+    nav button {
+      background: transparent; color: var(--muted); border: 1px solid var(--line); height: 36px;
+    }
+    nav button.active { color: #1a140c; background: var(--accent); border-color: var(--accent); }
+    nav.cats { padding-top: 8px; }
+    nav.cats button { height: 32px; font-size: 13px; font-weight: 500; }
+    .more { margin-top: 24px; }
+    main { padding: 20px 24px 48px; }
+    h2 { font-size: 18px; font-weight: 600; margin: 0 0 16px; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 16px;
+    }
+    .card { cursor: pointer; display: block; color: inherit; }
+    .poster {
+      aspect-ratio: 3/4; border-radius: 10px; background: #2a2f3a center/cover no-repeat;
+      border: 1px solid var(--line); margin-bottom: 8px;
+    }
+    .card .title { font-size: 14px; line-height: 1.4; }
+    .card .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .status, .error { color: var(--muted); padding: 24px 0; }
+    .error { color: #e58b8b; }
+    .detail { display: grid; grid-template-columns: 220px 1fr; gap: 28px; }
+    .detail img, .detail .poster { width: 220px; }
+    .content { color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
+    .eps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .eps a, .eps button {
+      height: 36px; background: var(--panel); color: var(--text); border: 1px solid var(--line);
+      border-radius: 8px; padding: 0 12px; font-weight: 500;
+    }
+    .player { max-width: 960px; }
+    video, iframe.webview { width: 100%; min-height: 480px; background: #000; border-radius: 12px; border: 0; }
+    .official {
+      margin-top: 16px; padding: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    }
+    .official .url { word-break: break-all; color: var(--accent); font-size: 13px; }
+    .parse-status { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    .parse-status strong { color: var(--accent); font-weight: 600; }
+    .comic { display: flex; flex-direction: column; gap: 8px; max-width: 720px; }
+    .comic img { width: 100%; background: #000; }
+    @media (max-width: 720px) {
+      .detail { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="#/">影视 Demo</a>
+    <form class="search" id="search-form">
+      <input id="q" placeholder="搜索，例如 庆余年" />
+      <button type="submit">搜索</button>
+    </form>
+  </header>
+  <div id="app"></div>
+  <script>
+    const SOURCES = [
+      ["qq", "腾讯"],
+      ["youku", "优酷"],
+      ["qiyi", "爱奇艺"],
+      ["mgtv", "芒果"],
+      ["mifun", "MiFun"],
+      ["ghgdm", "共和国"],
+      ["dm845", "巴士"],
+      ["dmla", "动漫啦"],
+    ];
+    const PARSE_LOAD_MS = 8000;
+    const PARSE_PLAY_MS = 14000;
+    let playGen = 0;
+
+    const app = document.getElementById("app");
+    const form = document.getElementById("search-form");
+    const qInput = document.getElementById("q");
+
+    function hashParams() {
+      const raw = location.hash.replace(/^#\/?/, "");
+      const [path, query = ""] = raw.split("?");
+      const parts = path.split("/").filter(Boolean);
+      const usp = new URLSearchParams(query);
+      return { parts, usp };
+    }
+
+    function go(hash) {
+      location.hash = hash;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const q = qInput.value.trim();
+      if (q) go("#/search?q=" + encodeURIComponent(q));
+    });
+
+    function posterStyle(url) {
+      return url ? `style="background-image:url('${url.replace(/'/g, "%27")}')"` : "";
+    }
+
+    function cardHtml(item) {
+      const href = `#/detail/${item.source}/${encodeURIComponent(item.id)}`;
+      return `<a class="card" href="${href}">
+        <div class="poster" ${posterStyle(item.pic)}></div>
+        <div class="title">${esc(item.title)}</div>
+        <div class="meta">${esc(item.source_name)}${item.year ? " · " + esc(item.year) : ""}</div>
+      </a>`;
+    }
+
+    function esc(s) {
+      return String(s || "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function tabs(active, q) {
+      return `<nav class="sources">${SOURCES.map(([k, n]) =>
+        `<button class="${k === active ? "active" : ""}" data-tab="${k}">${n}</button>`
+      ).join("")}</nav>`;
+    }
+
+    function catActive(cls, tid, genre) {
+      if (cls.extend && cls.extend.class) return genre === cls.extend.class;
+      return !genre && tid === cls.type_id;
+    }
+
+    function catHref(source, cls) {
+      const base = `#/home?source=${encodeURIComponent(source)}&tid=${encodeURIComponent(cls.type_id)}`;
+      if (cls.extend && cls.extend.class) return base + "&class=" + encodeURIComponent(cls.extend.class);
+      return base;
+    }
+
+    function catBar(source, classes, tid, genre) {
+      const rec = `<button class="${!tid && !genre ? "active" : ""}" data-href="#/home?source=${encodeURIComponent(source)}">推荐</button>`;
+      const rest = (classes || []).map((c) =>
+        `<button class="${catActive(c, tid, genre) ? "active" : ""}" data-href="${esc(catHref(source, c))}">${esc(c.type_name)}</button>`
+      ).join("");
+      return `<nav class="cats">${rec}${rest}</nav>`;
+    }
+
+    async function renderHome(source, tid, genre) {
+      app.innerHTML = `${tabs(source)}<nav class="cats"></nav><main><div class="status">加载分类…</div></main>`;
+      bindTabs();
+      let classes = [];
+      let classErr = "";
+      try {
+        const catData = await getJSON("/api/classes?source=" + encodeURIComponent(source));
+        classes = catData.classes || [];
+        if (catData.error) classErr = catData.error;
+      } catch (err) {
+        classErr = err.message || String(err);
+      }
+      const paint = (data, page, pagecount, append) => {
+        const err = [classErr, data.error].filter(Boolean).map((e) => `<p class="error">${esc(e)}</p>`).join("");
+        const cards = data.list || [];
+        const more = tid && page < pagecount
+          ? `<p><button class="btn ghost more" id="more">加载更多</button></p>`
+          : "";
+        const body = cards.length
+          ? `<div class="grid" id="grid">${cards.map(cardHtml).join("")}</div>${more}`
+          : `<p class="status">这个分类暂时没有数据，试试搜索「庆余年」。</p>`;
+        const title = genre || tid
+          ? (classes.find((c) => catActive(c, tid, genre)) || {}).type_name || data.source_name
+          : data.source_name;
+        if (append) {
+          const grid = document.getElementById("grid");
+          if (grid) grid.insertAdjacentHTML("beforeend", cards.map(cardHtml).join(""));
+          const old = document.getElementById("more");
+          if (old) old.parentElement.outerHTML = more;
+          bindMore(data, page, pagecount);
+          return;
+        }
+        app.innerHTML = `${tabs(source)}${catBar(source, classes, tid, genre)}<main><h2>${esc(title || "")}</h2>${err}${body}</main>`;
+        bindTabs();
+        bindCats();
+        bindMore(data, page, pagecount);
+      };
+      const bindCats = () => {
+        app.querySelectorAll("nav.cats button").forEach((btn) => {
+          btn.onclick = () => go(btn.dataset.href);
+        });
+      };
+      const bindMore = (data, page, pagecount) => {
+        const btn = document.getElementById("more");
+        if (!btn) return;
+        btn.onclick = async () => {
+          btn.disabled = true;
+          btn.textContent = "加载中…";
+          const next = page + 1;
+          const extra = genre ? JSON.stringify({ class: genre }) : "";
+          const moreData = await getJSON(
+            `/api/category?source=${encodeURIComponent(source)}&tid=${encodeURIComponent(tid)}&pg=${next}&extend=${encodeURIComponent(extra)}`
+          );
+          paint(moreData, next, Number(moreData.pagecount) || pagecount, true);
+        };
+      };
+      if (tid) {
+        const extra = genre ? JSON.stringify({ class: genre }) : "";
+        const data = await getJSON(
+          `/api/category?source=${encodeURIComponent(source)}&tid=${encodeURIComponent(tid)}&pg=1&extend=${encodeURIComponent(extra)}`
+        );
+        paint(data, 1, Number(data.pagecount) || 1, false);
+      } else {
+        const data = await getJSON("/api/home?source=" + encodeURIComponent(source));
+        paint(data, 1, 1, false);
+      }
+    }
+
+    async function renderSearch(q, sourceFilter) {
+      qInput.value = q;
+      app.innerHTML = `${tabs(sourceFilter || "")}<main><h2>搜索结果</h2><div class="status">正在搜索各源…</div></main>`;
+      bindTabs(q);
+      const data = await getJSON("/api/search?q=" + encodeURIComponent(q));
+      let list = data.list || [];
+      if (sourceFilter) list = list.filter((x) => x.source === sourceFilter);
+      const failed = Object.keys(data.errors || {});
+      const failHtml = failed.length
+        ? `<p class="error">部分源失败：${failed.map((k) => SOURCES.find(s => s[0] === k)?.[1] || k).join("、")}</p>`
+        : "";
+      const body = list.length
+        ? `<div class="grid">${list.map(cardHtml).join("")}</div>`
+        : `<p class="status">没有搜到结果。</p>`;
+      app.innerHTML = `${tabs(sourceFilter || "")}<main><h2>搜索结果 · ${esc(q)}</h2>${failHtml}${body}</main>`;
+      bindTabs(q);
+    }
+
+    async function renderDetail(source, id) {
+      app.innerHTML = `<main><div class="status">加载详情…</div></main>`;
+      const data = await getJSON(`/api/detail/${source}/${encodeURIComponent(id)}`);
+      const groups = (data.episodes || []).map((g) => {
+        const eps = g.episodes.map((ep) => {
+          const label = /^\d+$/.test(ep.title) ? `第${String(ep.title).padStart(2, "0")}集` : ep.title;
+          return `<a href="#/play/${source}?id=${encodeURIComponent(ep.id)}&title=${encodeURIComponent(label)}">${esc(label)}</a>`;
+        }).join("");
+        return `<h3>${esc(g.from)}</h3><div class="eps">${eps}</div>`;
+      }).join("") || `<p class="status">没有剧集。</p>`;
+      app.innerHTML = `<main>
+        <p><a class="btn ghost" href="#/">返回首页</a></p>
+        <div class="detail">
+          <div class="poster" ${posterStyle(data.pic)}></div>
+          <div>
+            <h2>${esc(data.title)}</h2>
+            <p class="meta">来源：${esc(data.source_name)}${data.year ? " · " + esc(data.year) : ""}</p>
+            <p class="content">${esc(data.content || "暂无简介")}</p>
+            ${groups}
+          </div>
+        </div>
+      </main>`;
+    }
+
+    async function renderPlay(source, id, title) {
+      const gen = ++playGen;
+      app.innerHTML = `<main class="player"><div class="status">解析播放地址…</div></main>`;
+      const data = await getJSON(`/api/play/${source}?id=${encodeURIComponent(id)}`);
+      if (gen !== playGen) return;
+      const heading = esc(title || "播放");
+      const pics = parsePics(data.url || data.official || "");
+      if (pics.length) {
+        app.innerHTML = `<main class="player">
+        <p><a class="btn ghost" href="javascript:history.back()">返回</a></p>
+        <h2>${heading}</h2>
+        <p class="parse-status">漫画共 ${pics.length} 页</p>
+        <div class="comic">${pics.map((u) => `<img src="${esc(u)}" alt="">`).join("")}</div>
+      </main>`;
+        return;
+      }
+      const parseUrls = (data.parse_urls && data.parse_urls.length) ? data.parse_urls : (data.url && data.mode === "parse" ? [data.url] : []);
+      const official = data.official || "";
+      const media = data.mode === "video" && data.url
+        ? "/api/media?url=" + encodeURIComponent(data.url)
+        : "";
+      const first = parseUrls[0] || "";
+      app.innerHTML = `<main class="player">
+        <p><a class="btn ghost" href="javascript:history.back()">返回</a></p>
+        <h2>${heading}</h2>
+        <p class="parse-status" id="parse-status"></p>
+        <video id="player" controls autoplay ${media ? "" : "hidden"}></video>
+        <iframe class="webview" id="webview" ${media ? "hidden" : ""} src="about:blank" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
+        <div class="official">
+          <p>默认第一条解析；打不开或直链超时会自动换下一条。</p>
+          ${first ? `<p><a class="btn" id="open-parse" href="${esc(first)}" target="_blank" rel="noopener">新窗口打开解析页</a></p>` : ""}
+          ${official ? `<p><a class="btn ghost" href="${esc(official)}" target="_blank" rel="noopener">打开官方页面</a></p>` : ""}
+        </div>
+      </main>`;
+      const video = document.getElementById("player");
+      const frame = document.getElementById("webview");
+      const openBtn = document.getElementById("open-parse");
+      const statusEl = document.getElementById("parse-status");
+      let idx = 0;
+      let settled = false;
+      let loadTimer = 0;
+      let playTimer = 0;
+      let hls = null;
+
+      const alive = () => gen === playGen;
+      const clearWatch = () => {
+        clearTimeout(loadTimer);
+        clearTimeout(playTimer);
+        loadTimer = playTimer = 0;
+      };
+      const setStatus = (html) => { if (statusEl) statusEl.innerHTML = html; };
+      const markPlaying = () => {
+        if (!alive() || settled) return;
+        settled = true;
+        clearWatch();
+        const u = parseUrls[idx] || "";
+        setStatus(`正在播放 · <strong>${esc(parserName(u) || "直链")}</strong>`);
+      };
+      const showParse = (i) => {
+        const u = parseUrls[i];
+        if (video) { video.hidden = true; video.pause(); video.removeAttribute("src"); }
+        if (hls) { try { hls.destroy(); } catch (_) {} hls = null; }
+        if (frame) { frame.hidden = false; frame.src = u || ""; }
+        if (openBtn && u) openBtn.href = u;
+      };
+      const tryNext = (reason) => {
+        if (!alive() || settled) return;
+        clearWatch();
+        idx += 1;
+        if (idx >= parseUrls.length) {
+          settled = true;
+          const last = parseUrls[parseUrls.length - 1] || "";
+          setStatus(`<span class="error" style="padding:0">各解析均超时或失败${reason ? "（" + esc(reason) + "）" : ""}</span>`);
+          if (last) showParse(parseUrls.length - 1);
+          return;
+        }
+        startParse(reason);
+      };
+      const startParse = (reason) => {
+        if (!alive() || !parseUrls[idx]) return;
+        settled = false;
+        const u = parseUrls[idx];
+        const name = parserName(u);
+        const hint = reason ? `上一线${esc(reason)}，` : "";
+        setStatus(`${hint}正在用 <strong>${esc(name)}</strong> 解析（${idx + 1}/${parseUrls.length}）…`);
+        showParse(idx);
+        loadTimer = setTimeout(() => tryNext("加载超时"), PARSE_LOAD_MS);
+      };
+
+      if (frame) {
+        frame.addEventListener("load", () => {
+          if (!alive() || settled || frame.hidden) return;
+          try {
+            const href = frame.contentWindow && frame.contentWindow.location.href || "";
+            if (!href || href === "about:blank") return;
+            if (href.indexOf("chrome-error") >= 0 || href.indexOf("chromewebdata") >= 0) {
+              tryNext("加载失败");
+              return;
+            }
+          } catch (_) {
+            /* cross-origin：解析页已打开 */
+          }
+          clearTimeout(loadTimer);
+          clearTimeout(playTimer);
+          loadTimer = playTimer = 0;
+          setStatus(`已打开 <strong>${esc(parserName(parseUrls[idx]))}</strong>（${idx + 1}/${parseUrls.length}）`);
+        });
+        frame.addEventListener("error", () => tryNext("加载失败"));
+      }
+      const onBlur = () => {
+        if (!alive() || settled || !frame || frame.hidden) return;
+        markPlaying();
+      };
+      const onMsg = (ev) => {
+        const d = ev && ev.data;
+        if (!d) return;
+        if (d === "playing" || d.type === "playing" || d.event === "play") markPlaying();
+      };
+      window.addEventListener("blur", onBlur);
+      window.addEventListener("message", onMsg);
+      window.addEventListener("hashchange", () => {
+        window.removeEventListener("blur", onBlur);
+        window.removeEventListener("message", onMsg);
+        clearWatch();
+        if (hls) { try { hls.destroy(); } catch (_) {} }
+      }, { once: true });
+
+      if (media && video) {
+        setStatus("正在走直链…超时则自动换解析");
+        attachMedia(video, media, {
+          onPlaying: markPlaying,
+          onFatal: () => { if (!settled) startParse("直链失败"); },
+          onHls: (inst) => { hls = inst; },
+        });
+        playTimer = setTimeout(() => {
+          if (!settled) startParse("直链超时");
+        }, PARSE_PLAY_MS);
+        return;
+      }
+      if (first) startParse("");
+      else setStatus("没有可用解析地址");
+    }
+
+    function parserName(url) {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, "");
+        return host.replace(/^jx\./, "") || host;
+      } catch {
+        return "解析站";
+      }
+    }
+
+    function parsePics(url) {
+      const m = String(url || "").match(/^(?:pics|mange):\/\/(.+)$/i);
+      if (!m) return [];
+      return m[1].split("&&").map((u) => u.trim()).filter((u) => /^https?:\/\//i.test(u));
+    }
+
+    function attachMedia(video, url, hooks) {
+      const { onFatal, onPlaying, onHls } = hooks || {};
+      if (!video || !url) return;
+      const fail = () => { if (onFatal) onFatal(); };
+      const ok = () => { if (onPlaying) onPlaying(); };
+      video.addEventListener("playing", ok, { once: true });
+      video.addEventListener("loadeddata", () => {
+        if (video.readyState >= 2 && video.duration > 1) ok();
+      }, { once: true });
+      const isHls = /\.m3u8(\?|$)/i.test(url) || url.indexOf("/api/media") !== -1;
+      if (isHls && window.Hls && window.Hls.isSupported()) {
+        const hls = new window.Hls({ enableWorker: true });
+        if (onHls) onHls(hls);
+        hls.on(window.Hls.Events.ERROR, (_e, data) => {
+          if (data && data.fatal) fail();
+        });
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        return;
+      }
+      video.addEventListener("error", fail, { once: true });
+      video.src = url;
+    }
+
+    function bindTabs(q) {
+      app.querySelectorAll("nav.sources button").forEach((btn) => {
+        btn.onclick = () => {
+          const source = btn.dataset.tab;
+          if (q) go(`#/search?q=${encodeURIComponent(q)}&source=${source}`);
+          else go("#/home?source=" + source);
+        };
+      });
+    }
+
+    async function getJSON(url) {
+      const res = await fetch(url);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || res.statusText);
+      return data;
+    }
+
+    async function route() {
+      try {
+        const { parts, usp } = hashParams();
+        if (parts[0] === "search") {
+          await renderSearch(usp.get("q") || "", usp.get("source") || "");
+        } else if (parts[0] === "detail" && parts[1] && parts[2]) {
+          await renderDetail(parts[1], decodeURIComponent(parts.slice(2).join("/")));
+        } else if (parts[0] === "play" && parts[1]) {
+          await renderPlay(parts[1], usp.get("id") || "", usp.get("title") || "");
+        } else {
+          await renderHome(usp.get("source") || "qq", usp.get("tid") || "", usp.get("class") || "");
+        }
+      } catch (err) {
+        app.innerHTML = `<main><p class="error">${esc(err.message || err)}</p></main>`;
+      }
+    }
+
+    window.addEventListener("hashchange", route);
+    route();
+  </script>
+</body>
+</html>

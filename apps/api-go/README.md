@@ -38,7 +38,7 @@ API 默认 `http://localhost:8080`
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `PORT` | `8080` | 监听端口 |
-| `SOURCES_PATH` | `config/sources.json` | MacCMS 源配置 |
+| `SOURCES_PATH` | `config/sources.json` | MacCMS 源配置（协议见 [`docs/maccms-api.md`](../../docs/maccms-api.md)） |
 | `DATABASE_URL` | — | PostgreSQL 连接串 |
 | `JWT_SECRET` | `dev-secret-change-me` | JWT 密钥 |
 

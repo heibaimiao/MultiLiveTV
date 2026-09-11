@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>bpz5 测试台 · 搜索 / 展示 / 播放</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1014; --panel: #161b22; --ink: #0a0c0f; --line: #2a3340;
+      --text: #e8ecef; --muted: #8b969f; --accent: #f2b705; --accent-ink: #1a1400;
+      --ok: #3ecf8e; --warn: #ff7a59; --parse: #5eb1ff; --direct: #9ad67a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      background: radial-gradient(900px 420px at 8% -8%, #243041 0%, transparent 55%), var(--bg);
+    }
+    .wrap { width: min(1120px, calc(100% - 1.5rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+    .banner {
+      display: none; margin-bottom: .8rem; padding: .75rem .9rem; border: 1px solid #ff7a5955;
+      background: #ff7a5914; color: #ffb39f; font-family: "IBM Plex Mono", monospace; font-size: .8rem;
+    }
+    .banner.show { display: block; }
+    .banner code { color: var(--accent); }
+    h1 {
+      margin: 0 0 .35rem; font-family: "Archivo Black", sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: .02em; text-transform: uppercase;
+    }
+    .sub { margin: 0 0 1rem; color: var(--muted); font-size: .92rem; }
+    .steps { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .step {
+      font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: .06em;
+      text-transform: uppercase; padding: .35rem .65rem; border: 1px solid var(--line); color: var(--muted);
+    }
+    .step.on { border-color: var(--accent); color: var(--accent); background: #f2b70514; }
+
+    .panel {
+      background: var(--panel); border: 1px solid var(--line); padding: .9rem; margin-bottom: .85rem;
+    }
+    label {
+      display: block; font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem;
+    }
+    .row { display: grid; grid-template-columns: 1fr auto auto; gap: .5rem; }
+    @media (max-width: 700px) { .row { grid-template-columns: 1fr; } }
+    input[type="text"] {
+      width: 100%; border: 1px solid var(--line); background: var(--ink); color: var(--text);
+      padding: .72rem .8rem; font-family: "IBM Plex Mono", monospace; font-size: .9rem; outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    button {
+      border: 0; font-weight: 700; cursor: pointer; padding: .72rem .95rem;
+      font-family: "Source Sans 3", sans-serif;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: var(--accent-ink); }
+    .btn-ghost { background: #1f2630; color: var(--text); border: 1px solid var(--line); }
+    .btn-sm { padding: .3rem .55rem; font-size: .78rem; }
+    .status { margin-top: .55rem; font-family: "IBM Plex Mono", monospace; font-size: .78rem; color: var(--muted); min-height: 1.1rem; }
+    .status.err { color: var(--warn); }
+    .status.ok { color: var(--ok); }
+
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: .85rem; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .cards { display: grid; gap: .45rem; max-height: 62vh; overflow: auto; }
+    .card {
+      display: grid; grid-template-columns: 56px 1fr; gap: .55rem; align-items: center;
+      padding: .5rem; border: 1px solid var(--line); background: var(--ink); cursor: pointer;
+    }
+    .card.on, .card:hover { border-color: var(--accent); }
+    .card img { width: 56px; height: 78px; object-fit: cover; background: #222; }
+    .card .t { font-weight: 700; font-size: .95rem; }
+    .card .m { color: var(--muted); font-size: .78rem; margin-top: .15rem; }
+    .empty { color: var(--muted); font-size: .88rem; }
+
+    .detail { display: none; }
+    .detail.show { display: block; }
+    .dh { display: grid; grid-template-columns: 96px 1fr; gap: .75rem; margin-bottom: .7rem; }
+    .dh img { width: 96px; height: 134px; object-fit: cover; background: #222; }
+    .dh h2 { margin: 0 0 .25rem; font-size: 1.15rem; }
+    .meta { color: var(--muted); font-size: .82rem; line-height: 1.4; }
+    .desc { margin-top: .4rem; color: #c5ced6; font-size: .84rem; line-height: 1.45; max-height: 4.6em; overflow: auto; }
+
+    .eps { display: flex; flex-wrap: wrap; gap: .3rem; margin: .55rem 0 .7rem; }
+    .ep {
+      border: 1px solid var(--line); background: #1f2630; color: var(--text);
+      padding: .28rem .5rem; font-size: .78rem; font-weight: 600;
+    }
+    .ep.on { border-color: var(--accent); color: var(--accent); }
+
+    .player-box {
+      background: #000; border: 1px solid var(--line); aspect-ratio: 16/9; margin-bottom: .7rem; position: relative;
+    }
+    video { width: 100%; height: 100%; display: block; background: #000; }
+    .play-info {
+      font-family: "IBM Plex Mono", monospace; font-size: .72rem; color: var(--muted);
+      word-break: break-all; margin-bottom: .65rem; line-height: 1.4;
+    }
+
+    .lines { display: grid; gap: .4rem; max-height: min(52vh, 520px); overflow: auto; }
+    .line {
+      border: 1px solid var(--line); border-left: 3px solid var(--line);
+      background: var(--ink); padding: .55rem .65rem;
+      display: grid; grid-template-columns: 1fr auto; gap: .45rem; align-items: center;
+      cursor: pointer;
+    }
+    .line:hover { border-color: #3a4658; }
+    .line.parse { border-left-color: var(--parse); }
+    .line.direct { border-left-color: var(--direct); }
+    .line.playing { border-color: var(--accent); background: #f2b70512; }
+    .line .name { font-weight: 700; font-size: .9rem; }
+    .tags { margin-top: .2rem; display: flex; flex-wrap: wrap; gap: .25rem; }
+    .tag {
+      font-family: "IBM Plex Mono", monospace; font-size: .64rem;
+      border: 1px solid var(--line); color: var(--muted); padding: .1rem .3rem;
+    }
+    .tag.parse { color: var(--parse); border-color: #5eb1ff55; }
+    .tag.direct { color: var(--direct); border-color: #9ad67a55; }
+    .filters { display: flex; flex-wrap: wrap; gap: .35rem; margin: .4rem 0 .55rem; }
+    .chip {
+      font-family: "IBM Plex Mono", monospace; font-size: .68rem; border: 1px solid var(--line);
+      background: transparent; color: var(--muted); padding: .22rem .45rem;
+    }
+    .chip.on { border-color: var(--accent); color: var(--accent); }
+    .source-summary {
+      display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .45rem;
+      min-height: 1.6rem; align-items: center;
+    }
+    .source-summary.empty { color: var(--muted); font-size: .84rem; display: block; }
+    .pill {
+      font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+      padding: .2rem .45rem; border: 1px solid var(--line); color: var(--text);
+    }
+    .pill.parse { border-color: #5eb1ff66; color: var(--parse); }
+    .pill.direct { border-color: #9ad67a66; color: var(--direct); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="banner" class="banner">
+      请先运行 <code>python3 scripts/bpz5-resolve-ui.py</code>，再打开 <code>http://127.0.0.1:8765</code>
+    </div>
+
+    <h1>测试台</h1>
+    <p class="sub">默认只展示官方线路；可切换筛选项查看采集站直链</p>
+    <div class="steps">
+      <span class="step on" id="s1">1 获取片源</span>
+      <span class="step" id="s2">2 展示</span>
+      <span class="step" id="s3">3 播放</span>
+    </div>
+
+    <section class="panel">
+      <label>获取片源</label>
+      <div class="row">
+        <input id="q" type="text" value="" placeholder="留空点「拉取一批」看最新；或输入片名搜索" />
+        <button class="btn-primary" id="btnFetch" type="button">拉取一批</button>
+        <button class="btn-ghost" id="btnSearch" type="button">搜索</button>
+      </div>
+      <div class="status" id="status">待命</div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <label>片单 <span id="countLabel" style="color:#8b969f;font-weight:400"></span></label>
+        <div class="cards" id="cards"><div class="empty">正在拉取...</div></div>
+      </section>
+
+      <section class="panel">
+        <div id="emptyDetail" class="empty">点左侧影片，展示详情与片源线路</div>
+        <div id="detail" class="detail">
+          <div class="dh">
+            <img id="poster" alt="" />
+            <div>
+              <h2 id="title">-</h2>
+              <div class="meta" id="meta"></div>
+              <div class="desc" id="desc"></div>
+            </div>
+          </div>
+
+          <label>分集</label>
+          <div class="eps" id="eps"></div>
+
+          <label>片源线路</label>
+          <div id="sourceSummary" class="source-summary empty">选集后展示各片源</div>
+          <div class="filters" id="filters">
+            <button type="button" class="chip on" data-f="parse">仅官方线</button>
+            <button type="button" class="chip" data-f="official">官方/腾讯</button>
+            <button type="button" class="chip" data-f="direct">采集站直链</button>
+            <button type="button" class="chip" data-f="all">全部</button>
+          </div>
+          <div class="lines" id="lines"></div>
+
+          <label style="margin-top:.75rem">播放器</label>
+          <div class="player-box"><video id="video" controls playsinline></video></div>
+          <div class="play-info" id="playInfo">点线路「播放」开始</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const OFFICIAL = new Set([
+      "bytevod-cloudflare","bytevod-cloudflare-4k","official-v","bytedance",
+      "bytevod-lv2","official-r","official-hot-playback","dong",
+    ]);
+
+    const el = {
+      q: document.getElementById("q"),
+      btnFetch: document.getElementById("btnFetch"),
+      btnSearch: document.getElementById("btnSearch"),
+      status: document.getElementById("status"),
+      cards: document.getElementById("cards"),
+      countLabel: document.getElementById("countLabel"),
+      emptyDetail: document.getElementById("emptyDetail"),
+      detail: document.getElementById("detail"),
+      poster: document.getElementById("poster"),
+      title: document.getElementById("title"),
+      meta: document.getElementById("meta"),
+      desc: document.getElementById("desc"),
+      eps: document.getElementById("eps"),
+      sourceSummary: document.getElementById("sourceSummary"),
+      video: document.getElementById("video"),
+      playInfo: document.getElementById("playInfo"),
+      lines: document.getElementById("lines"),
+      filters: document.getElementById("filters"),
+      s1: document.getElementById("s1"),
+      s2: document.getElementById("s2"),
+      s3: document.getElementById("s3"),
+    };
+
+    let movies = [];
+    let selectedId = "";
+    let episodes = [];
+    let currentToken = "";
+    let playback = null;
+    let filter = "parse"; // 默认隐藏普通/采集直链
+    let hls = null;
+    let playingIdx = -1;
+    let playSeq = 0;
+
+    function setStatus(t, k = "") {
+      el.status.textContent = t;
+      el.status.className = "status" + (k ? " " + k : "");
+    }
+    function setStep(n) {
+      [el.s1, el.s2, el.s3].forEach((x, i) => x.classList.toggle("on", i < n));
+    }
+    function esc(s) {
+      return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+    }
+    function needsResolve(line) {
+      return line.resolve_required === true || line.resolve_mode === "parse" ||
+        line.url_kind === "resolve_ticket" ||
+        (line.resolved === false && String(line.url || "").startsWith("resolve://"));
+    }
+    function ticketOf(line) {
+      if (line.resolve_ticket) return String(line.resolve_ticket).trim();
+      const u = String(line.url || "");
+      if (u.startsWith("resolve://")) return u.slice(10).trim();
+      if (line.url_kind === "resolve_ticket") return u.trim();
+      return "";
+    }
+    function passFilter(line) {
+      const parse = needsResolve(line);
+      if (filter === "direct") return !parse;
+      if (filter === "parse") return parse;
+      if (filter === "official") return OFFICIAL.has(line.provider_id) || parse;
+      return true;
+    }
+    function formatErr(res, data) {
+      if (!data || typeof data !== "object") return `HTTP ${res.status}`;
+      if (data.code === "playback_user_session_required" || data.state === "login_required") {
+        return `需要登录才能播官方线 · ${data.message || "login_required"}（可改选直链）`;
+      }
+      return data.message || data.error || data.code || `HTTP ${res.status}`;
+    }
+
+    /** 拉取一批片源（最新）或按关键词搜索 */
+    async function fetchCatalog(mode = "latest") {
+      const q = el.q.value.trim();
+      if (mode === "search" && !q) return setStatus("请输入片名再搜索", "err");
+      const latest = mode === "latest" || !q;
+      setStatus(latest ? "正在拉取一批最新片源..." : `搜索「${q}」...`);
+      setStep(1);
+      el.btnFetch.disabled = true;
+      el.btnSearch.disabled = true;
+      const url = latest
+        ? "/api/browse/catalog?page=1&limit=30"
+        : `/api/browse/catalog?q=${encodeURIComponent(q)}&page=1&limit=30`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!res.ok || data.error) return setStatus(formatErr(res, data), "err");
+        movies = data.cards || [];
+        renderCards();
+        el.countLabel.textContent = `· ${movies.length} 部`;
+        setStatus(latest ? `已获取 ${movies.length} 部最新片源` : `搜索到 ${movies.length} 部`, "ok");
+      } catch (e) {
+        setStatus(String(e), "err");
+      } finally {
+        el.btnFetch.disabled = false;
+        el.btnSearch.disabled = false;
+      }
+    }
+
+    function renderCards() {
+      if (!movies.length) {
+        el.cards.innerHTML = `<div class="empty">没有片源</div>`;
+        return;
+      }
+      el.cards.innerHTML = movies.map((m) => {
+        const id = m.selected_variant_id || m.default_variant_id || m.id;
+        const ep = m.available_episode_count || m.seasons?.[0]?.available_episode_count;
+        const groups = (m.playback_groups || []).map((g) => g.label || g.id).filter(Boolean).slice(0, 3).join("/");
+        const sub = [m.year, m.content_kind, m.area, ep ? `${ep}集` : "", groups || "", m.has_playback === false ? "暂无播放" : ""]
+          .filter(Boolean).join(" · ");
+        return `<article class="card ${id===selectedId?"on":""}" data-id="${esc(id)}">
+          <img src="${esc(m.poster_url||"")}" alt="" loading="lazy" onerror="this.style.opacity=.25" />
+          <div><div class="t">${esc(m.title||"-")}</div><div class="m">${esc(sub)}</div></div>
+        </article>`;
+      }).join("");
+    }
+
+    async function openMovie(id) {
+      selectedId = id;
+      renderCards();
+      el.emptyDetail.style.display = "none";
+      el.detail.classList.add("show");
+      setStep(2);
+      setStatus("拉详情与片源...");
+      stopPlay();
+      playback = null;
+      playingIdx = -1;
+      el.lines.innerHTML = "";
+      el.sourceSummary.className = "source-summary empty";
+      el.sourceSummary.textContent = "加载片源中...";
+      try {
+        const res = await fetch(`/api/catalog/${encodeURIComponent(id)}`);
+        const data = await res.json();
+        if (!res.ok || data.error) return setStatus(formatErr(res, data), "err");
+        el.poster.src = data.poster_url || "";
+        el.title.textContent = data.title || "-";
+        el.meta.textContent = [data.year, data.content_kind, data.area, data.language,
+          data.available_episode_count ? `${data.available_episode_count}集` : "",
+          (data.genres||[]).slice(0,4).join("/")].filter(Boolean).join(" · ");
+        el.desc.textContent = data.description || data.remarks || "";
+        setStatus(`已展示「${data.title}」`, "ok");
+
+        const er = await fetch(`/api/catalog/${encodeURIComponent(id)}/episodes?offset=0&limit=60`);
+        const ed = await er.json();
+        if (!er.ok || ed.error) return setStatus(formatErr(er, ed), "err");
+        episodes = ed.episodes || [];
+        renderEps();
+        if (episodes[0]?.token) await loadLines(episodes[0].token, episodes[0].title || "第1集");
+        else {
+          el.sourceSummary.textContent = "无分集 / 暂无片源";
+        }
+      } catch (e) {
+        setStatus(String(e), "err");
+      }
+    }
+
+    function renderEps() {
+      el.eps.innerHTML = episodes.map((ep) =>
+        `<button type="button" class="ep ${ep.token===currentToken?"on":""}" data-token="${esc(ep.token)}" data-title="${esc(ep.title||("第"+ep.number+"集"))}">${esc(ep.title||("第"+ep.number+"集"))}</button>`
+      ).join("");
+    }
+
+    function renderSourceSummary(lines) {
+      if (!lines.length) {
+        el.sourceSummary.className = "source-summary empty";
+        el.sourceSummary.textContent = "本集没有片源";
+        return;
+      }
+      const official = lines.filter(needsResolve);
+      const direct = lines.filter((x) => !needsResolve(x));
+      const shown = filter === "all" ? lines
+        : filter === "direct" ? direct
+        : official; // parse / official：只展示官方
+      el.sourceSummary.className = "source-summary";
+      el.sourceSummary.innerHTML =
+        `<span class="pill parse">官方 ${official.length}</span>` +
+        (filter === "all" || filter === "direct"
+          ? `<span class="pill direct">直链 ${direct.length}</span>`
+          : `<span class="pill">已隐藏直链 ${direct.length}</span>`) +
+        shown.map((x, i) => {
+          const parse = needsResolve(x);
+          const name = x.provider_name || x.label || x.play_from || x.provider_id || `线路${i + 1}`;
+          return `<span class="pill ${parse?"parse":"direct"}">${i + 1}.${esc(name)}</span>`;
+        }).join("");
+    }
+
+    async function loadLines(token, title) {
+      currentToken = token;
+      playingIdx = -1;
+      playSeq += 1; // 取消上一条解票/播放
+      stopPlay();
+      renderEps();
+      setStatus(`拉取片源线路 · ${title}...`);
+      el.sourceSummary.className = "source-summary empty";
+      el.sourceSummary.textContent = "拉取中...";
+      el.lines.innerHTML = "";
+      try {
+        const res = await fetch(`/api/playback/resolve/${encodeURIComponent(token)}`);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          el.sourceSummary.textContent = "片源拉取失败";
+          return setStatus(formatErr(res, data), "err");
+        }
+        playback = data;
+        const lines = data.line_options || [];
+        renderSourceSummary(lines);
+        setStatus(`${title} · 已展示全部 ${lines.length} 条线路`, "ok");
+        renderLines();
+      } catch (e) {
+        el.sourceSummary.textContent = "片源拉取失败";
+        setStatus(String(e), "err");
+      }
+    }
+
+    function renderLines() {
+      if (!playback) { el.lines.innerHTML = ""; return; }
+      const all = playback.line_options || [];
+      const list = all
+        .map((line, idx) => ({ line, idx }))
+        .filter(({ line }) => passFilter(line));
+      el.lines.innerHTML = list.map(({ line, idx }) => {
+        const parse = needsResolve(line);
+        const name = line.provider_name || line.label || line.provider_id || `线路${idx + 1}`;
+        const urlHint = parse ? "需解票后播放" : (String(line.url || "").slice(0, 48) + (String(line.url||"").length > 48 ? "…" : ""));
+        const on = idx === playingIdx ? " playing" : "";
+        return `<div class="line ${parse?"parse":"direct"}${on}" data-act="play" data-idx="${idx}">
+          <div>
+            <div class="name">${idx + 1}. ${esc(name)}</div>
+            <div class="tags">
+              <span class="tag ${parse?"parse":"direct"}">${parse?"官方票":"可直接播"}</span>
+              <span class="tag">${esc(line.play_from || line.provider_id || "")}</span>
+              <span class="tag">${esc(line.url_kind || "")}</span>
+              <span class="tag">${esc(urlHint)}</span>
+            </div>
+          </div>
+          <button class="btn-primary btn-sm" data-act="play" data-idx="${idx}" type="button">${idx === playingIdx ? "播放中" : (parse ? "解票播放" : "播放")}</button>
+        </div>`;
+      }).join("") || `<div class="empty">当前筛选下没有线路</div>`;
+    }
+
+    function stopPlay(keepInfo = false) {
+      try { el.video.pause(); } catch (_) {}
+      if (hls) {
+        try { hls.stopLoad(); } catch (_) {}
+        try { hls.detachMedia(); } catch (_) {}
+        try { hls.destroy(); } catch (_) {}
+        hls = null;
+      }
+      el.video.removeAttribute("src");
+      el.video.removeAttribute("srcObject");
+      try { el.video.load(); } catch (_) {}
+      if (!keepInfo) {
+        playingIdx = -1;
+        el.playInfo.textContent = "点线路「播放」开始";
+      }
+    }
+
+    function startVideoPlay(seq) {
+      if (seq !== playSeq) return;
+      const p = el.video.play();
+      if (p && typeof p.then === "function") p.catch(() => {});
+    }
+
+    function mediaProxyUrl(url) {
+      if (!url) return url;
+      if (url.startsWith("/api/media")) return url;
+      return "/api/media?url=" + encodeURIComponent(url);
+    }
+
+    /** 仅官方伪装 CDN 走本地代理；采集站直链直连，避免代理拖死 */
+    function needsMediaProxy(url, kindHint) {
+      try {
+        const u = new URL(url);
+        const h = u.hostname;
+        if (/(wikjdd\.cn|byteimg\.com|zshtys888\.com|ixigua\.com|cmecloud\.cn|bytedance\.com)$/i.test(h)) return true;
+        if (/\.(jpg|jpeg|png)(~|\?|$)/i.test(u.pathname + u.search)) return true;
+        if (kindHint === "mp4" && !/\.mp4(\?|$)/i.test(url) && !/\.m3u8(\?|$)/i.test(url)) return true;
+      } catch (_) {}
+      return false;
+    }
+
+    function attachHls(playSrc, seq, onFatal) {
+      hls = new Hls({
+        enableWorker: true,
+        maxBufferLength: 30,
+        xhrSetup: (xhr) => { try { xhr.withCredentials = false; } catch (_) {} },
+      });
+      hls.loadSource(playSrc);
+      hls.attachMedia(el.video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => startVideoPlay(seq));
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (seq !== playSeq || !data.fatal) return;
+        if (typeof onFatal === "function" && onFatal(data)) return;
+        setStatus(`播放失败: ${data.type}/${data.details || ""}`, "err");
+        try { hls.destroy(); } catch (_) {}
+        hls = null;
+        playingIdx = -1;
+        renderLines();
+      });
+    }
+
+    async function playUrl(url, label, kindHint, idx, reuseSeq, forceProxy = false) {
+      const seq = reuseSeq != null ? reuseSeq : ++playSeq;
+      playSeq = seq;
+      stopPlay(true);
+      playingIdx = idx;
+      renderLines();
+      setStep(3);
+      const useProxy = forceProxy || needsMediaProxy(url, kindHint);
+      const playSrc = useProxy ? mediaProxyUrl(url) : url;
+      el.playInfo.textContent = `${label}\n${url}${useProxy ? "\n(via media proxy)" : ""}`;
+      const isHls = /\.m3u8(\?|$)/i.test(url) || kindHint === "m3u8";
+      try {
+        if (isHls) {
+          if (window.Hls && Hls.isSupported()) {
+            attachHls(playSrc, seq, (data) => {
+              if (!useProxy && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                setStatus(`直链受阻，改代理重试 · ${label}...`);
+                playUrl(url, label, kindHint, idx, null, true);
+                return true;
+              }
+              return false;
+            });
+          } else if (el.video.canPlayType("application/vnd.apple.mpegurl")) {
+            el.video.src = playSrc;
+            el.video.addEventListener("loadedmetadata", () => startVideoPlay(seq), { once: true });
+          } else {
+            setStatus("当前浏览器不支持 HLS", "err");
+            playingIdx = -1;
+            renderLines();
+            return;
+          }
+        } else {
+          el.video.src = playSrc;
+          el.video.addEventListener("loadedmetadata", () => startVideoPlay(seq), { once: true });
+          el.video.addEventListener("error", () => {
+            if (seq !== playSeq) return;
+            if (!useProxy) {
+              setStatus(`直链失败，改代理重试 · ${label}...`);
+              playUrl(url, label, kindHint || "mp4", idx, null, true);
+              return;
+            }
+            setStatus("视频加载失败（直链失效或格式不支持）", "err");
+            playingIdx = -1;
+            renderLines();
+          }, { once: true });
+          startVideoPlay(seq);
+        }
+        if (seq === playSeq) setStatus(`正在播放 · ${label}`, "ok");
+      } catch (e) {
+        if (seq === playSeq) {
+          playingIdx = -1;
+          renderLines();
+          setStatus(String(e), "err");
+        }
+      }
+    }
+
+    async function playLine(line, idx) {
+      const name = line.provider_name || line.label || line.provider_id || `线路${idx + 1}`;
+      if (!needsResolve(line)) {
+        return playUrl(line.url, name, line.url_kind, idx);
+      }
+      const ticket = ticketOf(line);
+      if (!ticket) return setStatus("无 ticket", "err");
+      const seq = ++playSeq;
+      playingIdx = -1; // 解票成功前不要显示「播放中」
+      stopPlay(true);
+      renderLines();
+      setStatus(`解票中 · ${name}...`);
+      try {
+        const res = await fetch("/api/playback/resolve-line", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket }),
+        });
+        const data = await res.json();
+        if (seq !== playSeq) return;
+        if (!res.ok || data.error || data.statusCode >= 400) {
+          playingIdx = -1;
+          renderLines();
+          return setStatus(`解票失败: ${formatErr(res, data)}`, "err");
+        }
+        const out = data.line || {};
+        if (!out.url) {
+          playingIdx = -1;
+          renderLines();
+          return setStatus("解票成功但无 url", "err");
+        }
+        await playUrl(out.url, name, out.url_kind || line.url_kind, idx, seq);
+      } catch (e) {
+        if (seq === playSeq) {
+          playingIdx = -1;
+          renderLines();
+          setStatus(String(e), "err");
+        }
+      }
+    }
+
+    el.btnFetch.onclick = () => fetchCatalog("latest");
+    el.btnSearch.onclick = () => fetchCatalog("search");
+    el.q.onkeydown = (e) => {
+      if (e.key === "Enter") fetchCatalog(el.q.value.trim() ? "search" : "latest");
+    };
+    el.cards.onclick = (e) => {
+      const c = e.target.closest(".card");
+      if (c) openMovie(c.dataset.id);
+    };
+    el.eps.onclick = (e) => {
+      const b = e.target.closest(".ep");
+      if (b) loadLines(b.dataset.token, b.dataset.title);
+    };
+    el.filters.onclick = (e) => {
+      const b = e.target.closest("[data-f]");
+      if (!b) return;
+      filter = b.dataset.f;
+      el.filters.querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", c === b));
+      if (playback) {
+        renderSourceSummary(playback.line_options || []);
+        renderLines();
+      }
+    };
+    el.lines.onclick = (e) => {
+      const b = e.target.closest("[data-act=play]");
+      if (!b || !playback) return;
+      const idx = Number(b.dataset.idx);
+      if (!Number.isInteger(idx) || idx < 0) return;
+      const line = (playback.line_options || [])[idx];
+      if (line) playLine(line, idx);
+    };
+
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((d) => {
+        const sess = d.session || {};
+        const who = sess.ready ? `匿名会话 · ${sess.display_name || "ok"}` : "匿名会话未就绪";
+        setStatus(`代理就绪 · ${d.base} · ${who} · 正在拉取一批片源`);
+        return fetchCatalog("latest");
+      })
+      .catch(() => {
+        document.getElementById("banner").classList.add("show");
+        setStatus("请先启动 python3 scripts/bpz5-resolve-ui.py", "err");
+        el.btnFetch.disabled = true;
+        el.btnSearch.disabled = true;
+        el.cards.innerHTML = `<div class="empty">服务未启动</div>`;
+      });
+    if (location.protocol === "file:") document.getElementById("banner").classList.add("show");
+  </script>
+</body>
+</html>

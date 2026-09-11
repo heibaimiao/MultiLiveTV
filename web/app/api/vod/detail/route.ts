@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       merged: true,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch detail";
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch detail";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

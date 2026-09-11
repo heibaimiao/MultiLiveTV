@@ -2,8 +2,7 @@ import Foundation
 
 struct HomeLaunchPayload {
     let categoryTree: CategoryTree
-    let selectedTypeId: Int?
-    let sourceId: Int
+    let selectedSlug: String?
     let snapshot: HomeFeedSnapshot
 }
 
@@ -18,22 +17,15 @@ enum HomeLaunch {
         didSucceed
     }
 
-    static func childTypeIds(tree: CategoryTree, typeId: Int?) -> [Int] {
-        guard let typeId else { return [] }
-        return tree.childrenByParent[typeId]?.map(\.typeId) ?? []
-    }
-
     static func makePayload(
-        categories: [CategoryDef],
+        tree: CategoryTree,
         items: [VodItem],
         page: Int,
         pageCount: Int,
-        sourceId: Int,
+        selectedSlug: String?,
         tvDisplay: Bool
     ) -> HomeLaunchPayload {
-        let tree = CategoryTreeBuilder.build(from: categories)
-        let typeId = CategoryTreeBuilder.defaultTypeId(in: tree)
-        let matched = CategoryMatch.filter(items, selectedTypeId: typeId, tree: tree)
+        let matched = CategoryMatch.filter(items, selectedSlug: selectedSlug, tree: tree)
         let pool = HomeFeed.replaceFirstPage(pool: [], incoming: matched)
         let displayCount: Int
         if tvDisplay {
@@ -43,8 +35,7 @@ enum HomeLaunch {
         }
         return HomeLaunchPayload(
             categoryTree: tree,
-            selectedTypeId: typeId,
-            sourceId: sourceId,
+            selectedSlug: selectedSlug,
             snapshot: HomeFeedSnapshot(
                 pool: pool,
                 displayCount: displayCount,
@@ -55,21 +46,18 @@ enum HomeLaunch {
     }
 
     static func load(
-        fetchCategories: () async throws -> [CategoryDef],
-        fetchList: (_ typeId: Int?, _ childIds: [Int]) async throws -> ListPage,
-        sourceId: Int,
+        fetchList: (_ slug: String?) async throws -> ListPage,
         tvDisplay: Bool
     ) async throws -> HomeLaunchPayload {
-        let categories = try await fetchCategories()
-        let tree = CategoryTreeBuilder.build(from: categories)
-        let typeId = CategoryTreeBuilder.defaultTypeId(in: tree)
-        let page = try await fetchList(typeId, childTypeIds(tree: tree, typeId: typeId))
+        let tree = UnifiedCategories.tree()
+        let slug = CategoryTreeBuilder.defaultSlug(in: tree) ?? UnifiedCategories.defaultSlug
+        let page = try await fetchList(slug)
         return makePayload(
-            categories: categories,
+            tree: tree,
             items: page.items,
             page: page.page,
             pageCount: page.pageCount,
-            sourceId: sourceId,
+            selectedSlug: slug,
             tvDisplay: tvDisplay
         )
     }

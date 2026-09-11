@@ -1,0 +1,350 @@
+{
+  "id": 33,
+  "name": "无忧",
+  "url": "https://www.wyvod.com/api.php/provide/vod/",
+  "via": "next-list",
+  "ms": 13279,
+  "error": null,
+  "class_count": 38,
+  "visible_count": 30,
+  "parents": [
+    {
+      "type_id": 1,
+      "type_name": "电影",
+      "type_pid": null,
+      "norm": "电影",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 2,
+      "type_name": "剧集",
+      "type_pid": null,
+      "norm": "剧集",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 3,
+      "type_name": "综艺",
+      "type_pid": null,
+      "norm": "综艺",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 4,
+      "type_name": "动漫",
+      "type_pid": null,
+      "norm": "动漫",
+      "visible": true,
+      "is_parent": true
+    }
+  ],
+  "classes": [
+    {
+      "type_id": 1,
+      "type_name": "电影",
+      "type_pid": null,
+      "norm": "电影",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 2,
+      "type_name": "剧集",
+      "type_pid": null,
+      "norm": "剧集",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 3,
+      "type_name": "综艺",
+      "type_pid": null,
+      "norm": "综艺",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 4,
+      "type_name": "动漫",
+      "type_pid": null,
+      "norm": "动漫",
+      "visible": true,
+      "is_parent": true
+    },
+    {
+      "type_id": 5,
+      "type_name": "动作片",
+      "type_pid": null,
+      "norm": "动作片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 6,
+      "type_name": "喜剧片",
+      "type_pid": null,
+      "norm": "喜剧片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 7,
+      "type_name": "爱情片",
+      "type_pid": null,
+      "norm": "爱情片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 8,
+      "type_name": "科幻片",
+      "type_pid": null,
+      "norm": "科幻片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 9,
+      "type_name": "恐怖片",
+      "type_pid": null,
+      "norm": "恐怖片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 10,
+      "type_name": "剧情片",
+      "type_pid": null,
+      "norm": "剧情片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 11,
+      "type_name": "战争片",
+      "type_pid": null,
+      "norm": "战争片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 12,
+      "type_name": "国产剧",
+      "type_pid": null,
+      "norm": "国产剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 13,
+      "type_name": "港剧",
+      "type_pid": null,
+      "norm": "港剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 14,
+      "type_name": "台剧",
+      "type_pid": null,
+      "norm": "台剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 15,
+      "type_name": "日剧",
+      "type_pid": null,
+      "norm": "日剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 16,
+      "type_name": "韩剧",
+      "type_pid": null,
+      "norm": "韩剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 17,
+      "type_name": "欧美剧",
+      "type_pid": null,
+      "norm": "欧美剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 18,
+      "type_name": "海外剧",
+      "type_pid": null,
+      "norm": "海外剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 19,
+      "type_name": "经典片",
+      "type_pid": null,
+      "norm": "经典片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 20,
+      "type_name": "理论片[关]",
+      "type_pid": null,
+      "norm": "理论片",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 22,
+      "type_name": "纪录片",
+      "type_pid": null,
+      "norm": "纪录片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 23,
+      "type_name": "动画片",
+      "type_pid": null,
+      "norm": "动画片",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 24,
+      "type_name": "犯罪片x",
+      "type_pid": null,
+      "norm": "犯罪片",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 25,
+      "type_name": "悬疑片x",
+      "type_pid": null,
+      "norm": "悬疑片",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 26,
+      "type_name": "短剧",
+      "type_pid": null,
+      "norm": "短剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 27,
+      "type_name": "泰剧",
+      "type_pid": null,
+      "norm": "泰剧",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 28,
+      "type_name": "大陆综艺",
+      "type_pid": null,
+      "norm": "大陆综艺",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 29,
+      "type_name": "港台综艺",
+      "type_pid": null,
+      "norm": "港台综艺",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 30,
+      "type_name": "日韩综艺",
+      "type_pid": null,
+      "norm": "日韩综艺",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 31,
+      "type_name": "欧美综艺",
+      "type_pid": null,
+      "norm": "欧美综艺",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 32,
+      "type_name": "国产动漫",
+      "type_pid": null,
+      "norm": "国产动漫",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 33,
+      "type_name": "港台动漫[关]",
+      "type_pid": null,
+      "norm": "港台动漫",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 34,
+      "type_name": "日韩动漫",
+      "type_pid": null,
+      "norm": "日韩动漫",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 35,
+      "type_name": "欧美动漫",
+      "type_pid": null,
+      "norm": "欧美动漫",
+      "visible": true,
+      "is_parent": false
+    },
+    {
+      "type_id": 36,
+      "type_name": "惊悚片[关]",
+      "type_pid": null,
+      "norm": "惊悚片",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 37,
+      "type_name": "灾难片[关]",
+      "type_pid": null,
+      "norm": "灾难片",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 38,
+      "type_name": "古装片[关]",
+      "type_pid": null,
+      "norm": "古装片",
+      "visible": false,
+      "is_parent": false
+    },
+    {
+      "type_id": 39,
+      "type_name": "家庭片[关]",
+      "type_pid": null,
+      "norm": "家庭片",
+      "visible": false,
+      "is_parent": false
+    }
+  ]
+}

@@ -10,6 +10,10 @@ type Config struct {
 	DatabaseURL     string
 	JWTSecret       string
 	SourcesPath     string
+	WeightsPath     string
+	CategoriesPath  string
+	BPZ5BaseURL     string
+	BPZ5HMACSecret  string
 	AdminUsername   string
 	AdminPassword   string
 	AdminJWTSecret  string
@@ -24,6 +28,10 @@ func Load() Config {
 		DatabaseURL:     getEnv("DATABASE_URL", ""),
 		JWTSecret:       jwtSecret,
 		SourcesPath:     getEnv("SOURCES_PATH", "config/sources.json"),
+		WeightsPath:     getEnv("PLAY_LINE_WEIGHTS_PATH", "config/play-line-weights.json"),
+		CategoriesPath:  getEnv("UNIFIED_CATEGORIES_PATH", "config/unified-categories.json"),
+		BPZ5BaseURL:     getEnv("BPZ5_BASE_URL", "https://bpz5.com"),
+		BPZ5HMACSecret:  getEnv("BPZ5_HMAC_SECRET", ""),
 		AdminUsername:   getEnv("ADMIN_USERNAME", ""),
 		AdminPassword:   getEnv("ADMIN_PASSWORD", ""),
 		AdminJWTSecret:  adminJWT,

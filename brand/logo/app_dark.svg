@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" rx="180" fill="#05063d"/>
+<g transform="translate(0,170) scale(1,1)">
+<defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#02052b"/>
+      <stop offset="0.55" stop-color="#05063d"/>
+      <stop offset="1" stop-color="#00051f"/>
+    </linearGradient>
+
+    <linearGradient id="tvFrame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1fe8ff"/>
+      <stop offset="0.45" stop-color="#168cff"/>
+      <stop offset="0.75" stop-color="#5c39ff"/>
+      <stop offset="1" stop-color="#ff42c8"/>
+    </linearGradient>
+
+    <linearGradient id="play" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe36a"/>
+      <stop offset="0.38" stop-color="#ff9b38"/>
+      <stop offset="0.7" stop-color="#ff3f93"/>
+      <stop offset="1" stop-color="#bd29ff"/>
+    </linearGradient>
+
+    <linearGradient id="swoosh" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#20f4ff"/>
+      <stop offset="0.34" stop-color="#167fff"/>
+      <stop offset="0.62" stop-color="#7a35ff"/>
+      <stop offset="0.82" stop-color="#ff39c4"/>
+      <stop offset="1" stop-color="#ffb12e"/>
+    </linearGradient>
+
+    <linearGradient id="wordTV" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7df5ff"/>
+      <stop offset="1" stop-color="#008cff"/>
+    </linearGradient>
+
+    <linearGradient id="bottomGlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#193bff" stop-opacity="0"/>
+      <stop offset="0.28" stop-color="#2d63ff" stop-opacity=".85"/>
+      <stop offset="0.5" stop-color="#5eeaff" stop-opacity=".95"/>
+      <stop offset="0.7" stop-color="#ff4fc9" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#ff4f5b" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity=".5"/>
+    </filter>
+
+    <clipPath id="screenClip">
+      <rect x="595" y="238" width="385" height="302" rx="54"/>
+    </clipPath>
+  </defs>
+<g opacity=".9" filter="url(#glow)">
+    <rect x="275" y="327" width="205" height="12" rx="6" fill="#1768ff"/>
+    <rect x="365" y="373" width="235" height="18" rx="9" fill="#1ccfff"/>
+    <rect x="285" y="431" width="255" height="12" rx="6" fill="#1c70ff"/>
+    <rect x="337" y="487" width="205" height="16" rx="8" fill="#285aff"/>
+  </g>
+
+  <!-- TV antenna -->
+  <g fill="none" stroke="#27dfff" stroke-width="16" stroke-linecap="round" filter="url(#glow)">
+    <path d="M768 215 L691 133"/>
+    <path d="M790 215 L889 122"/>
+  </g>
+  <circle cx="687" cy="129" r="23" fill="#29e6ff" filter="url(#glow)"/>
+  <circle cx="892" cy="118" r="23" fill="#29e6ff" filter="url(#glow)"/>
+
+  <!-- TV outer body -->
+  <rect x="552" y="211" width="475" height="388" rx="70"
+        fill="#07133f" stroke="url(#tvFrame)" stroke-width="25"
+        filter="url(#shadow)"/>
+
+  <!-- Inner screen -->
+  <rect x="585" y="239" width="409" height="323" rx="58"
+        fill="#0b1446" stroke="#121b55" stroke-width="12"/>
+
+  <!-- Screen reflections -->
+  <g clip-path="url(#screenClip)" opacity=".2">
+    <path d="M570 250 Q760 160 1015 260 L1015 360 Q820 290 570 380Z" fill="#fff"/>
+    <path d="M585 520 Q790 435 1010 500 L1010 570 L585 570Z" fill="#5a72ff"/>
+  </g>
+
+  <!-- Play glow -->
+  <path d="M746 315 L746 491 Q746 505 760 497 L907 410 Q921 401 907 392 L760 305 Q746 297 746 315Z"
+        fill="#ff3fba" opacity=".35" filter="url(#softGlow)"/>
+
+  <!-- Play button -->
+  <path d="M735 309 L735 493 Q735 509 751 500 L907 408 Q922 399 907 390 L751 300 Q735 291 735 309Z"
+        fill="url(#play)" stroke="#ff83d1" stroke-width="3" filter="url(#glow)"/>
+
+  <!-- Orbital streaming ring behind/around TV -->
+  <path d="M421 507 C505 666 842 687 1069 510 C1136 458 1168 395 1124 340"
+        fill="none" stroke="#ff5a8e" stroke-width="6" opacity=".35"/>
+  <path d="M403 497 C500 665 838 682 1070 505 C1130 459 1164 396 1120 344"
+        fill="none" stroke="url(#swoosh)" stroke-width="38" stroke-linecap="round"
+        filter="url(#glow)"/>
+  <path d="M405 500 C505 663 838 678 1068 502"
+        fill="none" stroke="#43f5ff" stroke-width="8" opacity=".75"/>
+
+  <!-- Front highlight of orbit -->
+  <path d="M445 518 C574 641 846 631 1036 510"
+        fill="none" stroke="url(#swoosh)" stroke-width="13" stroke-linecap="round"/>
+
+  <!-- TV stand -->
+  <path d="M690 625 L856 625 L900 660 L646 660 Z"
+        fill="#07133f" stroke="#183a91" stroke-width="5"/>
+  <path d="M675 642 L876 642" stroke="#24dfff" stroke-width="7" opacity=".75" filter="url(#glow)"/>
+
+</g>
+</svg>
