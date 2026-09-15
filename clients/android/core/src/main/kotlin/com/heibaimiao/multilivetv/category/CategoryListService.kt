@@ -10,16 +10,19 @@ import com.heibaimiao.multilivetv.source.SourceCollector
 import com.heibaimiao.multilivetv.source.SourceHealthStore
 import com.heibaimiao.multilivetv.source.SourcePage
 import com.heibaimiao.multilivetv.source.SourceStore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.coroutines.coroutineContext
 
 object CategoryListService {
     data class ListResult(
@@ -45,6 +48,9 @@ object CategoryListService {
         page: Int,
         hours: Int? = null,
         health: SourceHealthStore = SourceHealthStore.shared,
+        fetchPage: suspend (Source, Int, Int?, Int?) -> SourcePage = { source, pg, typeId, hrs ->
+            SourceCollector.list(source, pg, typeId, hrs, health)
+        },
     ): ListResult {
         val enabled = store.collectable(SourceCapability.CATEGORY)
         if (enabled.isEmpty()) throw VodClientException("资源站不可用")
@@ -55,7 +61,10 @@ object CategoryListService {
         if (slug != null && plan.isEmpty()) {
             return ListResult(1, "ok", page, 1, "0", 0, emptyList())
         }
-        val pages = fetchPlanPages(store, plan, page, hours)
+        val pages = fetchPlanPages(store, plan, page, hours, fetchPage)
+        if (pages.isEmpty() && plan.isNotEmpty()) {
+            throw VodClientException("无法连接资源站，请检查网络后重试")
+        }
         val mergeable = pages.flatMap { it.first }
         val pageCount = pages.maxOfOrNull { it.second } ?: 1
         val total = pages.sumOf { it.third }
@@ -68,17 +77,26 @@ object CategoryListService {
         plan: List<UnifiedFetchPlan.Request>,
         page: Int,
         hours: Int?,
+        fetchPage: suspend (Source, Int, Int?, Int?) -> SourcePage,
     ): List<Triple<List<MergeableVodItem>, Int, Int>> {
         val semaphore = Semaphore(UnifiedFetchPlan.MAX_IN_FLIGHT)
         val collected = ConcurrentLinkedQueue<Triple<List<MergeableVodItem>, Int, Int>>()
         val minPages = UnifiedFetchPlan.minCompletedPages(plan)
-        supervisorScope {
+        val isolated = SupervisorJob()
+        val scope = CoroutineScope(coroutineContext + isolated)
+        try {
             val jobs = plan.map { request ->
-                launch {
+                scope.launch {
                     val source = store.byID(request.sourceId) ?: return@launch
                     val data = semaphore.withPermit {
                         withTimeoutOrNull(UnifiedFetchPlan.PER_CALL_TIMEOUT_MS) {
-                            runCatching { SourceCollector.list(source, page, request.typeId, hours) }.getOrNull()
+                            try {
+                                fetchPage(source, page, request.typeId, hours)
+                            } catch (error: CancellationException) {
+                                throw error
+                            } catch (_: Exception) {
+                                null
+                            }
                         }
                     } ?: return@launch
                     val items = mergeableItems(source, data)
@@ -88,7 +106,6 @@ object CategoryListService {
             }
             withTimeoutOrNull(UnifiedFetchPlan.FIRST_PAINT_MS) {
                 while (jobs.any { it.isActive }) {
-                    if (collected.size >= minPages) break
                     delay(40)
                 }
             }
@@ -99,9 +116,10 @@ object CategoryListService {
                     }
                 }
             }
-            jobs.forEach { it.cancel() }
+            return collected.toList()
+        } finally {
+            isolated.cancel()
         }
-        return collected.toList()
     }
 
     private fun mergeableItems(source: Source, data: SourcePage): List<MergeableVodItem> =
