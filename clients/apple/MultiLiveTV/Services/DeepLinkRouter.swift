@@ -5,6 +5,7 @@ enum AppTab: Hashable {
     case home
     case live
     case search
+    case history
     case downloads
 }
 

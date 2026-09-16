@@ -3,6 +3,7 @@ import SwiftUI
 struct DownloadsView: View {
     @EnvironmentObject private var vod: VodService
     @EnvironmentObject private var downloads: DownloadManager
+    @EnvironmentObject private var history: WatchHistoryController
     @State private var playbackRequest: PlaybackRequest?
     @State private var confirmDelete: DownloadRecord?
 
@@ -22,9 +23,10 @@ struct DownloadsView: View {
             .screenBackground()
             .navigationTitle("下载")
             .fullScreenCover(item: $playbackRequest) { request in
-                PlayerView(candidates: request.candidates)
+                PlayerView(request: request)
                     .environmentObject(vod)
                     .environmentObject(downloads)
+                    .environmentObject(history)
             }
             .confirmationDialog(
                 "删除本集下载？",

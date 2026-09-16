@@ -7,7 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		170AB80D95934C5FA69FC8F0 /* SourceMovie.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */; };
+		B81B2C3D4E5F60718293A4B1 /* WatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B2C3D4E5F60718293A4B1 /* WatchHistory.swift */; };
+		C81B2C3D4E5F60718293A4B1 /* WatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B2C3D4E5F60718293A4B1 /* WatchHistory.swift */; };
+		B81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift */; };
+		C81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift */; };
+		B81B2C3D4E5F60718293A4B3 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B2C3D4E5F60718293A4B3 /* HistoryView.swift */; };
+		C81B2C3D4E5F60718293A4B3 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B2C3D4E5F60718293A4B3 /* HistoryView.swift */; };
 		B2FDB5E734774560B510664E /* SourceMovie.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */; };
 		9945D29CFA29449A9744CF83 /* SourceHealthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */; };
 		595BFAB922014427856B4D99 /* SourceHealthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */; };
@@ -187,6 +192,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A81B2C3D4E5F60718293A4B1 /* WatchHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistory.swift; sourceTree = "<group>"; };
+		A81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodePaging.swift; sourceTree = "<group>"; };
+		A81B2C3D4E5F60718293A4B3 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceMovie.swift; sourceTree = "<group>"; };
 		63350561E37C438E95B5FFD9 /* SourceHealthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceHealthStore.swift; sourceTree = "<group>"; };
 		CFBF230CFE0347AA8A22FC59 /* SourceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceAdapter.swift; sourceTree = "<group>"; };
@@ -327,6 +335,7 @@
 			children = (
 				9ED2825D88B50211383CC816 /* DetailView.swift */,
 				D3DF23C4939BE7AD7A211E03 /* DownloadsView.swift */,
+				A81B2C3D4E5F60718293A4B3 /* HistoryView.swift */,
 				3A21AE43A6E02F841FDE380C /* HomeView.swift */,
 				E653A62633B56BBCBEDEBD1D /* LiveView.swift */,
 				C1D030031B9AD901C375C115 /* PlayerView.swift */,
@@ -423,6 +432,7 @@
 				15D36209B9219AA1AF5EA53A /* CategoryTree.swift */,
 				A1B2C3D4E5F60718293A4B5C /* UnifiedCategories.swift */,
 				A31D2DC771AC74B93303A0F6 /* DeepLinkRouter.swift */,
+				A81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift */,
 				68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */,
 				018139FC242A4D94B1051B7F /* HomeLaunch.swift */,
 				F67607B4A5AD43ACBE2BB3A2 /* SourceMovie.swift */,
@@ -439,6 +449,7 @@
 				C3F139E06244EF24231B11CF /* SourceStore.swift */,
 				A196D30F1A2BC73ADD0E84B7 /* VodDisplayFormatter.swift */,
 				F8B913CD283679B2B6B65469 /* VodMergeService.swift */,
+				A81B2C3D4E5F60718293A4B1 /* WatchHistory.swift */,
 				FE7460BA3B6D9A1DD08F0F11 /* VodService.swift */,
 				B61D310F20EDA15E4924F0EE /* Download */,
 				0F093006D4649F9E717B5C63 /* Live */,
@@ -794,6 +805,8 @@
 				1C7D3667F69E0960D097CB29 /* HomeFeed.swift in Sources */,
 				16CFAAF85CBEE3F91EA0F846 /* HomeLaunch.swift in Sources */,
 				DF98935CC5E94C101D48EC5D /* HomeView.swift in Sources */,
+				B81B2C3D4E5F60718293A4B3 /* HistoryView.swift in Sources */,
+				B81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift in Sources */,
 				652606D1DDA97AFED5356754 /* LaunchLoadingView.swift in Sources */,
 				992459BAE3BE14919B82B924 /* LiveChannelCard.swift in Sources */,
 				DC60E330B60D83160AFBB7B2 /* LiveGuideOverlay.swift in Sources */,
@@ -829,6 +842,7 @@
 				F8A5261D8442596D53E12BDD /* VodCard.swift in Sources */,
 				667919E6342C3ECEAC2E33FF /* VodDisplayFormatter.swift in Sources */,
 				A78ED4A783DDADBFEBAF6F2E /* VodMergeService.swift in Sources */,
+				B81B2C3D4E5F60718293A4B1 /* WatchHistory.swift in Sources */,
 				3698F14E5C522DC9D35FE3EE /* VodPosterView.swift in Sources */,
 				341FC0D9F675295F614F5842 /* VodService.swift in Sources */,
 				C8C889199027CBE941496D93 /* VodShelf.swift in Sources */,
@@ -867,6 +881,8 @@
 				4BD0316751C72598867FD9FA /* HomeFeed.swift in Sources */,
 				95F98550AEA7452FC91E5E0B /* HomeLaunch.swift in Sources */,
 				68E7AE21FB9EFF59B1C3BBE7 /* HomeView.swift in Sources */,
+				C81B2C3D4E5F60718293A4B3 /* HistoryView.swift in Sources */,
+				C81B2C3D4E5F60718293A4B2 /* EpisodePaging.swift in Sources */,
 				B0AB5A88DB3CCA10E46B2EFE /* LaunchLoadingView.swift in Sources */,
 				491B61B68BF2B77F8015886E /* LiveChannelCard.swift in Sources */,
 				0ADC721120C85829085CEFB6 /* LiveGuideOverlay.swift in Sources */,
@@ -902,6 +918,7 @@
 				53C90C8754622E691223644C /* VodCard.swift in Sources */,
 				2C0640B349221E01C473BDF6 /* VodDisplayFormatter.swift in Sources */,
 				7D5910763EC40841D8B2C457 /* VodMergeService.swift in Sources */,
+				C81B2C3D4E5F60718293A4B1 /* WatchHistory.swift in Sources */,
 				6F6FBB1E2C0EB4C649DA9469 /* VodPosterView.swift in Sources */,
 				4E2FD296D1B73DDEB35A38B9 /* VodService.swift in Sources */,
 				192DDBD831B164E8D6560AAC /* VodShelf.swift in Sources */,

@@ -204,12 +204,15 @@ enum CategoryListService {
         let pages: [ChildListPage] = await withTaskGroup(of: ChildListPage?.self) { group in
             for childId in childIds {
                 group.addTask {
-                    guard let data = try? await SourceCollector.list(
-                        source: source,
-                        page: page,
-                        typeId: childId,
-                        hours: hours
-                    ) else {
+                    let data = await AsyncTimeout.run(seconds: UnifiedFetchPlan.perCallTimeout) {
+                        try await SourceCollector.list(
+                            source: source,
+                            page: page,
+                            typeId: childId,
+                            hours: hours
+                        )
+                    }
+                    guard let data else {
                         return nil
                     }
                     return ChildListPage(
@@ -303,12 +306,15 @@ enum CategoryListService {
                     index += 1
                     inFlight += 1
                     group.addTask {
-                        guard let data = try? await SourceCollector.list(
-                            source: job.source,
-                            page: page,
-                            typeId: job.typeId,
-                            hours: hours
-                        ), !data.list.isEmpty else {
+                        let data = await AsyncTimeout.run(seconds: UnifiedFetchPlan.perCallTimeout) {
+                            try await SourceCollector.list(
+                                source: job.source,
+                                page: page,
+                                typeId: job.typeId,
+                                hours: hours
+                            )
+                        }
+                        guard let data, !data.list.isEmpty else {
                             return nil
                         }
                         let items = data.list.map {

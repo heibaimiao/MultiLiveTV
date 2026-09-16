@@ -3,15 +3,40 @@ import SwiftUI
 
 struct PlaybackRequest: Identifiable {
     let candidates: [PlaybackCandidate]
+    var resumePositionMs: Int64 = 0
+    var historyItem: VodItem?
+    var historySourceName: String = ""
+    var historyEpisodeIndex: Int = 0
 
     var id: String {
         candidates.map { "\($0.sourceId)-\($0.episode.id)" }.joined(separator: "|")
+            + "-\(resumePositionMs)"
     }
 
-    init(candidates: [PlaybackCandidate]) {
+    init(
+        candidates: [PlaybackCandidate],
+        resumePositionMs: Int64 = 0,
+        historyItem: VodItem? = nil,
+        historySourceName: String = "",
+        historyEpisodeIndex: Int = 0
+    ) {
         self.candidates = candidates.isEmpty
             ? [PlaybackCandidate(sourceId: 0, episode: Episode(name: "", url: ""))]
             : candidates
+        self.resumePositionMs = resumePositionMs
+        self.historyItem = historyItem
+        self.historySourceName = historySourceName
+        self.historyEpisodeIndex = historyEpisodeIndex
+    }
+
+    init(_ playback: WatchHistoryPlayback) {
+        self.init(
+            candidates: playback.candidates,
+            resumePositionMs: playback.resumePositionMs,
+            historyItem: playback.item,
+            historySourceName: playback.sourceName,
+            historyEpisodeIndex: playback.episodeIndex
+        )
     }
 
     init(sourceId: Int, episode: Episode) {
@@ -24,21 +49,37 @@ struct PlaybackRequest: Identifiable {
 
 struct PlayerView: View {
     let candidates: [PlaybackCandidate]
+    var resumePositionMs: Int64 = 0
+    var historyItem: VodItem?
+    var historySourceName: String = ""
+    var historyEpisodeIndex: Int = 0
 
     @EnvironmentObject private var vod: VodService
     @EnvironmentObject private var downloads: DownloadManager
+    @EnvironmentObject private var history: WatchHistoryController
     @Environment(\.dismiss) private var dismiss
     @State private var player: AVPlayer?
     @State private var errorMessage: String?
     @State private var statusObservation: NSKeyValueObservation?
     @State private var failObserver: NSObjectProtocol?
+    @State private var timeObserver: Any?
     @State private var startTimeoutTask: Task<Void, Never>?
     @State private var playbackGeneration = 0
     @State private var failedURL: String?
     @State private var playingLocal = false
     @State private var didBecomeReady = false
+    @State private var didSeekResume = false
     @State private var candidateIndex = 0
     @State private var statusMessage = "解析播放地址…"
+    @State private var recorder: WatchHistoryRecorder?
+
+    init(request: PlaybackRequest) {
+        self.candidates = request.candidates
+        self.resumePositionMs = request.resumePositionMs
+        self.historyItem = request.historyItem
+        self.historySourceName = request.historySourceName
+        self.historyEpisodeIndex = request.historyEpisodeIndex
+    }
 
     init(candidates: [PlaybackCandidate]) {
         self.candidates = candidates
@@ -82,10 +123,15 @@ struct PlayerView: View {
         }
         .task(id: candidates.map(\.episode.id).joined(separator: "|")) {
             candidateIndex = 0
+            didSeekResume = false
+            if recorder == nil {
+                recorder = WatchHistoryRecorder(store: history.store)
+            }
             await startPlayback()
         }
         .onDisappear {
             playbackGeneration += 1
+            writeWatchHistory(force: true)
             teardownPlayer()
         }
         #if os(tvOS)
@@ -198,6 +244,8 @@ struct PlayerView: View {
                     didBecomeReady = true
                     startTimeoutTask?.cancel()
                     errorMessage = nil
+                    seekToResumeIfNeeded(avPlayer)
+                    attachTimeObserver(avPlayer)
                 default:
                     break
                 }
@@ -228,6 +276,61 @@ struct PlayerView: View {
         }
 
         avPlayer.play()
+    }
+
+    private func seekToResumeIfNeeded(_ avPlayer: AVPlayer) {
+        guard resumePositionMs > 0, !didSeekResume else { return }
+        didSeekResume = true
+        avPlayer.seek(
+            to: CMTime(value: resumePositionMs, timescale: 1000),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
+    }
+
+    private func attachTimeObserver(_ avPlayer: AVPlayer) {
+        if let timeObserver {
+            avPlayer.removeTimeObserver(timeObserver)
+            self.timeObserver = nil
+        }
+        timeObserver = avPlayer.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 2, preferredTimescale: 1),
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                writeWatchHistory(force: false)
+            }
+        }
+    }
+
+    private func writeWatchHistory(force: Bool) {
+        guard let historyItem, let player, let recorder else { return }
+        let seconds = CMTimeGetSeconds(player.currentTime())
+        guard seconds.isFinite, seconds >= 0 else { return }
+        var durationMs: Int64 = 0
+        if let item = player.currentItem {
+            let duration = CMTimeGetSeconds(item.duration)
+            if duration.isFinite, duration > 0 {
+                durationMs = Int64(duration * 1000)
+            }
+        }
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        recorder.save(
+            WatchHistoryProgress.fromPlayback(
+                item: historyItem,
+                episode: activeCandidate.episode,
+                episodeIndex: historyEpisodeIndex,
+                sourceId: activeCandidate.sourceId,
+                sourceName: historySourceName,
+                positionMs: Int64(seconds * 1000),
+                durationMs: durationMs,
+                now: now
+            ),
+            force: force
+        )
+        if force {
+            history.reload()
+        }
     }
 
     private func failOverOrStop(resolvedURL: String, underlying: String?, generation: Int) async {
@@ -268,6 +371,10 @@ struct PlayerView: View {
             NotificationCenter.default.removeObserver(failObserver)
             self.failObserver = nil
         }
+        if let player, let timeObserver {
+            player.removeTimeObserver(timeObserver)
+        }
+        timeObserver = nil
         player?.pause()
         player = nil
     }

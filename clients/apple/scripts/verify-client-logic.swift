@@ -2387,6 +2387,184 @@ func testUserFacingErrorRewritesATSFailure() {
     assertEqual(message.contains("HTTP"), true, "ATS failure should explain that plaintext HTTP was blocked")
 }
 
+func historyRecord(
+    videoId: String,
+    positionMs: Int64 = 1_000,
+    durationMs: Int64 = 7_200_000,
+    episodeId: String = "ep1",
+    episodeTitle: String = "第1集",
+    episodeIndex: Int = 0,
+    title: String = "片名",
+    lastPlayTime: Int64 = 1_000
+) -> WatchHistoryRecord {
+    WatchHistoryRecord(
+        videoId: videoId,
+        vodId: videoId.split(separator: ":").last.map(String.init) ?? videoId,
+        episodeId: episodeId,
+        title: title,
+        episodeTitle: episodeTitle,
+        episodeIndex: episodeIndex,
+        cover: "https://cover",
+        sourceId: 1,
+        sourceName: "线路1",
+        positionMs: positionMs,
+        durationMs: durationMs,
+        lastPlayTime: lastPlayTime
+    )
+}
+
+func testWatchHistoryStoreUpsertsSameVideo() {
+    let store = WatchHistoryStore(persistence: MemoryWatchHistoryPersistence())
+    store.save(historyRecord(videoId: "1:1001", positionMs: 120_000, lastPlayTime: 10))
+    store.save(historyRecord(videoId: "1:1001", positionMs: 860_000, lastPlayTime: 20))
+    assertEqual(store.getAll().count, 1, "same videoId should replace, not duplicate")
+    assertEqual(store.getAll()[0].positionMs, 860_000, "later position should win")
+}
+
+func testWatchHistorySeriesKeepsOnlyLatestEpisode() {
+    let store = WatchHistoryStore(persistence: MemoryWatchHistoryPersistence())
+    store.save(historyRecord(videoId: "1:dpcq", episodeId: "123", episodeTitle: "第123集", episodeIndex: 122, lastPlayTime: 1))
+    store.save(historyRecord(videoId: "1:dpcq", episodeId: "125", episodeTitle: "第125集", episodeIndex: 124, lastPlayTime: 2))
+    assertEqual(store.getByVideoId("1:dpcq")?.episodeId ?? "", "125", "series should keep the latest episode")
+    assertEqual(store.getAll().count, 1, "one row per video")
+}
+
+func testWatchHistorySortsByLastPlayTimeAndTrims() {
+    let store = WatchHistoryStore(persistence: MemoryWatchHistoryPersistence(), maxSize: 2)
+    store.save(historyRecord(videoId: "a", title: "A", lastPlayTime: 1))
+    store.save(historyRecord(videoId: "b", title: "B", lastPlayTime: 2))
+    store.save(historyRecord(videoId: "c", title: "C", lastPlayTime: 3))
+    assertEqual(store.getAll().map(\.videoId), ["c", "b"], "trim oldest by lastPlayTime")
+}
+
+func testWatchHistoryDeleteClearAndCorruptJson() {
+    let persistence = MemoryWatchHistoryPersistence()
+    persistence.save("{not-json")
+    let store = WatchHistoryStore(persistence: persistence)
+    assertEqual(store.getAll().isEmpty, true, "corrupt json should load as empty")
+    store.save(historyRecord(videoId: " "))
+    store.save(historyRecord(videoId: ""))
+    assertEqual(store.getAll().isEmpty, true, "blank videoId should be skipped")
+    store.save(historyRecord(videoId: "a"))
+    store.save(historyRecord(videoId: "b"))
+    store.delete("a")
+    assertEqual(store.getAll().map(\.videoId), ["b"], "delete should drop one row")
+    store.clear()
+    assertEqual(store.getAll().isEmpty, true, "clear should empty the store")
+}
+
+func testWatchHistoryFilePersistenceSurvivesReload() {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("watch-history-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let file = dir.appendingPathComponent("watch_history.json")
+    defer {
+        try? FileManager.default.removeItem(at: dir)
+    }
+    WatchHistoryStore(persistence: FileWatchHistoryPersistence(file: file))
+        .save(historyRecord(videoId: "1:1001", positionMs: 5_000))
+    let reloaded = WatchHistoryStore(persistence: FileWatchHistoryPersistence(file: file)).getByVideoId("1:1001")
+    assertEqual(reloaded?.positionMs ?? -1, 5_000, "file persistence should round-trip")
+}
+
+func testWatchHistoryProgressSanitizesAndCompletesNearEnd() {
+    assertEqual(WatchHistoryProgress.sanitizePosition(-10, durationMs: 1_000), 0, "negative clamps to 0")
+    assertEqual(WatchHistoryProgress.sanitizePosition(800, durationMs: 1_000), 800, "in-range stays")
+    assertEqual(WatchHistoryProgress.sanitizePosition(2_000, durationMs: 1_000), 1_000, "over duration clamps")
+    assertEqual(WatchHistoryProgress.sanitizePosition(10, durationMs: 0), 0, "unknown duration is 0")
+    assertEqual(WatchHistoryProgress.isCompleted(1_790_000, durationMs: 1_800_000), true, "within 10s of end is complete")
+    assertEqual(WatchHistoryProgress.isCompleted(1_000, durationMs: 10_000), false, "early position is not complete")
+    let completed = WatchHistoryProgress.normalize(historyRecord(videoId: "1:1", positionMs: 7_191_000, durationMs: 7_200_000))
+    assertEqual(completed.completed, true, "normalize should mark near-end complete")
+    assertEqual(WatchHistoryResume.resumePositionMs(completed), 0, "completed resume starts over")
+    assertEqual(
+        WatchHistoryResume.resumePositionMs(historyRecord(videoId: "1:1", positionMs: 185_000, durationMs: 7_200_000)),
+        185_000,
+        "in-progress resume keeps position"
+    )
+}
+
+func testWatchHistoryRecorderThrottlesUntilForced() {
+    let store = WatchHistoryStore(persistence: MemoryWatchHistoryPersistence())
+    let recorder = WatchHistoryRecorder(store: store, intervalMs: 8_000)
+    recorder.save(historyRecord(videoId: "1:1", positionMs: 1_000, lastPlayTime: 10_000), force: false)
+    recorder.save(historyRecord(videoId: "1:1", positionMs: 2_000, lastPlayTime: 14_000), force: false)
+    assertEqual(store.getByVideoId("1:1")?.positionMs ?? -1, 1_000, "throttle should drop the 4s update")
+    recorder.save(historyRecord(videoId: "1:1", positionMs: 3_000, lastPlayTime: 14_000), force: true)
+    assertEqual(store.getByVideoId("1:1")?.positionMs ?? -1, 3_000, "force should write immediately")
+    recorder.save(historyRecord(videoId: "1:1", positionMs: 4_000, lastPlayTime: 22_000), force: false)
+    assertEqual(store.getByVideoId("1:1")?.positionMs ?? -1, 4_000, "interval elapsed should write again")
+}
+
+func testWatchHistoryResumeFindsEpisodeByIdThenNameThenIndex() {
+    let episodes = [Episode(name: "第1集", url: "u1"), Episode(name: "第3集", url: "u3"), Episode(name: "第5集", url: "u5")]
+    let detail = DetailResponse(
+        vod: VodItem(vodId: "1001", vodName: "斗破苍穹", vodPic: ""),
+        playSources: [PlaySource(name: "线路1", key: "line1", episodes: episodes, sourceId: 7)],
+        variants: [],
+        merged: false
+    )
+    let matched = WatchHistoryResume.findEpisode(detail: detail, record: historyRecord(videoId: "7:1001", episodeId: "u3", episodeTitle: "第3集", episodeIndex: 1))
+    assertEqual(matched?.1.url ?? "", "u3", "match by episode url")
+    let byName = WatchHistoryResume.findEpisode(detail: detail, record: historyRecord(videoId: "7:1001", episodeId: "missing", episodeTitle: "第5集", episodeIndex: 0))
+    assertEqual(byName?.1.url ?? "", "u5", "fall back to episode title")
+    let byIndex = WatchHistoryResume.findEpisode(detail: detail, record: historyRecord(videoId: "7:1001", episodeId: "", episodeTitle: "", episodeIndex: 0))
+    assertEqual(byIndex?.1.url ?? "", "u1", "fall back to episode index")
+    let empty = WatchHistoryResume.findEpisode(
+        detail: DetailResponse(vod: detail.vod, playSources: [], variants: [], merged: false),
+        record: historyRecord(videoId: "7:1001")
+    )
+    assertEqual(empty == nil, true, "empty sources cannot resume")
+}
+
+func testWatchHistoryDisplayCopyAndEpisodeLine() {
+    assertEqual(WatchHistoryDisplay.heading(), "接着看", "heading")
+    assertEqual(WatchHistoryDisplay.continueAction(clock: "0:04"), "从 0:04 继续", "continue")
+    assertEqual(WatchHistoryDisplay.restartAction(), "从头播放", "restart")
+    assertEqual(WatchHistoryDisplay.episodeLine(title: "保镖恋人", episodeTitle: "HD") == nil, true, "drop HD")
+    assertEqual(WatchHistoryDisplay.episodeLine(title: "保镖恋人", episodeTitle: "1080P") == nil, true, "drop 1080P")
+    assertEqual(WatchHistoryDisplay.episodeLine(title: "保镖恋人", episodeTitle: "保镖恋人") == nil, true, "drop duplicate title")
+    assertEqual(WatchHistoryDisplay.episodeLine(title: "保镖恋人", episodeTitle: "正片") == nil, true, "drop 正片")
+    assertEqual(WatchHistoryDisplay.episodeLine(title: "保镖恋人", episodeTitle: "第12集") ?? "", "第12集", "keep real episode")
+    assertEqual(WatchHistoryDisplay.episodeLine(title: "保镖恋人", episodeTitle: "HD第12集") ?? "", "HD第12集", "keep mixed label")
+    assertEqual(WatchHistoryProgress.formatClock(0), "0:00", "zero clock")
+    assertEqual(WatchHistoryProgress.formatClock(185_000), "3:05", "minutes clock")
+    assertEqual(WatchHistoryProgress.formatClock(6_750_000), "1:52:30", "hours clock")
+    assertEqual(WatchHistoryDisplay.showProgressBar(7_200_000), true, "known duration shows bar")
+    assertEqual(WatchHistoryDisplay.showProgressBar(0), false, "unknown duration hides bar")
+}
+
+func testEpisodePagingSplitsLongSeries() {
+    let movie = EpisodePaging.pages(count: 1)
+    assertEqual(movie.map(\.label), ["1-1"], "movie is one page")
+    assertEqual(EpisodePaging.slice(["正片"], page: movie[0]), ["正片"], "movie slice")
+    let pages = EpisodePaging.pages(count: 86, pageSize: 40)
+    assertEqual(pages.map(\.label), ["1-40", "41-80", "81-86"], "long series splits")
+    let names = (1...86).map { "第\($0)集" }
+    assertEqual(EpisodePaging.slice(names, page: pages[0]).count, 40, "first page size")
+    assertEqual(EpisodePaging.slice(names, page: pages[1]).first ?? "", "第41集", "second page starts at 41")
+    let last = EpisodePaging.slice(names, page: pages[2])
+    assertEqual([last.first ?? "", last.last ?? ""], ["第81集", "第86集"], "last page range")
+}
+
+func testAsyncTimeoutDropsLateValue() {
+    let sem = DispatchSemaphore(value: 0)
+    var late: String? = "unset"
+    var early: String? = nil
+    Task {
+        late = await AsyncTimeout.run(seconds: 0.05) {
+            try await Task.sleep(nanoseconds: 400_000_000)
+            return "late"
+        }
+        early = await AsyncTimeout.run(seconds: 1) {
+            return "ok"
+        }
+        sem.signal()
+    }
+    _ = sem.wait(timeout: .now() + 2)
+    assertEqual(late == nil, true, "timeout should drop the late value")
+    assertEqual(early ?? "", "ok", "fast value should return before deadline")
+}
+
 @main
 enum LogicTests {
     static func main() {
@@ -2555,6 +2733,17 @@ enum LogicTests {
         testSourceHealthFailureThresholdDoesNotDisable()
         testEffectivePlayScoreAppliesHealthPenalty()
         testAppDeepLinkStillUsesNumericSourceId()
+        testWatchHistoryStoreUpsertsSameVideo()
+        testWatchHistorySeriesKeepsOnlyLatestEpisode()
+        testWatchHistorySortsByLastPlayTimeAndTrims()
+        testWatchHistoryDeleteClearAndCorruptJson()
+        testWatchHistoryFilePersistenceSurvivesReload()
+        testWatchHistoryProgressSanitizesAndCompletesNearEnd()
+        testWatchHistoryRecorderThrottlesUntilForced()
+        testWatchHistoryResumeFindsEpisodeByIdThenNameThenIndex()
+        testWatchHistoryDisplayCopyAndEpisodeLine()
+        testEpisodePagingSplitsLongSeries()
+        testAsyncTimeoutDropsLateValue()
         print("VERIFY CLIENT LOGIC PASSED")
     }
 }

@@ -10,12 +10,22 @@ struct MultiLiveTVApp: App {
     #endif
     @StateObject private var vod: VodService
     @StateObject private var downloads: DownloadManager
+    @StateObject private var history: WatchHistoryController
     @StateObject private var deepLink = DeepLinkRouter()
 
     init() {
         let vodService = VodService()
         _vod = StateObject(wrappedValue: vodService)
         _downloads = StateObject(wrappedValue: DownloadManager(parser: vodService))
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        let file = support.appendingPathComponent("watch_history.json")
+        _history = StateObject(
+            wrappedValue: WatchHistoryController(
+                store: WatchHistoryStore(persistence: FileWatchHistoryPersistence(file: file))
+            )
+        )
     }
 
     var body: some Scene {
@@ -23,6 +33,7 @@ struct MultiLiveTVApp: App {
             RootView()
                 .environmentObject(vod)
                 .environmentObject(downloads)
+                .environmentObject(history)
                 .environmentObject(deepLink)
                 .preferredColorScheme(.dark)
                 .tint(AppTheme.accent)
@@ -126,6 +137,9 @@ struct MainTabView: View {
             SearchView()
                 .tabItem { Label("搜索", systemImage: "magnifyingglass") }
                 .tag(AppTab.search)
+            HistoryView()
+                .tabItem { Label("历史", systemImage: "clock") }
+                .tag(AppTab.history)
             DownloadsView()
                 .tabItem { Label("下载", systemImage: "arrow.down.circle") }
                 .tag(AppTab.downloads)

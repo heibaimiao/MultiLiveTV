@@ -48,6 +48,8 @@ swiftc -o "$OUT" \
   "$ROOT/MultiLiveTV/Services/PlayParser.swift" \
   "$ROOT/MultiLiveTV/Services/MacCMSClient.swift" \
   "$ROOT/MultiLiveTV/Services/VodMergeService.swift" \
+  "$ROOT/MultiLiveTV/Services/WatchHistory.swift" \
+  "$ROOT/MultiLiveTV/Services/EpisodePaging.swift" \
   "$ROOT/MultiLiveTV/Services/CategoryListService.swift" \
   "$ROOT/MultiLiveTV/Services/UnifiedCategories.swift" \
   "$ROOT/MultiLiveTV/Services/CategoryTree.swift" \

@@ -5,6 +5,7 @@ struct DetailView: View {
 
     @EnvironmentObject private var vod: VodService
     @EnvironmentObject private var downloads: DownloadManager
+    @EnvironmentObject private var history: WatchHistoryController
     @State private var detail: DetailResponse?
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -13,9 +14,12 @@ struct DetailView: View {
     @State private var allowResolveFallback = true
     @State private var playbackRequest: PlaybackRequest?
     @State private var showDownloadPicker = false
+    @State private var continueRecord: WatchHistoryRecord?
+    @State private var episodePageIndex = 0
     @FocusState private var focusedEpisode: String?
     @FocusState private var focusedSource: Int?
     @FocusState private var focusedAction: String?
+    @FocusState private var focusedContinue: String?
 
     var body: some View {
         Group {
@@ -37,9 +41,10 @@ struct DetailView: View {
         #endif
         .task { await loadDetail() }
         .fullScreenCover(item: $playbackRequest) { request in
-            PlayerView(candidates: request.candidates)
+            PlayerView(request: request)
                 .environmentObject(vod)
                 .environmentObject(downloads)
+                .environmentObject(history)
         }
         .sheet(isPresented: $showDownloadPicker) {
             if let detail, let playSource = currentPlaySource(detail) {
@@ -49,6 +54,19 @@ struct DetailView: View {
                     sourceId: episodeSourceId(detail)
                 )
                 .environmentObject(downloads)
+            }
+        }
+        .overlay {
+            if let continueRecord {
+                ContinuePlaybackDialog(
+                    record: continueRecord,
+                    focusedAction: $focusedContinue,
+                    onContinue: { playFromHistory(restart: false) },
+                    onRestart: { playFromHistory(restart: true) }
+                )
+                #if os(tvOS)
+                .onExitCommand { self.continueRecord = nil }
+                #endif
             }
         }
     }
@@ -134,9 +152,7 @@ struct DetailView: View {
                                 kind: .prominent,
                                 isFocused: focusedAction == "play"
                             ) {
-                                playbackRequest = PlaybackRequest(
-                                    candidates: playbackCandidates(detail: detail, episode: first)
-                                )
+                                playPrimary(detail)
                             }
                             .focused($focusedAction, equals: "play")
 
@@ -176,20 +192,37 @@ struct DetailView: View {
                     .padding(.horizontal, AppTheme.screenPadding)
                 #endif
 
+                let pages = EpisodePaging.pages(count: source.episodes.count)
+                if pages.count > 1 {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
+                                CategoryTabButton(
+                                    label: page.label,
+                                    isActive: episodePageIndex == index,
+                                    isFocused: focusedEpisode == "page:\(page.label)"
+                                ) {
+                                    episodePageIndex = index
+                                }
+                                .tvChipFocused($focusedEpisode, equals: "page:\(page.label)")
+                            }
+                        }
+                        .padding(.horizontal, AppTheme.screenPadding)
+                    }
+                }
+
                 LazyVGrid(
                     columns: episodeColumns,
                     alignment: .leading,
                     spacing: 12
                 ) {
-                    ForEach(source.episodes) { ep in
+                    ForEach(visibleEpisodes(source)) { ep in
                         EpisodeButton(
                             title: ep.name,
                             statusLabel: downloadRecord(detail: detail, episode: ep)?.statusLabel,
                             isFocused: focusedEpisode == ep.id
                         ) {
-                            playbackRequest = PlaybackRequest(
-                                candidates: playbackCandidates(detail: detail, episode: ep)
-                            )
+                            playEpisode(detail: detail, episode: ep)
                         }
                         .focused($focusedEpisode, equals: ep.id)
                         .accessibilityLabel("播放\(ep.name)")
@@ -198,6 +231,9 @@ struct DetailView: View {
                 .padding(.horizontal, AppTheme.screenPadding)
             }
             .tvFocusSection()
+            .onChange(of: selectedSourceIndex) { _, _ in
+                episodePageIndex = 0
+            }
         }
     }
 
@@ -307,6 +343,47 @@ struct DetailView: View {
         #else
         [GridItem(.adaptive(minimum: 112, maximum: 168), spacing: 10)]
         #endif
+    }
+
+    private func visibleEpisodes(_ source: PlaySource) -> [Episode] {
+        let pages = EpisodePaging.pages(count: source.episodes.count)
+        guard !pages.isEmpty else { return [] }
+        let page = pages[min(max(episodePageIndex, 0), pages.count - 1)]
+        return EpisodePaging.slice(source.episodes, page: page)
+    }
+
+    private func playPrimary(_ detail: DetailResponse) {
+        guard let first = currentPlaySource(detail)?.episodes.first else { return }
+        if let record = WatchHistoryResume.lookup(store: history.store, item: detail.vod),
+           !record.completed {
+            continueRecord = record
+            focusedContinue = "continue"
+            return
+        }
+        playEpisode(detail: detail, episode: first)
+    }
+
+    private func playFromHistory(restart: Bool) {
+        guard let detail, let record = continueRecord else { return }
+        continueRecord = nil
+        if let playback = WatchHistoryResume.playbackRequest(detail: detail, record: record, restart: restart) {
+            playbackRequest = PlaybackRequest(playback)
+        }
+    }
+
+    private func playEpisode(detail: DetailResponse, episode: Episode) {
+        let record = WatchHistoryResume.lookup(store: history.store, item: detail.vod)
+        let sameEpisode = record.map {
+            $0.episodeId == episode.url || (!$0.episodeTitle.isEmpty && $0.episodeTitle == episode.name)
+        } ?? false
+        let resume = sameEpisode ? WatchHistoryResume.resumePositionMs(record!) : 0
+        let playback = WatchHistoryResume.playbackRequest(
+            detail: detail,
+            sourceIndex: selectedSourceIndex,
+            episode: episode,
+            resumePositionMs: resume
+        )
+        playbackRequest = PlaybackRequest(playback)
     }
 
     private func episodeSourceId(_ detail: DetailResponse) -> Int {
@@ -466,6 +543,72 @@ private struct DownloadEpisodePicker: View {
             playSourceKey: playSource.key,
             episodeURL: episode.url
         )
+    }
+}
+
+private struct ContinuePlaybackDialog: View {
+    let record: WatchHistoryRecord
+    var focusedAction: FocusState<String?>.Binding
+    let onContinue: () -> Void
+    let onRestart: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.72)
+                .ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 14) {
+                Text(WatchHistoryDisplay.heading())
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Text(record.title.isEmpty ? "上次播放" : record.title)
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .lineLimit(1)
+                if let episode = WatchHistoryDisplay.episodeLine(title: record.title, episodeTitle: record.episodeTitle) {
+                    Text(episode)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .lineLimit(1)
+                }
+                if WatchHistoryDisplay.showProgressBar(record.durationMs) {
+                    HStack(spacing: 12) {
+                        ProgressView(value: record.progress)
+                            .tint(AppTheme.accent)
+                        Text(WatchHistoryProgress.formatClock(WatchHistoryResume.resumePositionMs(record)))
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
+                }
+                VStack(spacing: 12) {
+                    CinemaActionButton(
+                        title: WatchHistoryDisplay.continueAction(
+                            clock: WatchHistoryProgress.formatClock(WatchHistoryResume.resumePositionMs(record))
+                        ),
+                        systemImage: "play.fill",
+                        kind: .prominent,
+                        isFocused: focusedAction.wrappedValue == "continue",
+                        action: onContinue
+                    )
+                    .focused(focusedAction, equals: "continue")
+
+                    CinemaActionButton(
+                        title: WatchHistoryDisplay.restartAction(),
+                        systemImage: "backward.end",
+                        kind: .secondary,
+                        isFocused: focusedAction.wrappedValue == "restart",
+                        action: onRestart
+                    )
+                    .focused(focusedAction, equals: "restart")
+                }
+                .padding(.top, 8)
+            }
+            .padding(28)
+            .frame(maxWidth: 420)
+            .background(AppTheme.groupedBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        #if os(tvOS)
+        .defaultFocus(focusedAction, "continue")
+        #endif
     }
 }
 
