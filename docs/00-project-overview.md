@@ -20,7 +20,7 @@
 | 用户认证 | JWT HS256 + bcrypt(12) + SHA-256 refresh | `internal/service/auth` |
 | 管理认证 | 环境变量明文账号 + JWT HS256（8h） | `internal/service/admin` |
 | Apple 客户端 | SwiftUI、XcodeGen、Swift 5.9、iOS/tvOS 17、VLCKit 3.6.0 | `clients/apple/project.yml`、Podfile.lock |
-| Android 客户端 | Jetpack Compose MVP（无完整 Gradle 工程） | `clients/android/` |
+| Android 客户端 | Kotlin 2.0 + Compose + Gradle 8.13（`:core` / `:app` / `:tv`） | `clients/android/` |
 | 管理后台 | Vite 6、React 19、Tailwind 4、nginx 静态托管 | `apps/admin/package.json` |
 | API 契约 | OpenAPI 3.0.3（未覆盖 Admin） | `packages/openapi/openapi.yaml` |
 | 网页端 | Next.js 15（**已冻结**） | `web/ARCHIVED.md` |
@@ -42,7 +42,7 @@
 | Apple 点播浏览与播放 | `clients/apple` 直连采集站 | 已实现 |
 | Apple 直播（M3U） | `LiveService` + `lives.json` | 已实现 |
 | Apple 下载 | `DownloadManager` 等 | 已实现 |
-| Android 浏览 / 搜索 / 详情 | 调 Go API；无播放器 | 部分实现 |
+| Android 浏览 / 搜索 / 详情 / 播放 / 直播 | 直连采集站；Media3；不调 Go | 已实现 |
 | 用户登录 UI（Apple / Android） | — | 代码中未发现 |
 | Next.js 网页 | `web/` | 已冻结 |
 | 弹幕 `danmaku_api_url`、`json_parse` | 仅出现在 `Source` 结构体 | 未实现（无读取逻辑） |
@@ -50,19 +50,19 @@
 ## 系统架构
 
 ```text
-Apple 客户端（内嵌 sources.json）  ──直连──►  第三方 MacCMS 采集站
-                                           ▲
-Android / Admin / curl                     │
-        │                                  │
-        ▼                                  │
-   Go API :8080  ──代理 / 聚合─────────────┘
+Apple / Android 客户端（内嵌 sources.json）  ──直连──►  第三方 MacCMS 采集站
+                                                     ▲
+Admin / curl                                         │
+        │                                            │
+        ▼                                            │
+   Go API :8080  ──代理 / 聚合───────────────────────┘
         │
         ├── 可选 Postgres（用户 / 收藏 / 进度 / refresh）
         ├── 可选 bpz5.com（HMAC 搜剧 / 解票）
         └── 可选 jx_url 解析站（源配置字段）
 ```
 
-Apple **不依赖** Go API。Android 与管理后台依赖 Go API。
+Apple **不依赖** Go API。Android Pad/TV 同样直连采集站，不调 Go API。管理后台依赖 Go API。
 
 ## 核心接口数量
 
@@ -98,13 +98,13 @@ Apple **不依赖** Go API。Android 与管理后台依赖 Go API。
 | MacCMS 采集站（`sources.json`，当前 29 条） | 列表 / 搜索 / 详情 | `flag=0` 且 `vip_only=false` 才对公开 API 启用 |
 | 各源 `jx_url` | 将播放页 URL 解析为直链 | 源字段；空则不解析 |
 | bpz5.com | 官方 ticket 线路搜索与解票 | `BPZ5_BASE_URL`、`BPZ5_HMAC_SECRET` |
-| Apple 直播 M3U | `lives.json` 中的播放列表 URL | 仅 Apple 客户端 |
+| 直播 M3U | `lives.json` 中的播放列表 URL | Apple / Android 客户端 |
 
 ## 当前实现情况
 
 - Go API 可无数据库运行纯点播；Docker Compose 开发栈默认带 Postgres + Admin。
 - Apple 是功能最完整的用户端（首页、直播、搜索、下载、播放）。
-- Android 是源码片段级 MVP，README 要求手工并入 Android Studio 工程。
+- Android 是完整 Gradle 工程（`:core` / `:app` / `:tv`），直连采集站，命令见 [clients/android/README.md](../clients/android/README.md)。
 - `web/` 已归档，目录仍可 `npm run dev`，主 README 标明冻结。
 - Docker 镜像只 COPY `config/sources.json`；compose 未注入 `BPZ5_*`、未挂载权重 / 分类 JSON（容器内走默认路径，文件可能缺失，进程用内置默认权重并打 log）。
 
@@ -126,5 +126,4 @@ Apple **不依赖** Go API。Android 与管理后台依赖 Go API。
 - Docker 镜像纳入 `play-line-weights.json`、`unified-categories.json`，compose 注入 `BPZ5_*`（若需要官方线）。
 - 明确 goose migration 是否弃用，或修复 SQL 并接入启动流程。
 - 端侧用户登录 / 收藏：仅 API 已实现，Apple / Android **代码中未发现** 调用。
-- Android 补全 Gradle 工程与播放器。
 - 修正 E2E / DEPLOY 中过时的 Apple API 客户端描述。

@@ -9,7 +9,7 @@
 | 冒烟 | bash + curl + python3 | `apps/api-go/scripts/smoke-test.sh [BASE]` |
 | Apple 逻辑 | Swift 脚本（非 XCTest target） | 见 `clients/apple/scripts/` |
 | Web | 少量 `web/lib/__tests__/*.check.ts` | **代码中未发现** 接入 `package.json` test script 的正式 runner（`web/package.json` 无 `test` 脚本） |
-| Android | — | **代码中未发现** `*Test.kt` |
+| Android | `:core` JUnit Platform（`kotlin("test")`） | `cd clients/android && ./gradlew :core:test` |
 | E2E 自动化 | — | **代码中未发现** Playwright / Appium；仅有手工清单 [`E2E.md`](E2E.md) |
 
 Mock：Go 测试对 bpz5 使用 `httptest` 假上游（`TestResolvePlay_TicketViaMockUpstream`）。无独立 mock 框架依赖。
@@ -56,6 +56,10 @@ Mock：Go 测试对 bpz5 使用 `httptest` 假上游（`TestResolvePlay_TicketVi
 
 **代码中未发现** Xcode Test Target / XCTest。
 
+### Android
+
+`clients/android/core/src/test/kotlin/`：JUnit Platform，命令 `./gradlew :core:test`。覆盖解析、合并分类、直播会话、观看历史、点播 HUD、DNS 等。`:app` / `:tv` **没有** instrumented UI 测试。详见 [clients/android/README.md](../clients/android/README.md)。
+
 ### Web
 
 `web/lib/__tests__/vodTimeSort.check.ts`、`playLineWeights.check.ts`：检查脚本风格，是否在 CI 运行 **待确认**（workflow 只测 `apps/api-go`）。
@@ -85,6 +89,6 @@ Mock：Go 测试对 bpz5 使用 `httptest` 假上游（`TestResolvePlay_TicketVi
 | Admin 部分 | 有登录与源 CRUD | 部分实现 |
 | 外网冒烟 | 有脚本，未进 CI | 部分实现 |
 | Apple UI | 无 | 缺失 |
-| Android | 无 | 缺失 |
+| Android | `:core` 单测 | 已实现（无 androidTest） |
 
 CI 在 `apps/api-go/**` 变更时跑 `go test ./...`，**不**跑 smoke，**不**测 Apple/Admin/Android。

@@ -14,7 +14,7 @@
 | Repository | 1 文件 `db.go`（仅连接+Migrate） |
 | Entity/Model | `types.go` `user.go` `maccms_json.go` `vod_time.go` |
 | Apple Swift（非 Pods） | 66 |
-| Android Kotlin | 4（MainActivity、ApiModels、PlayLineWeights 等） |
+| Android Kotlin | `:core` / `:app` / `:tv` 完整工程 |
 | HTTP 路由（完整栈） | 31 |
 | OpenAPI path | 14（未含 admin/health/swagger） |
 | 数据库表（AutoMigrate） | 4 |
@@ -53,7 +53,7 @@ Controller 在本仓库对应 **Gin Handler**，无 Spring Controller。
 6. **MQ：** 代码中未发现，文档未虚构。
 7. **Redis：** 代码中未发现。
 8. **定时任务：** 无；仅 TTL 缓存。
-9. **第三方：** MacCMS、jx_url、bpz5 已记录。直播 M3U 仅 Apple。
+9. **第三方：** MacCMS、jx_url、bpz5 已记录。直播 M3U 在 Apple 与 Android。
 10. **虚构检查：** 未写支付/订单/网关产品/K8s。Apple 登录按「代码中未发现」处理。PlaySource 使用 `name` 而非设计稿 `label`。
 
 ## 发现的问题（与实现相关）
@@ -68,7 +68,7 @@ Controller 在本仓库对应 **Gin Handler**，无 Spring Controller。
 - CORS 反射任意 Origin。
 - `json_parse` / `danmaku_api_url` 死字段。
 - 单源 list 上游失败返回 200 空列表。
-- Android 非完整工程。
+- Android 构建与运行以 [clients/android/README.md](../clients/android/README.md) 为准。
 
 ## 未能确认的信息
 

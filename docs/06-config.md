@@ -96,16 +96,16 @@
 `version`、`defaultWeight`、`byPlayFrom`、`byProviderId`、`bySourceId`。  
 权重优先级：`providerId` > `playFrom` > `sourceId` > `defaultWeight`。
 
-### Apple `lives.json`
+### 客户端 `lives.json`
 
-`id`、`name`、`url`、`flag`。仅客户端使用。
+`id`、`name`、`url`、`flag`。Apple 与 Android 各有一份包内副本。
 
 ## 前端构建变量
 
 | 配置 | 来源 | 用途 |
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | Admin Vite / Docker build arg | 默认 `/api/v1` |
-| Android `ApiConfig.BASE_URL` | 源码常量 | `http://10.0.2.2:8080/api/v1/` |
+| Android 源站 JSON | `clients/android/core/src/main/resources/` | 直连采集站；无 Go `BASE_URL` |
 | `web/.env.local` | 本地文件 | `BPZ5_*`（冻结网页）；**不要提交密钥** |
 
 ## Docker 镜像

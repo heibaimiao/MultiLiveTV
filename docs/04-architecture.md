@@ -14,13 +14,13 @@
              ▼
      MacCMS 采集站（sources.json）
              ▲
-             │ Go 服务端同样直连
+             │ HTTPS 直连第三方
 ┌────────────┴──────────────┐     ┌─────────────────┐
-│ Android Compose MVP        │     │ Admin SPA :3001 │
-│ Retrofit → Go /api/v1      │     │ Vite / nginx    │
-└────────────┬──────────────┘     └────────┬────────┘
-             │                             │ /api → api:8080
-             ▼                             ▼
+│ Android Pad `:app` / TV `:tv`│     │ Admin SPA :3001 │
+│ OkHttp + Media3            │     │ Vite / nginx    │
+└───────────────────────────┘     └────────┬────────┘
+                                           │ /api → api:8080
+                                           ▼
 ┌─────────────────────────────────────────────────────────┐
 │ Go Gin API :8080                                         │
 │ middleware: CORSWithOrigin, RequestLogger                │
@@ -96,7 +96,7 @@ React Router：Login → Layout（Dashboard / Sources / Users / Logs）。Token 
 
 ### 2.4 Android
 
-单 Activity `HomeScreen` + Retrofit `VodApi`。Base URL 写死 `http://10.0.2.2:8080/api/v1/`。
+Gradle 多模块：`:core` 业务、`:app` 平板、`:tv` 电视。OkHttp 直连采集站，Media3 播放。详见 [clients/android/README.md](../clients/android/README.md)。
 
 ### 2.5 web/
 

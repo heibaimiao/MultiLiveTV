@@ -114,7 +114,14 @@ open MultiLiveTV.xcworkspace
 
 ### Android
 
-无 Gradle Wrapper。README 要求新建 Android Studio 工程后合并 `clients/android/app/src/main/`。模拟器 API：`http://10.0.2.2:8080/api/v1/`。
+内嵌聚合，不调 Go API。Gradle Wrapper 8.13，模块 `:core` / `:app` / `:tv`。命令与产物见 [clients/android/README.md](../clients/android/README.md)。
+
+```bash
+cd clients/android
+./gradlew :core:test
+./gradlew :app:installDebug
+./gradlew :tv:installDebug
+```
 
 ### 冻结网页（不作为产品部署路径）
 

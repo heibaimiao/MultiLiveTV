@@ -1,6 +1,6 @@
 # MultiLiveTV
 
-MacCMS 多源聚合点播：Go 后端 + Apple TV / iPad 原生客户端（可选 Admin 与 Android Pad）。
+MacCMS 多源聚合点播：Go 后端 + Apple TV / iPad 原生客户端（可选 Admin 与 Android Pad/TV）。
 
 仅供个人学习研究。第三方采集站不稳定，需自行维护 `sources.json`。
 
@@ -9,7 +9,7 @@ MacCMS 多源聚合点播：Go 后端 + Apple TV / iPad 原生客户端（可选
 - 跨源统一分类、搜索合并、详情多线路
 - 线路权重排序；`jx_url` 解析；可选 bpz5 官方 ticket 解票（服务端）
 - Apple：首页 / 直播 / 搜索 / 下载 / 播放（**直连采集站，不依赖 Go API**）
-- Android Pad：首页 / 直播 / 搜索 / 播放（直连采集站，对标 iPad）
+- Android Pad / TV：首页 / 直播 / 搜索 / 播放（直连采集站，对标 iPad / tvOS）
 - 可选 Postgres：注册、JWT、收藏、进度
 - 可选管理后台：源站 CRUD、用户、日志
 
@@ -17,7 +17,7 @@ MacCMS 多源聚合点播：Go 后端 + Apple TV / iPad 原生客户端（可选
 
 ## 技术栈
 
-Go 1.25 + Gin + GORM + PostgreSQL 16（可选）· SwiftUI tvOS/iPadOS 17 · Admin：Vite/React · Android Pad：Compose
+Go 1.25 + Gin + GORM + PostgreSQL 16（可选）· SwiftUI tvOS/iPadOS 17 · Admin：Vite/React · Android Pad/TV：Kotlin 2.0 + Compose
 
 架构：[docs/04-architecture.md](docs/04-architecture.md) · 总览：[docs/00-project-overview.md](docs/00-project-overview.md)
 
@@ -27,7 +27,7 @@ Go 1.25 + Gin + GORM + PostgreSQL 16（可选）· SwiftUI tvOS/iPadOS 17 · Adm
 apps/api-go/          Gin API
 apps/admin/           管理后台 :3001
 clients/apple/        tvOS + iPad（内嵌聚合）
-clients/android/      Android Pad（内嵌聚合，对标 iPad）
+clients/android/      Android Pad `:app` + TV `:tv`（内嵌聚合）
 packages/openapi/     OpenAPI（不含 Admin）
 web/                  已冻结的 Next.js
 docs/                 产品与技术文档
@@ -48,6 +48,8 @@ docker compose up --build
 - Smoke：`apps/api-go/scripts/smoke-test.sh`
 
 Apple：见 [clients/apple/README.md](clients/apple/README.md)（`xcodegen generate && pod install`，打开 `.xcworkspace`）。
+
+Android：见 [clients/android/README.md](clients/android/README.md)（`./gradlew :app:installDebug` 或 `:tv:installDebug`）。
 
 ## 配置
 
@@ -87,6 +89,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
 ```bash
 cd apps/api-go && go test ./...
+cd clients/android && ./gradlew :core:test
 ```
 
 说明与缺口：[docs/08-testing.md](docs/08-testing.md) · 手工清单 [docs/E2E.md](docs/E2E.md)

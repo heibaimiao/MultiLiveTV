@@ -56,7 +56,7 @@
 | Apple | 无登录收藏 | Swift 源 | 代码中未发现 |
 | Apple | 无 APIConfig.swift | 全树搜索 | 代码中未发现 |
 | 直播 API | Go 无直播路由 | `main.go` | 代码中未发现 |
-| Android | Retrofit 调 Go；无播放器；无 Gradle | `clients/android` | 已确认（部分实现） |
+| Android | Kotlin 2.0 Compose；`:core`/`:app`/`:tv`；直连采集站；Media3 | `clients/android/README.md` | 已确认 |
 | Admin UI | Vite React :3001 | `apps/admin` | 已确认 |
 | web | Next.js 已冻结 | `web/ARCHIVED.md` | 已确认 |
 | PlaySource | JSON 字段 `name` 非 `label` | `model.PlaySource` | 已确认 |
@@ -75,11 +75,11 @@
 
 | 能力 | Go API | Apple | Android | Admin |
 | --- | --- | --- | --- | --- |
-| 点播列表/搜索/详情 | 有 | 本地实现 | 调 API | 无 |
-| play/resolve | 有 | 本地 jx | 无 | 无 |
-| 用户收藏进度 | 有 | 无 | 无 | 管用户不登录用户端 |
-| 直播 | 无 | 有 | 无 | 无 |
-| 下载 | 无 | 有 | 无 | 无 |
+| 点播列表/搜索/详情 | 有 | 本地实现 | 本地实现 | 无 |
+| play/resolve | 有 | 本地 jx | 本地 jx + Media3 | 无 |
+| 用户收藏进度 | 有 | 无账号；有本地观看历史 | 无账号；有本地观看历史 | 管用户不登录用户端 |
+| 直播 | 无 | 有 | 有 | 无 |
+| 下载 | 无 | 有 | UI 入口，能力弱于 Apple | 无 |
 
 ## 文档交叉引用（仓库原有，未删除）
 

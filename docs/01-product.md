@@ -49,9 +49,9 @@ MultiLiveTV
 │   ├── 下载管理
 │   ├── Top Shelf
 │   └── Deep Link
-├── Android 客户端（调 Go API）
-│   ├── 分类 Tab + 列表 + 搜索
-│   └── 详情弹窗（线路/集数，无播放器）
+├── Android 客户端（不调 Go API）
+│   ├── Pad 首页 / 搜索 / 详情 / 播放 / 直播 / 历史
+│   └── TV 遥控器浏览、直播预览、点播 HUD
 └── 网页端 web/（已冻结）
     └── 历史 Next.js 全栈点播站
 ```
@@ -144,11 +144,11 @@ MultiLiveTV
 - **处理：** `DownloadManager` + File / HLS 引擎 + 后台 URLSession。
 - **状态：** 已实现（仅 Apple）。
 
-### 3.10 Android 浏览
+### 3.10 Android Pad / TV
 
-- **目的：** 电视 / 平板上浏览聚合目录。
-- **限制：** 无播放器、无直播、无下载、无登录；无 Gradle 工程文件。
-- **状态：** 部分实现。
+- **目的：** 平板与电视上浏览聚合目录并播放。
+- **处理：** `:app` / `:tv` + `:core`；OkHttp 直连采集站；Media3 ExoPlayer。
+- **状态：** 已实现（无账号登录）。构建见 [clients/android/README.md](../clients/android/README.md)。
 
 ### 3.11 网页端
 
@@ -164,7 +164,7 @@ MultiLiveTV
 | 注册用户 | `POST /auth/register`，邮箱 + 密码 | JWT 后访问 `/user/favorites`、`/user/progress` |
 | 管理员 | 环境变量 `ADMIN_USERNAME` / `ADMIN_PASSWORD`，**不是** `users` 表 | Admin JWT 后访问 `/admin/*`（除 login） |
 | Apple 终端用户 | 无账号体系 | 本地直连采集站；能力由 App 代码决定 |
-| Android 终端用户 | 无账号 | 调用公开 Go API |
+| Android 终端用户 | 无账号 | 本地直连采集站；能力由 App 代码决定 |
 
 **代码中未发现：** RBAC 角色表、操作员、VIP 用户落地逻辑（`vip_only` 源只是从公开 `Enabled()` 中排除，无 VIP 鉴权接口）。
 
