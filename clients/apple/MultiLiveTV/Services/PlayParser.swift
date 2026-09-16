@@ -4,7 +4,7 @@ enum PlayParser {
     private static let playSourceNames: [String: String] = [
         "wjm3u8": "无尽", "snm3u8": "索尼", "ikm3u8": "爱酷", "ffm3u8": "非凡",
         "feifan": "非凡", "gsm3u8": "光速", "gsyun": "光速", "mtm3u8": "茅台",
-        "mtyun": "茅台", "mym3u8": "猫眼", "hym3u8": "虎牙", "hyyun": "虎牙",
+        "mtyun": "茅台", "mym3u8": "猫眼", "hym3u8": "虎牙直链", "hyyun": "虎牙云",
         "modum3u8": "魔都", "liangzi": "量子", "jsyun": "极速", "subyun": "速播",
         "lzm3u8": "量子", "jpm3u8": "极品", "jsm3u8": "极速", "subm3u8": "速播",
         "bfzym3u8": "暴风", "hnm3u8": "红牛", "hnyun": "红牛", "bjm3u8": "八戒",
@@ -23,7 +23,7 @@ enum PlayParser {
         "yy": "丫丫", "ck": "CK", "dy": "电影", "uk": "UK", "ls": "乐视",
         "qh": "奇虎", "ys": "影视", "tp": "淘片", "tk": "天空", "wolong": "卧龙",
         "feifan": "非凡", "maotai": "茅台", "maoyan": "猫眼", "gsyun": "光速",
-        "mtyun": "茅台", "hyyun": "虎牙", "liangzi": "量子", "jsyun": "极速", "subyun": "速播",
+        "mtyun": "茅台", "hyyun": "虎牙云", "liangzi": "量子", "jsyun": "极速", "subyun": "速播",
     ]
 
     private static let m3u8Pattern = try! NSRegularExpression(
@@ -137,6 +137,7 @@ enum PlayParser {
         let line = lineName.trimmingCharacters(in: .whitespacesAndNewlines)
         if source.isEmpty { return line }
         if line.isEmpty || source == line { return source }
+        if line.hasPrefix(source) { return line }
         return "\(source) · \(line)"
     }
 
@@ -160,6 +161,10 @@ enum PlayParser {
 
         if isDirectMediaURL(trimmed) {
             return ParseResponse(url: trimmed, parsed: true)
+        }
+
+        if let resolved = await resolveFromOriginalPlayPage(trimmed) {
+            return ParseResponse(url: resolved, parsed: true)
         }
 
         guard let jxURL = source.jxUrl, !jxURL.isEmpty else {
@@ -220,6 +225,36 @@ enum PlayParser {
         }
 
         return PlaybackSupport.isDirectMediaURL(originalURL) ? originalURL : nil
+    }
+
+    static func extractDirectMediaURL(from text: String) -> String? {
+        firstM3U8(in: text)
+    }
+
+    private static func resolveFromOriginalPlayPage(_ playURL: String) async -> String? {
+        guard let url = URL(string: playURL) else { return nil }
+        var request = URLRequest(url: url)
+        request.setValue(NetworkConfig.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue("bytes=0-16383", forHTTPHeaderField: "Range")
+        if let host = url.host {
+            request.setValue("\(url.scheme ?? "https")://\(host)/", forHTTPHeaderField: "Referer")
+        }
+        guard let (data, response) = try? await session.data(for: request),
+              let http = response as? HTTPURLResponse,
+              (200...299).contains(http.statusCode) else {
+            return nil
+        }
+        let contentType = http.value(forHTTPHeaderField: "Content-Type") ?? ""
+        if contentType.contains("application/json"),
+           let resolved = parseJSONPlaybackURL(data),
+           PlaybackSupport.isDirectMediaURL(resolved) {
+            return resolved
+        }
+        let text = normalizeResponseText(data)
+        if let m3u8 = extractDirectMediaURL(from: text), PlaybackSupport.isDirectMediaURL(m3u8) {
+            return m3u8
+        }
+        return nil
     }
 
     private static func fetch(_ url: URL) async throws -> (Data, String) {

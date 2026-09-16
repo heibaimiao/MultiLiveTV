@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "MultiLiveTV"
 include(":core")
 include(":app")
+include(":tv")

@@ -77,20 +77,41 @@ final class LiveService: ObservableObject {
     }
 
     private func fetchPlaylist(_ urlString: String) async throws -> [LiveGroup] {
-        guard let url = RemoteMediaURL.parse(urlString) ?? URL(string: urlString) else {
-            throw LiveError.notConfigured
+        let text: String
+        if let resourceName = LivePlaylistURL.bundledResourceName(from: urlString) {
+            text = try loadBundledPlaylist(named: resourceName)
+        } else {
+            guard let url = RemoteMediaURL.parse(urlString) ?? URL(string: urlString) else {
+                throw LiveError.notConfigured
+            }
+            let (data, response) = try await session.data(from: url)
+            guard LiveHTTP.isSuccess(response) else {
+                throw LiveError.httpFailed
+            }
+            text = String(data: data, encoding: .utf8)
+                ?? String(data: data, encoding: .utf16)
+                ?? ""
         }
-        let (data, response) = try await session.data(from: url)
-        guard LiveHTTP.isSuccess(response) else {
-            throw LiveError.httpFailed
-        }
-        let text = String(data: data, encoding: .utf8)
-            ?? String(data: data, encoding: .utf16)
-            ?? ""
         let parsed = M3UPlaylistParser.parsePlaylist(text)
         if parsed.isEmpty {
             throw LiveError.emptyPlaylist
         }
         return parsed
+    }
+
+    private func loadBundledPlaylist(named resourceName: String) throws -> String {
+        let url: URL?
+        if resourceName.contains(".") {
+            let name = (resourceName as NSString).deletingPathExtension
+            let ext = (resourceName as NSString).pathExtension
+            url = Bundle.main.url(forResource: name, withExtension: ext.isEmpty ? nil : ext)
+        } else {
+            url = Bundle.main.url(forResource: resourceName, withExtension: nil)
+        }
+        guard let url else { throw LiveError.missingBundledPlaylist }
+        let data = try Data(contentsOf: url)
+        return String(data: data, encoding: .utf8)
+            ?? String(data: data, encoding: .utf16)
+            ?? ""
     }
 }

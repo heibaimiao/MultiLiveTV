@@ -60,6 +60,7 @@
 		4DB37155C8FDF62AED1C537A /* LiveVideoStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36648814CB64C171472B679E /* LiveVideoStage.swift */; };
 		4E2FD296D1B73DDEB35A38B9 /* VodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7460BA3B6D9A1DD08F0F11 /* VodService.swift */; };
 		509F639BD765E64E59CA49A5 /* lives.json in Resources */ = {isa = PBXBuildFile; fileRef = 65973C09D8A24E43EAE804D8 /* lives.json */; };
+		7DE80C7CA5A2404D95DB5904 /* local-live.m3u in Resources */ = {isa = PBXBuildFile; fileRef = 9C21A3B2729B4A95BD8AAF45 /* local-live.m3u */; };
 		51363F0D5DBC70BC7CE009ED /* DownloadRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F86008EAF83BAE6633A9884 /* DownloadRecord.swift */; };
 		529DA5A8CEE673BE76462AD7 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D030031B9AD901C375C115 /* PlayerView.swift */; };
 		531132A2284A0FB1FA9BB090 /* ContentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CABF9770EF3536391C69DD9 /* ContentProvider.swift */; };
@@ -87,6 +88,7 @@
 		73585F70C34BFA34AE268867 /* FileDownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747E9AE6F699B73B5B04F471 /* FileDownloadEngine.swift */; };
 		73BE26A584A1E82AF4C79742 /* MultiLiveTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847E09F44B2A2BE18BFCBFE4 /* MultiLiveTVApp.swift */; };
 		78164399D2B26F913F3A3B89 /* lives.json in Resources */ = {isa = PBXBuildFile; fileRef = 65973C09D8A24E43EAE804D8 /* lives.json */; };
+		9E9C22CC1AE547B588DD8E4C /* local-live.m3u in Resources */ = {isa = PBXBuildFile; fileRef = 9C21A3B2729B4A95BD8AAF45 /* local-live.m3u */; };
 		7A4EF667ED61D1C1999D047E /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203C4FA6CEDFC1CB68D974BE /* DownloadManager.swift */; };
 		7A6794C15B1AFA742B3021CD /* TVDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C9E57FA4E1CF502A09A637 /* TVDesign.swift */; };
 		7B6971797488369527678DC6 /* CategoryListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B0D244576AB6B669951D67 /* CategoryListService.swift */; };
@@ -217,6 +219,7 @@
 		51374C2CA94F390CD44139C7 /* DownloadMediaKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadMediaKind.swift; sourceTree = "<group>"; };
 		5BA465E9AE431265CA8AF4E8 /* MacCMSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCMSModels.swift; sourceTree = "<group>"; };
 		65973C09D8A24E43EAE804D8 /* lives.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = lives.json; sourceTree = "<group>"; };
+		9C21A3B2729B4A95BD8AAF45 /* local-live.m3u */ = {isa = PBXFileReference; lastKnownFileType = text; path = "local-live.m3u"; sourceTree = "<group>"; };
 		68C3D4BD829B2C2DBEABE997 /* HomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeed.swift; sourceTree = "<group>"; };
 		7369D567255A92D5D18970E0 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		747E9AE6F699B73B5B04F471 /* FileDownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadEngine.swift; sourceTree = "<group>"; };
@@ -456,6 +459,7 @@
 			isa = PBXGroup;
 			children = (
 				65973C09D8A24E43EAE804D8 /* lives.json */,
+				9C21A3B2729B4A95BD8AAF45 /* local-live.m3u */,
 				C742F62EDF128ED722E7F54D /* play-line-weights.json */,
 				B2C3D4E5F60718293A4B5C6D /* unified-categories.json */,
 				52A009FB248D4D37A7CEB5F0 /* source-registry.json */,
@@ -602,6 +606,7 @@
 			files = (
 				95DF40B338513E94049DDB55 /* Assets.xcassets in Resources */,
 				78164399D2B26F913F3A3B89 /* lives.json in Resources */,
+				9E9C22CC1AE547B588DD8E4C /* local-live.m3u in Resources */,
 				018934378659CE306A8E71CB /* play-line-weights.json in Resources */,
 				E5F60718293A4B5C6D7E8F90 /* unified-categories.json in Resources */,
 				B3E0E660BA7A4B71B1668CC6 /* source-registry.json in Resources */,
@@ -615,6 +620,7 @@
 			files = (
 				8A44F2F1749FDD836028D5C5 /* Assets.xcassets in Resources */,
 				509F639BD765E64E59CA49A5 /* lives.json in Resources */,
+				7DE80C7CA5A2404D95DB5904 /* local-live.m3u in Resources */,
 				D0D2B72C37802C4AD5808CB1 /* play-line-weights.json in Resources */,
 				F60718293A4B5C6D7E8F901A /* unified-categories.json in Resources */,
 				A860AD2128E447039E4B4D2E /* source-registry.json in Resources */,

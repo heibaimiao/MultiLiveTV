@@ -32,6 +32,7 @@ enum LiveError: LocalizedError {
     case notConfigured
     case emptyPlaylist
     case httpFailed
+    case missingBundledPlaylist
 
     var errorDescription: String? {
         switch self {
@@ -39,7 +40,20 @@ enum LiveError: LocalizedError {
         case .notConfigured: return "请在 lives.json 填写 M3U 地址"
         case .emptyPlaylist: return "直播列表为空"
         case .httpFailed: return "直播源无法访问"
+        case .missingBundledPlaylist: return "未找到本地直播列表"
         }
+    }
+}
+
+enum LivePlaylistURL {
+    static let bundleScheme = "bundle://"
+
+    static func bundledResourceName(from urlString: String) -> String? {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.lowercased().hasPrefix(bundleScheme) else { return nil }
+        let name = String(trimmed.dropFirst(bundleScheme.count))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
     }
 }
 

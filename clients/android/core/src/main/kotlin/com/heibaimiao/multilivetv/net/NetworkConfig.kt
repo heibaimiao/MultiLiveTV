@@ -25,6 +25,8 @@ object RemoteMediaURL {
 }
 
 object RequestFailure {
+    private val httpStatus = Regex("""\bhttp\s+\d{3}\b""")
+
     fun userFacingMessage(error: Throwable): String {
         val message = error.message.orEmpty().lowercase()
         return when {
@@ -32,7 +34,8 @@ object RequestFailure {
             "unable to resolve" in message || "unknownhost" in message -> "无法连接服务器，请稍后重试"
             "connect" in message || "connection" in message -> "连接失败，请稍后重试"
             "ssl" in message || "certificate" in message || "tls" in message -> "安全连接失败，请稍后重试"
-            "http" in message || "unexpected code" in message -> "服务器响应异常，请稍后重试"
+            httpStatus.containsMatchIn(message) || "unexpected code" in message ->
+                "服务器响应异常，请稍后重试"
             error.message?.isNotBlank() == true && error is VodClientException -> error.message!!
             else -> "加载失败，请稍后重试"
         }

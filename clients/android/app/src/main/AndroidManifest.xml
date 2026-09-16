@@ -6,12 +6,16 @@
 
     <uses-feature
         android:name="android.hardware.touchscreen"
-        android:required="true" />
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:banner="@mipmap/ic_launcher"
         android:label="MultiLiveTV"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
@@ -24,6 +28,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

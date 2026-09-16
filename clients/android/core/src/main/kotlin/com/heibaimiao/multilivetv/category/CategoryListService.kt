@@ -22,6 +22,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
 
 object CategoryListService {
@@ -40,6 +41,11 @@ object CategoryListService {
         val list: List<VodItemRaw>,
         val pageCount: Int,
         val total: Int,
+    )
+
+    private data class FetchedPages(
+        val pages: List<Triple<List<MergeableVodItem>, Int, Int>>,
+        val emptyCount: Int,
     )
 
     suspend fun fetchUnifiedList(
@@ -61,13 +67,16 @@ object CategoryListService {
         if (slug != null && plan.isEmpty()) {
             return ListResult(1, "ok", page, 1, "0", 0, emptyList())
         }
-        val pages = fetchPlanPages(store, plan, page, hours, fetchPage)
-        if (pages.isEmpty() && plan.isNotEmpty()) {
+        val fetched = fetchPlanPages(store, plan, page, hours, fetchPage)
+        if (fetched.pages.isEmpty() && plan.isNotEmpty()) {
+            if (fetched.emptyCount > 0) {
+                return ListResult(1, "ok", page, 1, "0", 0, emptyList())
+            }
             throw VodClientException("无法连接资源站，请检查网络后重试")
         }
-        val mergeable = pages.flatMap { it.first }
-        val pageCount = pages.maxOfOrNull { it.second } ?: 1
-        val total = pages.sumOf { it.third }
+        val mergeable = fetched.pages.flatMap { it.first }
+        val pageCount = fetched.pages.maxOfOrNull { it.second } ?: 1
+        val total = fetched.pages.sumOf { it.third }
         val list = VodMergeService.sortMergedByUpdatedDesc(VodMergeService.mergeVodItems(mergeable, store))
         return ListResult(1, "ok", page, pageCount, list.size.toString(), total, list)
     }
@@ -78,9 +87,10 @@ object CategoryListService {
         page: Int,
         hours: Int?,
         fetchPage: suspend (Source, Int, Int?, Int?) -> SourcePage,
-    ): List<Triple<List<MergeableVodItem>, Int, Int>> {
+    ): FetchedPages {
         val semaphore = Semaphore(UnifiedFetchPlan.MAX_IN_FLIGHT)
         val collected = ConcurrentLinkedQueue<Triple<List<MergeableVodItem>, Int, Int>>()
+        val emptyCount = AtomicInteger(0)
         val minPages = UnifiedFetchPlan.minCompletedPages(plan)
         val isolated = SupervisorJob()
         val scope = CoroutineScope(coroutineContext + isolated)
@@ -88,20 +98,23 @@ object CategoryListService {
             val jobs = plan.map { request ->
                 scope.launch {
                     val source = store.byID(request.sourceId) ?: return@launch
-                    val data = semaphore.withPermit {
-                        withTimeoutOrNull(UnifiedFetchPlan.PER_CALL_TIMEOUT_MS) {
-                            try {
+                    try {
+                        val data = semaphore.withPermit {
+                            withTimeoutOrNull(UnifiedFetchPlan.PER_CALL_TIMEOUT_MS) {
                                 fetchPage(source, page, request.typeId, hours)
-                            } catch (error: CancellationException) {
-                                throw error
-                            } catch (_: Exception) {
-                                null
                             }
                         }
-                    } ?: return@launch
-                    val items = mergeableItems(source, data)
-                    if (items.isEmpty()) return@launch
-                    collected += Triple(items, data.pageCount, data.total)
+                        if (data == null) return@launch
+                        val items = mergeableItems(source, data)
+                        if (items.isEmpty()) {
+                            emptyCount.incrementAndGet()
+                            return@launch
+                        }
+                        collected += Triple(items, data.pageCount, data.total)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                    }
                 }
             }
             withTimeoutOrNull(UnifiedFetchPlan.FIRST_PAINT_MS) {
@@ -116,7 +129,7 @@ object CategoryListService {
                     }
                 }
             }
-            return collected.toList()
+            return FetchedPages(collected.toList(), emptyCount.get())
         } finally {
             isolated.cancel()
         }

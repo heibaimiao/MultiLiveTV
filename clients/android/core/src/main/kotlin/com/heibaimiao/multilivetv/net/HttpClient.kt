@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit
 
 object HttpClient {
     val okHttp: OkHttpClient = OkHttpClient.Builder()
+        .dns(ResilientDns)
         .dispatcher(
             okhttp3.Dispatcher().apply {
                 maxRequests = 12

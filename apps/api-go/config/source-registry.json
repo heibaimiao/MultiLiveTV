@@ -418,13 +418,14 @@
     {
       "id": "live-1",
       "numericId": 1,
-      "name": "ZB",
+      "name": "广东深圳组播",
       "type": "live_m3u",
       "enabled": true,
       "inApp": true,
-      "url": "http://wangziduoqing.com/yuan/zb.txt",
+      "url": "http://iptv.cqshushu.com/index.php?s=Gewn-MCWGCizQSii0Xu4BQ&t=multicast&channels=1&format=m3u",
       "origin": [
-        "clients/apple/.../lives.json"
+        "clients/apple/.../lives.json",
+        "clients/android/.../lives.json"
       ]
     },
     {

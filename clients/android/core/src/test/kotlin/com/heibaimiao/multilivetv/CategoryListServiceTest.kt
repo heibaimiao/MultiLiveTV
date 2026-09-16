@@ -3,6 +3,7 @@ package com.heibaimiao.multilivetv
 import com.heibaimiao.multilivetv.category.CategoryListService
 import com.heibaimiao.multilivetv.category.UnifiedFetchPlan
 import com.heibaimiao.multilivetv.model.Source
+import com.heibaimiao.multilivetv.net.RequestFailure
 import com.heibaimiao.multilivetv.net.VodClientException
 import com.heibaimiao.multilivetv.source.SourceHealthStore
 import com.heibaimiao.multilivetv.source.SourceMovie
@@ -143,6 +144,38 @@ class CategoryListServiceTest {
                 ) { _, _, _, _ -> error("down") }
             }
         }
+    }
+
+    @Test
+    fun allSources_http_failures_should_not_surface_as_http_status_error() = runBlocking<Unit> {
+        val error = assertFailsWith<VodClientException> {
+            withTimeout(12.seconds) {
+                CategoryListService.fetchUnifiedList(
+                    store = store,
+                    slug = null,
+                    page = 1,
+                    health = SourceHealthStore(),
+                ) { _, _, _, _ -> throw VodClientException("HTTP 403") }
+            }
+        }
+        assertEquals("无法连接资源站，请检查网络后重试", error.message)
+        val shown = RequestFailure.userFacingMessage(error)
+        assertEquals("无法连接资源站，请检查网络后重试", shown)
+        assertTrue("服务器响应异常" !in shown)
+    }
+
+    @Test
+    fun allSources_empty_should_return_empty_not_throw() = runBlocking {
+        val result = withTimeout(12.seconds) {
+            CategoryListService.fetchUnifiedList(
+                store = store,
+                slug = null,
+                page = 1,
+                health = SourceHealthStore(),
+            ) { _, _, _, _ -> SourcePage(page = 1, pageCount = 1, total = 0, list = emptyList()) }
+        }
+        assertTrue(result.list.isEmpty())
+        assertEquals(1, result.code)
     }
 
     private fun source(id: Int, name: String, priority: Int) = Source.legacy(

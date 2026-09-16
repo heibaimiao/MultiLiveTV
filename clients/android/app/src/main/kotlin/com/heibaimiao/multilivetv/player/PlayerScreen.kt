@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,12 +32,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.heibaimiao.multilivetv.R
+import com.heibaimiao.multilivetv.history.VodPlaybackRequest
+import com.heibaimiao.multilivetv.history.WatchHistoryProgress
+import com.heibaimiao.multilivetv.history.WatchHistoryRecorder
+import com.heibaimiao.multilivetv.history.WatchHistoryStore
 import com.heibaimiao.multilivetv.live.VodMediaProbe
+import com.heibaimiao.multilivetv.net.HttpClient
 import com.heibaimiao.multilivetv.net.NetworkConfig
 import com.heibaimiao.multilivetv.parser.PlaybackCandidate
 import com.heibaimiao.multilivetv.parser.PlaybackSupport
@@ -44,28 +50,39 @@ import com.heibaimiao.multilivetv.parser.VodPlaybackFailover
 import com.heibaimiao.multilivetv.ui.AppTheme
 import com.heibaimiao.multilivetv.vod.VodService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
 fun PlayerScreen(
-    candidates: List<PlaybackCandidate>,
+    request: VodPlaybackRequest,
     vod: VodService,
+    history: WatchHistoryStore,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
+    val candidates = request.candidates
     var index by remember { mutableIntStateOf(0) }
     var status by remember { mutableStateOf("正在解析播放地址…") }
     var ready by remember { mutableStateOf(false) }
     var mediaUrl by remember { mutableStateOf<String?>(null) }
     var headers by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    val recorder = remember(history) { WatchHistoryRecorder(history) }
+    val requestState = rememberUpdatedState(request)
+    val indexState = rememberUpdatedState(index)
 
     val player = remember {
-        val httpFactory = DefaultHttpDataSource.Factory()
+        val httpFactory = OkHttpDataSource.Factory(HttpClient.okHttp)
             .setUserAgent(NetworkConfig.USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
             .build()
+    }
+
+    fun capture(force: Boolean) {
+        val current = requestState.value
+        val candidate = current.candidates.getOrNull(indexState.value) ?: return
+        captureWatchHistory(recorder, current, candidate, player, force)
     }
 
     DisposableEffect(player) {
@@ -79,11 +96,28 @@ fun PlayerScreen(
                     ready = false
                 }
             }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (!isPlaying) capture(true)
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) capture(true)
+            }
         }
         player.addListener(listener)
         onDispose {
+            capture(true)
             player.removeListener(listener)
             player.release()
+        }
+    }
+
+    LaunchedEffect(player, ready) {
+        if (!ready) return@LaunchedEffect
+        while (true) {
+            capture(false)
+            delay(1_000)
         }
     }
 
@@ -131,15 +165,17 @@ fun PlayerScreen(
 
     LaunchedEffect(mediaUrl, headers) {
         val url = mediaUrl ?: return@LaunchedEffect
-        val httpFactory = DefaultHttpDataSource.Factory()
+        val httpFactory = OkHttpDataSource.Factory(HttpClient.okHttp)
             .setUserAgent(headers["User-Agent"] ?: NetworkConfig.USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
             .setDefaultRequestProperties(headers)
         player.setMediaSource(
             DefaultMediaSourceFactory(httpFactory).createMediaSource(MediaItem.fromUri(url)),
         )
         player.prepare()
+        val resumeAt = request.resumePositionMs
+        if (resumeAt > 0L) player.seekTo(resumeAt)
         player.playWhenReady = true
+        capture(true)
     }
 
     val candidate = candidates.getOrNull(index)
@@ -168,9 +204,8 @@ fun LivePlayerScreen(url: String, headers: Map<String, String>, title: String, o
         ExoPlayer.Builder(context).build()
     }
     DisposableEffect(player) {
-        val httpFactory = DefaultHttpDataSource.Factory()
+        val httpFactory = OkHttpDataSource.Factory(HttpClient.okHttp)
             .setUserAgent(headers["User-Agent"] ?: NetworkConfig.USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
             .setDefaultRequestProperties(headers.ifEmpty { mapOf("User-Agent" to NetworkConfig.USER_AGENT) })
         player.setMediaSource(DefaultMediaSourceFactory(httpFactory).createMediaSource(MediaItem.fromUri(url)))
         player.prepare()
@@ -250,5 +285,28 @@ private fun PlayerSurface(player: ExoPlayer, onView: (PlayerView) -> Unit) {
         },
         modifier = Modifier.fillMaxSize(),
         update = { it.player = player },
+    )
+}
+
+private fun captureWatchHistory(
+    recorder: WatchHistoryRecorder,
+    request: VodPlaybackRequest,
+    candidate: PlaybackCandidate,
+    player: ExoPlayer,
+    force: Boolean,
+) {
+    val duration = player.duration
+    recorder.save(
+        WatchHistoryProgress.fromPlayback(
+            item = request.item,
+            episode = candidate.episode,
+            episodeIndex = request.episodeIndex,
+            sourceId = candidate.sourceId,
+            sourceName = request.sourceName,
+            positionMs = player.currentPosition,
+            durationMs = if (duration > 0L) duration else 0L,
+            now = System.currentTimeMillis(),
+        ),
+        force = force,
     )
 }

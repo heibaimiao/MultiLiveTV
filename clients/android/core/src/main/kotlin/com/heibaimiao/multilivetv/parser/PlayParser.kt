@@ -23,7 +23,7 @@ object PlayParser {
     private val playSourceNames = mapOf(
         "wjm3u8" to "无尽", "snm3u8" to "索尼", "ikm3u8" to "爱酷", "ffm3u8" to "非凡",
         "feifan" to "非凡", "gsm3u8" to "光速", "gsyun" to "光速", "mtm3u8" to "茅台",
-        "mtyun" to "茅台", "mym3u8" to "猫眼", "hym3u8" to "虎牙", "hyyun" to "虎牙",
+        "mtyun" to "茅台", "mym3u8" to "猫眼", "hym3u8" to "虎牙直链", "hyyun" to "虎牙云",
         "modum3u8" to "魔都", "liangzi" to "量子", "jsyun" to "极速", "subyun" to "速播",
         "lzm3u8" to "量子", "jpm3u8" to "极品", "jsm3u8" to "极速", "subm3u8" to "速播",
         "bfzym3u8" to "暴风", "hnm3u8" to "红牛", "hnyun" to "红牛", "bjm3u8" to "八戒",
@@ -42,7 +42,7 @@ object PlayParser {
         "yy" to "丫丫", "ck" to "CK", "dy" to "电影", "uk" to "UK", "ls" to "乐视",
         "qh" to "奇虎", "ys" to "影视", "tp" to "淘片", "tk" to "天空", "wolong" to "卧龙",
         "feifan" to "非凡", "maotai" to "茅台", "maoyan" to "猫眼", "gsyun" to "光速",
-        "mtyun" to "茅台", "hyyun" to "虎牙", "liangzi" to "量子", "jsyun" to "极速", "subyun" to "速播",
+        "mtyun" to "茅台", "hyyun" to "虎牙云", "liangzi" to "量子", "jsyun" to "极速", "subyun" to "速播",
     )
 
     private val m3u8Pattern = Regex("""https?://[^\s"'<>]+\.m3u8[^\s"'<>]*""", RegexOption.IGNORE_CASE)
@@ -114,6 +114,7 @@ object PlayParser {
         val line = lineName.trim()
         if (source.isEmpty()) return line
         if (line.isEmpty() || source == line) return source
+        if (line.startsWith(source)) return line
         return "$source · $line"
     }
 
@@ -123,11 +124,29 @@ object PlayParser {
         if (PlaybackSupport.isDirectMediaURL(trimmed)) {
             return@withContext ParseResponse(trimmed, parsed = true)
         }
+        runCatching { resolveFromOriginalPlayPage(source, trimmed) }.getOrNull()?.let {
+            return@withContext ParseResponse(it, parsed = true)
+        }
         val jxURL = source.jxUrl
         if (jxURL.isNullOrEmpty()) return@withContext ParseResponse(trimmed, parsed = false)
         val encoded = URLEncoder.encode(trimmed, Charsets.UTF_8.name()).replace("+", "%20")
         val resolved = runCatching { resolveFromJXEndpoint(jxURL + encoded, trimmed) }.getOrNull()
         if (resolved != null) ParseResponse(resolved, parsed = true) else ParseResponse(trimmed, parsed = false)
+    }
+
+    private fun resolveFromOriginalPlayPage(source: Source, playURL: String): String? {
+        val headers = PlaybackSupport.httpHeaders(source, playURL)
+        val response = HttpClient.get(playURL, extraHeaders = headers, range = "bytes=0-16383")
+        if (response.code !in 200..299) return null
+        if (response.contentType.contains("application/json")) {
+            parseJSONPlaybackURL(response.text())?.let {
+                if (PlaybackSupport.isDirectMediaURL(it)) return it
+            }
+        }
+        extractDirectMediaURL(response.text())?.let {
+            if (PlaybackSupport.isDirectMediaURL(it)) return it
+        }
+        return null
     }
 
     private fun resolveFromJXEndpoint(url: String, originalURL: String): String? {
@@ -177,6 +196,8 @@ object PlayParser {
         }
         return null
     }
+
+    fun extractDirectMediaURL(text: String): String? = firstM3U8(text)
 
     private fun firstM3U8(text: String): String? =
         sanitizePlaybackURL(m3u8Pattern.find(text)?.value)

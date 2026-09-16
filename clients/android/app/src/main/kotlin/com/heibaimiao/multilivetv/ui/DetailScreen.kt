@@ -19,11 +19,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,14 +39,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.heibaimiao.multilivetv.history.VodPlaybackRequest
+import com.heibaimiao.multilivetv.history.WatchHistoryProgress
+import com.heibaimiao.multilivetv.history.WatchHistoryRecord
+import com.heibaimiao.multilivetv.history.WatchHistoryResume
+import com.heibaimiao.multilivetv.history.WatchHistoryStore
 import com.heibaimiao.multilivetv.model.DetailResponse
 import com.heibaimiao.multilivetv.model.Episode
-import com.heibaimiao.multilivetv.model.PlaySource
 import com.heibaimiao.multilivetv.model.VodItem
 import com.heibaimiao.multilivetv.net.RequestFailure
 import com.heibaimiao.multilivetv.parser.PlayLineWeighting
-import com.heibaimiao.multilivetv.parser.PlaybackCandidate
-import com.heibaimiao.multilivetv.parser.VodPlaybackFailover
 import com.heibaimiao.multilivetv.vod.VodService
 import kotlinx.coroutines.launch
 
@@ -52,13 +56,15 @@ import kotlinx.coroutines.launch
 fun DetailScreen(
     item: VodItem,
     vod: VodService,
-    onPlay: (List<PlaybackCandidate>) -> Unit,
+    history: WatchHistoryStore,
+    onPlay: (VodPlaybackRequest) -> Unit,
     onBack: () -> Unit,
 ) {
     var detail by remember { mutableStateOf<DetailResponse?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var selectedSourceIndex by remember { mutableIntStateOf(0) }
+    var continueRecord by remember { mutableStateOf<WatchHistoryRecord?>(null) }
     val scope = rememberCoroutineScope()
 
     fun load() {
@@ -83,9 +89,30 @@ fun DetailScreen(
     }
 
     LaunchedEffect(item.id) { load() }
+    LaunchedEffect(detail?.vod?.id) {
+        val loaded = detail ?: return@LaunchedEffect
+        val record = WatchHistoryResume.lookup(history, loaded.vod) ?: WatchHistoryResume.lookup(history, item)
+        continueRecord = record?.takeIf { WatchHistoryResume.resumePositionMs(it) > 0L }
+    }
+
+    val playFromHistory: (Boolean) -> Unit = { restart ->
+        val loaded = detail
+        val record = continueRecord
+        if (loaded != null && record != null) {
+            WatchHistoryResume.playbackRequest(loaded, record, restart = restart)?.let(onPlay)
+            continueRecord = null
+        }
+    }
 
     when {
-        detail != null -> DetailBody(detail!!, selectedSourceIndex, { selectedSourceIndex = it }, onPlay, onBack)
+        detail != null -> DetailBody(
+            detail = detail!!,
+            selectedSourceIndex = selectedSourceIndex,
+            history = history,
+            onSelectSource = { selectedSourceIndex = it },
+            onPlay = onPlay,
+            onBack = onBack,
+        )
         loading -> Centered { CircularProgressIndicator(color = AppTheme.accent) }
         else -> Centered {
             Column {
@@ -94,19 +121,45 @@ fun DetailScreen(
             }
         }
     }
+
+    val prompt = continueRecord
+    if (prompt != null && detail != null) {
+        val clock = WatchHistoryProgress.formatClock(WatchHistoryResume.resumePositionMs(prompt))
+        AlertDialog(
+            onDismissRequest = { continueRecord = null },
+            title = { Text("是否继续播放？") },
+            text = { Text("上次看到 ${prompt.episodeTitle.ifBlank { prompt.title }} $clock") },
+            confirmButton = {
+                TextButton(onClick = { playFromHistory(false) }) { Text("继续播放 $clock") }
+            },
+            dismissButton = {
+                TextButton(onClick = { playFromHistory(true) }) { Text("重新开始") }
+            },
+        )
+    }
 }
 
 @Composable
 private fun DetailBody(
     detail: DetailResponse,
     selectedSourceIndex: Int,
+    history: WatchHistoryStore,
     onSelectSource: (Int) -> Unit,
-    onPlay: (List<PlaybackCandidate>) -> Unit,
+    onPlay: (VodPlaybackRequest) -> Unit,
     onBack: () -> Unit,
 ) {
     val vod = detail.vod
     val sources = detail.playSources
     val selected = sources.getOrNull(selectedSourceIndex)
+    fun playEpisode(episode: Episode) {
+        val record = WatchHistoryResume.lookup(history, vod)
+        val sameEpisode = record != null && (
+            record.episodeId == episode.url ||
+                (record.episodeTitle.isNotBlank() && record.episodeTitle == episode.name)
+            )
+        val resume = if (sameEpisode) WatchHistoryResume.resumePositionMs(record) else 0L
+        onPlay(WatchHistoryResume.playbackRequest(detail, selectedSourceIndex, episode, resume))
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -156,14 +209,7 @@ private fun DetailBody(
             Text("选集", color = AppTheme.textTertiary)
             Spacer(Modifier.height(8.dp))
             EpisodeGrid(selected?.episodes.orEmpty()) { episode ->
-                onPlay(
-                    VodPlaybackFailover.candidates(
-                        playSources = sources,
-                        selectedIndex = selectedSourceIndex,
-                        episode = episode,
-                        fallbackSourceId = vod.resolvedSourceId,
-                    ),
-                )
+                playEpisode(episode)
             }
         }
     }

@@ -569,10 +569,10 @@ func testMergePlaySourcesCollapsesYunAndM3U8Duplicates() {
             )
         )
     ])
-    assertEqual(merged.map(\.name).sorted(), ["速播", "速播 · 虎牙"], "m3u8 and yun of the same brand must collapse to one chip")
+    assertEqual(merged.map(\.name).sorted(), ["速播", "速播 · 虎牙云", "速播 · 虎牙直链"], "虎牙 yun/m3u8 stay separate; 速播 yun/m3u8 still collapse")
 }
 
-func testMergePlaySourcesPrefersDirectURLWhenCollapsingDuplicates() {
+func testMergePlaySourcesKeepsHuyaYunAndDirectSeparate() {
     let merged = PlayParser.mergePlaySources(from: [
         .init(
             source: source(143, "虎牙"),
@@ -582,9 +582,39 @@ func testMergePlaySourcesPrefersDirectURLWhenCollapsingDuplicates() {
             )
         )
     ])
-    assertEqual(merged.count, 1, "虎牙 yun and m3u8 must be one chip")
-    assertEqual(merged[0].name, "虎牙", "matching site and line collapse to 虎牙")
-    assertEqual(merged[0].episodes.first?.url, "https://cdn.example/1.m3u8", "keep the direct m3u8 line when collapsing")
+    assertEqual(Set(merged.map(\.name)), ["虎牙云", "虎牙直链"], "虎牙 yun and m3u8 use different chips")
+    let preferred = merged[PlayLineWeighting.preferredIndex(in: merged)]
+    assertEqual(preferred.name, "虎牙直链", "default to the direct 虎牙 line")
+    assertEqual(preferred.episodes.first?.url, "https://cdn.example/1.m3u8", "direct m3u8 stays on the 直链 chip")
+}
+
+func testHuyaYunAndM3u8UseDifferentLineNames() {
+    let sources = PlayParser.parsePlayURL(
+        vodPlayFrom: "hyyun$$$hym3u8",
+        vodPlayURL: "正片$https://hd.kuktxu.com/play/bDk0qOKa$$$正片$https://hd.kuktxu.com/play/bDk0qOKa/index.m3u8"
+    )
+    assertEqual(sources.map(\.name), ["虎牙云", "虎牙直链"], "hyyun and hym3u8 must not share 虎牙")
+}
+
+func testDisplayPlaySourceNameDoesNotRepeatHuyaPrefix() {
+    assertEqual(PlayParser.displayPlaySourceName(sourceName: "虎牙", lineName: "虎牙直链"), "虎牙直链", "site prefix is not repeated")
+    assertEqual(PlayParser.displayPlaySourceName(sourceName: "虎牙", lineName: "虎牙云"), "虎牙云", "yun chip keeps 虎牙云")
+    assertEqual(PlayParser.displayPlaySourceName(sourceName: "速播", lineName: "虎牙直链"), "速播 · 虎牙直链", "other sites keep the combined label")
+}
+
+func testExtractDirectMediaURLFromDPlayerSharePage() {
+    let html = """
+    <div id="dplayer"></div>
+    <script>
+        const vid = 'https://hd.kuktxu.com/play/bDk0qOKa/index.m3u8';
+        const videoConfig = { url: vid, type: 'hls' };
+    </script>
+    """
+    assertEqual(
+        PlayParser.extractDirectMediaURL(from: html),
+        "https://hd.kuktxu.com/play/bDk0qOKa/index.m3u8",
+        "share pages already embed the real m3u8"
+    )
 }
 
 func testPlayLineWeightsOrderOfficialBeforeMacCMS() {
@@ -2407,7 +2437,10 @@ enum LogicTests {
         testMergePlaySourcesDoesNotRepeatMatchingSiteAndLineName()
         testMergePlaySourcesKeepsSitePrefixWhenLineDiffers()
         testMergePlaySourcesCollapsesYunAndM3U8Duplicates()
-        testMergePlaySourcesPrefersDirectURLWhenCollapsingDuplicates()
+        testMergePlaySourcesKeepsHuyaYunAndDirectSeparate()
+        testHuyaYunAndM3u8UseDifferentLineNames()
+        testDisplayPlaySourceNameDoesNotRepeatHuyaPrefix()
+        testExtractDirectMediaURLFromDPlayerSharePage()
         testPlayLineWeightsOrderOfficialBeforeMacCMS()
         testDisplayPlaySourcesKeepsWeightedOrder()
         testDirectMediaURLRequiresPathExtension()

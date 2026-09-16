@@ -5,6 +5,7 @@ import com.heibaimiao.multilivetv.net.RemoteMediaURL
 import com.heibaimiao.multilivetv.net.RequestFailure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 class LiveService(private val store: LiveStore = runCatching { LiveStore() }.getOrElse { LiveStore(emptyList()) }) {
     suspend fun reload(): Pair<List<LiveGroup>, String?> = withContext(Dispatchers.IO) {
@@ -16,7 +17,10 @@ class LiveService(private val store: LiveStore = runCatching { LiveStore() }.get
             try {
                 playlists += fetchPlaylist(source.url)
             } catch (error: Exception) {
-                lastError = RequestFailure.userFacingMessage(error)
+                lastError = when (error) {
+                    is IOException -> error.message ?: RequestFailure.userFacingMessage(error)
+                    else -> RequestFailure.userFacingMessage(error)
+                }
             }
         }
         val merged = M3UPlaylistParser.merge(playlists)
@@ -24,8 +28,28 @@ class LiveService(private val store: LiveStore = runCatching { LiveStore() }.get
     }
 
     private fun fetchPlaylist(urlString: String): List<LiveGroup> {
-        val url = RemoteMediaURL.parse(urlString) ?: urlString
-        val text = HttpClient.getOrThrow(url).text()
+        val text = bundledResourceName(urlString)?.let { loadBundledPlaylist(it) }
+            ?: run {
+                val url = RemoteMediaURL.parse(urlString) ?: urlString
+                HttpClient.getOrThrow(url).text()
+            }
         return M3UPlaylistParser.parsePlaylist(text)
+    }
+
+    companion object {
+        private const val BUNDLE_SCHEME = "bundle://"
+
+        fun bundledResourceName(urlString: String): String? {
+            val trimmed = urlString.trim()
+            if (!trimmed.startsWith(BUNDLE_SCHEME, ignoreCase = true)) return null
+            val name = trimmed.substring(BUNDLE_SCHEME.length).trim()
+            return name.ifEmpty { null }
+        }
+
+        fun loadBundledPlaylist(resourceName: String): String {
+            val stream = LiveService::class.java.classLoader?.getResourceAsStream(resourceName)
+                ?: throw IOException("未找到本地直播列表")
+            return stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+        }
     }
 }
