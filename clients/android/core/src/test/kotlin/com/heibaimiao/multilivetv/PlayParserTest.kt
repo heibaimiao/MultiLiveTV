@@ -121,4 +121,20 @@ class PlayParserTest {
         )
         assertTrue(candidates.any { it.episode.url.endsWith("/index.m3u8") })
     }
+
+    @Test
+    fun successivePlayerErrorsMustAdvancePastTheFirstBackup() {
+        var index = 0
+        index = VodPlaybackFailover.nextIndex(index, 3)!!
+        index = VodPlaybackFailover.nextIndex(index, 3)!!
+        assertEquals(2, index)
+        assertEquals(null, VodPlaybackFailover.nextIndex(index, 3))
+    }
+
+    @Test
+    fun capturedZeroNeverReachesTheThirdCandidate() {
+        val stale = 0
+        assertEquals(1, VodPlaybackFailover.nextIndex(stale, 3))
+        assertEquals(1, VodPlaybackFailover.nextIndex(stale, 3))
+    }
 }

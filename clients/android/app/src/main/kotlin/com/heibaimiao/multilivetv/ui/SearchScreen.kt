@@ -20,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.heibaimiao.multilivetv.model.VodItem
 import com.heibaimiao.multilivetv.net.RequestFailure
+import com.heibaimiao.multilivetv.net.RequestGeneration
 import com.heibaimiao.multilivetv.vod.VodService
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,6 +34,33 @@ fun SearchScreen(vod: VodService, onOpen: (VodItem) -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var searched by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val generation = remember { RequestGeneration() }
+    var searchJob by remember { mutableStateOf<Job?>(null) }
+
+    fun runSearch() {
+        if (keyword.isBlank()) return
+        searchJob?.cancel()
+        searchJob = scope.launch {
+            val token = generation.next()
+            loading = true
+            error = null
+            searched = true
+            try {
+                val found = vod.search(keyword.trim())
+                if (!generation.shouldApply(token)) return@launch
+                results = found
+                error = null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (!generation.shouldApply(token)) return@launch
+                error = RequestFailure.userFacingMessage(e)
+                results = emptyList()
+            } finally {
+                if (generation.shouldApply(token)) loading = false
+            }
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(AppTheme.screenBackground).padding(top = AppTheme.screenPadding)) {
         Row(
@@ -44,28 +74,16 @@ fun SearchScreen(vod: VodService, onOpen: (VodItem) -> Unit) {
                 singleLine = true,
                 label = { Text("搜索") },
             )
-            Button(
-                onClick = {
-                    if (keyword.isBlank()) return@Button
-                    scope.launch {
-                        loading = true
-                        error = null
-                        searched = true
-                        try {
-                            results = vod.search(keyword.trim())
-                        } catch (e: Exception) {
-                            error = RequestFailure.userFacingMessage(e)
-                            results = emptyList()
-                        } finally {
-                            loading = false
-                        }
-                    }
-                },
-            ) { Text("搜索") }
+            Button(onClick = { runSearch() }) { Text("搜索") }
         }
         when {
             loading -> Centered { CircularProgressIndicator(color = AppTheme.accent) }
-            error != null -> Centered { Text(error!!, color = AppTheme.textSecondary) }
+            error != null -> Centered {
+                Column {
+                    Text(error!!, color = AppTheme.textSecondary)
+                    Button(onClick = { runSearch() }, modifier = Modifier.padding(top = 12.dp)) { Text("重试") }
+                }
+            }
             searched && results.isEmpty() -> Centered { Text("没有找到相关影片", color = AppTheme.textSecondary) }
             results.isNotEmpty() -> VodPosterGrid(results, onOpen)
             else -> Centered { Text("输入片名搜索多源结果", color = AppTheme.textTertiary) }

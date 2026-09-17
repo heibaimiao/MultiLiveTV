@@ -7,7 +7,8 @@ final class VodService: ObservableObject {
     init() {
         store = (try? SourceStore()) ?? SourceStore(sources: [])
         PlayLineWeighting.playPriorityBySourceId = Dictionary(
-            uniqueKeysWithValues: store.all().map { ($0.numericId, $0.priority.playPriority) }
+            store.all().map { ($0.numericId, $0.priority.playPriority) },
+            uniquingKeysWith: { _, last in last }
         )
     }
 

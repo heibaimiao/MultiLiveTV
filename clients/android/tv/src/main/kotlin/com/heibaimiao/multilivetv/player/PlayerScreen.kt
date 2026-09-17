@@ -48,6 +48,7 @@ import com.heibaimiao.multilivetv.history.WatchHistoryDisplay
 import com.heibaimiao.multilivetv.history.WatchHistoryProgress
 import com.heibaimiao.multilivetv.history.WatchHistoryRecorder
 import com.heibaimiao.multilivetv.history.WatchHistoryStore
+import com.heibaimiao.multilivetv.live.LiveCatalog
 import com.heibaimiao.multilivetv.live.LiveChannel
 import com.heibaimiao.multilivetv.live.LiveChannelNav
 import com.heibaimiao.multilivetv.live.LiveGroup
@@ -122,7 +123,7 @@ fun PlayerScreen(
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
-                val next = VodPlaybackFailover.nextIndex(index, candidates.size)
+                val next = VodPlaybackFailover.nextIndex(indexState.value, candidates.size)
                 if (next != null) {
                     index = next
                 } else {
@@ -229,18 +230,36 @@ fun LivePlayerScreen(
     val context = LocalContext.current
     var current by remember { mutableStateOf(session.channel) }
     var osd by remember { mutableStateOf(session.channel.name) }
+    var failed by remember { mutableStateOf<String?>(null) }
     BackHandler(onBack = onClose)
 
     val player = remember {
         ExoPlayer.Builder(context).build()
     }
     DisposableEffect(player) {
-        onDispose { player.release() }
+        val listener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                failed = PlaybackSupport.userFacingError(
+                    current.streams.firstOrNull()?.url.orEmpty(),
+                    error.message,
+                )
+            }
+        }
+        player.addListener(listener)
+        onDispose {
+            player.removeListener(listener)
+            player.release()
+        }
     }
 
     LaunchedEffect(current.id) {
+        failed = null
         osd = current.name
-        val stream = current.streams.first()
+        val stream = LiveCatalog.firstPlayableStream(current)
+        if (stream == null) {
+            failed = "当前频道无法播放"
+            return@LaunchedEffect
+        }
         val headers = stream.headers.ifEmpty { mapOf("User-Agent" to NetworkConfig.USER_AGENT) }
         val httpFactory = OkHttpDataSource.Factory(HttpClient.okHttp)
             .setUserAgent(headers["User-Agent"] ?: NetworkConfig.USER_AGENT)
@@ -277,6 +296,17 @@ fun LivePlayerScreen(
             },
     ) {
         PlayerSurface(player, fillScreen = true)
+        if (failed != null) {
+            Text(
+                failed!!,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(32.dp)
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            )
+        }
         if (WatchHistoryDisplay.showPlayingOverlay && osd.isNotEmpty()) {
             Text(
                 osd,

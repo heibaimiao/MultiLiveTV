@@ -41,6 +41,7 @@ import coil.ImageLoader
 import com.heibaimiao.multilivetv.history.FileWatchHistoryPersistence
 import com.heibaimiao.multilivetv.history.VodPlaybackRequest
 import com.heibaimiao.multilivetv.history.WatchHistoryStore
+import com.heibaimiao.multilivetv.live.LiveCatalog
 import com.heibaimiao.multilivetv.live.LiveChannel
 import com.heibaimiao.multilivetv.live.LiveService
 import com.heibaimiao.multilivetv.model.VodItem
@@ -204,8 +205,12 @@ fun MultiLiveTVApp(container: AppContainer, useRail: Boolean) {
                     if (channel == null) {
                         nav.popBackStack()
                     } else {
-                        val stream = channel.streams.first()
-                        LivePlayerScreen(stream.url, stream.headers, channel.name) { nav.popBackStack() }
+                        val stream = LiveCatalog.firstPlayableStream(channel)
+                        if (stream == null) {
+                            nav.popBackStack()
+                        } else {
+                            LivePlayerScreen(stream.url, stream.headers, channel.name) { nav.popBackStack() }
+                        }
                     }
                 }
             }

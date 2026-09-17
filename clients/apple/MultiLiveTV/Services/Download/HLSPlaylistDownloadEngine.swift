@@ -53,8 +53,12 @@ final class HLSPlaylistDownloadEngine: DownloadEngine {
         for (index, item) in plan.downloads.enumerated() {
             try Task.checkCancellation()
             if cancelledIDs.contains(id) { throw CancellationError() }
-            let data = try await fetch(item.remote, headers: headers, id: id)
-            try data.write(to: destinationDirectory.appendingPathComponent(item.localName), options: .atomic)
+            try await download(
+                item.remote,
+                headers: headers,
+                id: id,
+                to: destinationDirectory.appendingPathComponent(item.localName)
+            )
             let fraction = Double(index + 1) / Double(total)
             onProgress?(id, fraction, Int64(index + 1), Int64(total))
         }
@@ -95,5 +99,32 @@ final class HLSPlaylistDownloadEngine: DownloadEngine {
             throw DownloadEngineError.httpStatus(http.statusCode)
         }
         return data
+    }
+
+    private func download(
+        _ url: URL,
+        headers: [String: String],
+        id: String,
+        to destination: URL
+    ) async throws {
+        if cancelledIDs.contains(id) { throw CancellationError() }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 30
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        let (temp, response) = try await session.download(for: request)
+        if cancelledIDs.contains(id) {
+            try? FileManager.default.removeItem(at: temp)
+            throw CancellationError()
+        }
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            try? FileManager.default.removeItem(at: temp)
+            throw DownloadEngineError.httpStatus(http.statusCode)
+        }
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
+        }
+        try FileManager.default.moveItem(at: temp, to: destination)
     }
 }

@@ -20,7 +20,10 @@ enum VodMergeService {
     }
 
     static func mergeVodItems(_ items: [MergeableVodItem], store: SourceStore) -> [MergedVodItem] {
-        let sourceOrder = Dictionary(uniqueKeysWithValues: store.enabled().enumerated().map { ($1.id, $0) })
+        let sourceOrder = Dictionary(
+            store.enabled().enumerated().map { ($1.id, $0) },
+            uniquingKeysWith: { _, last in last }
+        )
         let (groups, order) = groupMergeableItems(items)
 
         return order.map { key in

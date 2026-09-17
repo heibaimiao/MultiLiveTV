@@ -2210,6 +2210,41 @@ func testSourceRegistryDecodesDualIdAndCapabilities() {
     assertEqual(source.priority.metadataPriority, 460, "metadata priority")
 }
 
+func testBusyFlagResetsWhenCancelledGenerationIsStillCurrent() {
+    var isSearching = true
+    if RequestGeneration.shouldApply(eventGeneration: 3, currentGeneration: 3) {
+        isSearching = false
+    }
+    assertEqual(isSearching, false, "cancel of the current search must clear the skeleton flag")
+}
+
+func testBusyFlagStaysWhenANewerSearchIsInFlight() {
+    var isSearching = true
+    if RequestGeneration.shouldApply(eventGeneration: 3, currentGeneration: 4) {
+        isSearching = false
+    }
+    assertEqual(isSearching, true, "a stale search must not clear a newer in-flight flag")
+}
+
+func testSourceStoreKeepsLastDuplicateNumericIdWithoutTrapping() {
+    let store = SourceStore(sources: [source(33, "旧"), source(33, "新")])
+    assertEqual(store.configured(id: 33)?.name, "新", "duplicate numericId should keep the last source")
+    assertEqual(store.all().count, 2, "all() still lists both entries")
+}
+
+func testSourceStoreKeepsLastDuplicateSourceIdWithoutTrapping() {
+    let first = source(1, "甲")
+    let clash = Source(
+        sourceId: first.sourceId,
+        numericId: 99,
+        name: "乙-覆盖",
+        connection: SourceConnection(endpoint: "https://example.com/99/")
+    )
+    let store = SourceStore(sources: [first, clash])
+    assertEqual(store.configured(sourceId: first.sourceId)?.name, "乙-覆盖", "duplicate source_id should keep the last source")
+    assertEqual(store.configured(id: 99)?.name, "乙-覆盖", "numeric lookup still works for the last row")
+}
+
 func testSourceStoreEnabledVsConfiguredAndCollectable() {
     let disabled = source(10, "关", enabled: false)
     let noSearch = source(
@@ -2725,7 +2760,11 @@ enum LogicTests {
         testDisplayBlurbStripsTagsFromFallbackBlurb()
         testDisplayBlurbJoinsAdjacentParagraphsWithSpace()
         testDisplayBlurbReturnsNilWhenOnlyTagsRemain()
+        testBusyFlagResetsWhenCancelledGenerationIsStillCurrent()
+        testBusyFlagStaysWhenANewerSearchIsInFlight()
         testSourceRegistryDecodesDualIdAndCapabilities()
+        testSourceStoreKeepsLastDuplicateNumericIdWithoutTrapping()
+        testSourceStoreKeepsLastDuplicateSourceIdWithoutTrapping()
         testSourceStoreEnabledVsConfiguredAndCollectable()
         testSourceCollectorRejectsDisabledSearchCapability()
         testMacCMSSourceParserBuildsSourceMovie()

@@ -30,6 +30,7 @@ enum VerifyDownloads {
         testStableID()
         testMediaClassification()
         testEnqueuePolicy()
+        testResolveInterrupt()
         testFinishAfterSuccess()
         try testStore()
         testLineDedup()
@@ -142,6 +143,29 @@ enum VerifyDownloads {
             DownloadEnqueuePolicy.outcome(existing: failed, fileExists: false, freeDiskBytes: 0),
             .insufficientDisk,
             "重试时磁盘不足仍拒绝"
+        )
+    }
+
+    static func testResolveInterrupt() {
+        expectEqual(
+            DownloadEnqueuePolicy.actionAfterResolve(deleteRequested: true, pauseRequested: false),
+            .discard,
+            "解析中删除应丢掉任务，不能停在 resolving"
+        )
+        expectEqual(
+            DownloadEnqueuePolicy.actionAfterResolve(deleteRequested: false, pauseRequested: true),
+            .pause,
+            "解析中暂停应标 paused"
+        )
+        expectEqual(
+            DownloadEnqueuePolicy.actionAfterResolve(deleteRequested: true, pauseRequested: true),
+            .discard,
+            "删除优先于暂停"
+        )
+        expectEqual(
+            DownloadEnqueuePolicy.actionAfterResolve(deleteRequested: false, pauseRequested: false),
+            .proceed,
+            "无中断应继续下载"
         )
     }
 

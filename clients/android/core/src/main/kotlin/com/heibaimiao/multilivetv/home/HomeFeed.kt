@@ -158,7 +158,8 @@ object HomeFeed {
                 val bare = normalizeTitle(item.vodName)
                 if (key != bare && map[bare] != null) {
                     if (map[key] == null) {
-                        map[key] = map[bare]!!
+                        val existing = map[bare] ?: return@consume
+                        map[key] = existing
                         if (key !in orderedKeys) orderedKeys += key
                     }
                     map.remove(bare)

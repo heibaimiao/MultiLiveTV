@@ -82,10 +82,10 @@ struct SearchContent: View {
             AppErrorView(message: errorMessage) {
                 startSearch()
             }
-            .iPadFillScrollRefreshable { await search() }
+            .iPadFillScrollRefreshable { startSearch(); await searchTask?.value }
         } else if hasSearched && results.isEmpty {
             AppEmptyStateView(title: "未找到结果", subtitle: "试试其他关键词", systemImage: "magnifyingglass")
-                .iPadFillScrollRefreshable { await search() }
+                .iPadFillScrollRefreshable { startSearch(); await searchTask?.value }
         } else if results.isEmpty {
             AppEmptyStateView(title: "搜索影片", subtitle: "输入片名、演员或关键词", systemImage: "magnifyingglass")
         } else {
@@ -93,7 +93,7 @@ struct SearchContent: View {
                 VodPosterGrid(items: results, focusedId: $focusedId) { selectedItem = $0 }
                     .padding(AppTheme.screenPadding)
             }
-            .iPadRefreshable { await search() }
+            .iPadRefreshable { startSearch(); await searchTask?.value }
             .tvFocusSection()
         }
     }
@@ -110,6 +110,11 @@ struct SearchContent: View {
         let generation = searchGeneration
         isSearching = true
         errorMessage = nil
+        defer {
+            if RequestGeneration.shouldApply(eventGeneration: generation, currentGeneration: searchGeneration) {
+                isSearching = false
+            }
+        }
         do {
             let found = try await vod.search(trimmed)
             guard RequestGeneration.shouldApply(eventGeneration: generation, currentGeneration: searchGeneration) else {
@@ -118,7 +123,6 @@ struct SearchContent: View {
             results = found
             errorMessage = nil
             hasSearched = true
-            isSearching = false
         } catch {
             guard RequestGeneration.shouldApply(eventGeneration: generation, currentGeneration: searchGeneration) else {
                 return
@@ -129,7 +133,6 @@ struct SearchContent: View {
             errorMessage = RequestFailure.userFacingMessage(for: error)
             results = []
             hasSearched = true
-            isSearching = false
         }
     }
 }

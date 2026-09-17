@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.heibaimiao.multilivetv.live.LiveCatalog
 import com.heibaimiao.multilivetv.live.LiveChannel
 import com.heibaimiao.multilivetv.live.LiveGroup
 import com.heibaimiao.multilivetv.live.LiveService
@@ -44,16 +45,19 @@ fun LiveScreen(service: LiveService, onPlay: (LiveChannel) -> Unit) {
 
     LaunchedEffect(Unit) { reload() }
 
+    val visible = remember(groups) { LiveCatalog.visibleGroups(groups) }
+
     when {
         loading -> Centered { CircularProgressIndicator(color = AppTheme.accent) }
-        error != null && groups.isEmpty() -> Centered {
+        error != null && visible.isEmpty() -> Centered {
             Column {
                 Text(error!!, color = AppTheme.textSecondary)
                 Button(onClick = { reload() }, modifier = Modifier.padding(AppTheme.screenPadding)) { Text("重试") }
             }
         }
+        visible.isEmpty() -> Centered { Text("暂无频道", color = AppTheme.textTertiary) }
         else -> LazyColumn(Modifier.fillMaxSize().background(AppTheme.screenBackground).padding(AppTheme.screenPadding)) {
-            groups.forEach { group ->
+            visible.forEach { group ->
                 item { Text(group.name, color = AppTheme.accent, modifier = Modifier.padding(vertical = AppTheme.screenPadding / 2)) }
                 items(group.channels, key = { it.id }) { channel ->
                     Text(

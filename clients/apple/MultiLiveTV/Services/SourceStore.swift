@@ -8,14 +8,21 @@ final class SourceStore {
     init(bundle: Bundle = .main) throws {
         let document = try Self.loadRegistry(bundle: bundle)
         sources = document.sources
-        byNumericId = Dictionary(uniqueKeysWithValues: sources.map { ($0.numericId, $0) })
-        bySourceIdKey = Dictionary(uniqueKeysWithValues: sources.map { ($0.sourceId, $0) })
+        byNumericId = Self.uniqueIndex(sources, key: \.numericId)
+        bySourceIdKey = Self.uniqueIndex(sources, key: \.sourceId)
     }
 
     init(sources: [Source]) {
         self.sources = sources
-        byNumericId = Dictionary(uniqueKeysWithValues: sources.map { ($0.numericId, $0) })
-        bySourceIdKey = Dictionary(uniqueKeysWithValues: sources.map { ($0.sourceId, $0) })
+        byNumericId = Self.uniqueIndex(sources, key: \.numericId)
+        bySourceIdKey = Self.uniqueIndex(sources, key: \.sourceId)
+    }
+
+    private static func uniqueIndex<Key: Hashable>(
+        _ sources: [Source],
+        key: KeyPath<Source, Key>
+    ) -> [Key: Source] {
+        Dictionary(sources.map { ($0[keyPath: key], $0) }, uniquingKeysWith: { _, last in last })
     }
 
     func all() -> [Source] { sources }

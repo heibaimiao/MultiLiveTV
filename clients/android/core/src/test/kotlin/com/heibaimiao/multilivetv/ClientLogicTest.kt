@@ -64,6 +64,17 @@ class ClientLogicTest {
     }
 
     @Test
+    fun sourceStoreKeepsLastDuplicateNumericId() {
+        val store = SourceStore(
+            listOf(
+                Source.legacy(33, "旧", "https://old/"),
+                Source.legacy(33, "新", "https://new/"),
+            ),
+        )
+        assertEquals("新", store.configured(33)?.name)
+    }
+
+    @Test
     fun bundledRegistryLoads() {
         val store = SourceStore()
         assertTrue(store.enabled().isNotEmpty())

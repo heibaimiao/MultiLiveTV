@@ -17,4 +17,10 @@ object LiveCatalog {
         if (groups.isEmpty()) return null
         return groups.firstOrNull { it.name == selectedName } ?: groups.first()
     }
+
+    fun flatChannels(groups: List<LiveGroup>): List<LiveChannel> =
+        groups.flatMap { it.channels }
+
+    fun firstPlayableStream(channel: LiveChannel): LiveStream? =
+        channel.streams.firstOrNull { RemoteMediaURL.parse(it.url) != null }
 }

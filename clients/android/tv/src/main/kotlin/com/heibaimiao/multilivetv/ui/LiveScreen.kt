@@ -84,8 +84,6 @@ import kotlinx.coroutines.launch
 private val BrowseDim = Color.Black.copy(alpha = 0.55f)
 private val PanelScrim = Color.Black.copy(alpha = 0.78f)
 
-private enum class LiveFocusColumn { GROUP, CHANNEL }
-
 @Composable
 fun LiveScreen(
     service: LiveService,
@@ -105,13 +103,10 @@ fun LiveScreen(
     var didInitialFocus by remember { mutableStateOf(false) }
     var osd by remember { mutableStateOf("") }
     var previewJob by remember { mutableStateOf<Job?>(null) }
-    var focusColumn by remember { mutableStateOf(LiveFocusColumn.CHANNEL) }
 
-    val groupFocus = remember { FocusRequester() }
     val channelFocusById = remember { mutableMapOf<String, FocusRequester>() }
     val watchFocus = remember { FocusRequester() }
     val channelListState = rememberLazyListState()
-    val groupListState = rememberLazyListState()
     val itemShape = RoundedCornerShape(8.dp)
 
     fun sync() {
@@ -208,20 +203,6 @@ fun LiveScreen(
         }
     }
 
-    fun selectGroup(group: LiveGroup, playDefaultChannel: Boolean) {
-        selectedGroupName = group.name
-        focusColumn = LiveFocusColumn.GROUP
-        if (!playDefaultChannel) return
-        val rememberedInGroup = group.channels.firstOrNull { it.id == memory.lastChannelId }
-        val target = rememberedInGroup ?: group.channels.firstOrNull() ?: return
-        scope.launch {
-            delay(16)
-            focusColumn = LiveFocusColumn.CHANNEL
-            runCatching { requesterFor(target.id).requestFocus() }
-            schedulePreview(target)
-        }
-    }
-
     fun enterWatch() {
         previewJob?.cancel()
         controller.enterWatch()
@@ -247,7 +228,6 @@ fun LiveScreen(
         if (targetId != null) {
             scope.launch {
                 delay(16)
-                focusColumn = LiveFocusColumn.CHANNEL
                 runCatching { requesterFor(targetId).requestFocus() }
             }
         }
@@ -321,7 +301,7 @@ fun LiveScreen(
     }
 
     val visibleGroups = remember(groups) { LiveCatalog.visibleGroups(groups) }
-    val selectedGroup = LiveCatalog.resolveSelection(visibleGroups, selectedGroupName)
+    val browseChannels = remember(visibleGroups) { LiveCatalog.flatChannels(visibleGroups) }
 
     LaunchedEffect(Unit) { reload() }
 
@@ -342,9 +322,8 @@ fun LiveScreen(
         if (!didInitialFocus) {
             didInitialFocus = true
             val channel = pick?.channel
-                ?.takeIf { ch -> selectedGroup?.channels?.any { it.id == ch.id } == true }
-                ?: selectedGroup?.channels?.firstOrNull()
-                ?: pick?.channel
+                ?: browseChannels.firstOrNull { it.group == groupName }
+                ?: browseChannels.firstOrNull()
             if (channel != null) {
                 scope.launch {
                     delay(32)
@@ -352,13 +331,9 @@ fun LiveScreen(
                     schedulePreview(channel)
                 }
             } else {
-                runCatching { groupFocus.requestFocus() }
+                runCatching { sidebarLiveFocus.requestFocus() }
             }
         }
-    }
-
-    LaunchedEffect(selectedGroup?.name) {
-        channelListState.scrollToItem(0)
     }
 
     LaunchedEffect(liveState.uiMode) {
@@ -370,11 +345,7 @@ fun LiveScreen(
     BackHandler(enabled = liveState.uiMode == LiveUiMode.WATCH) {
         revealBrowse()
     }
-    BackHandler(enabled = liveState.uiMode == LiveUiMode.BROWSE && focusColumn == LiveFocusColumn.CHANNEL) {
-        focusColumn = LiveFocusColumn.GROUP
-        runCatching { groupFocus.requestFocus() }
-    }
-    BackHandler(enabled = liveState.uiMode == LiveUiMode.BROWSE && focusColumn == LiveFocusColumn.GROUP) {
+    BackHandler(enabled = liveState.uiMode == LiveUiMode.BROWSE) {
         runCatching { sidebarLiveFocus.requestFocus() }
     }
 
@@ -386,7 +357,7 @@ fun LiveScreen(
                 TvAction("重新加载") { reload() }
             }
         }
-        selectedGroup == null -> Centered { StatusText("暂时没有可用频道") }
+        browseChannels.isEmpty() -> Centered { StatusText("暂时没有可用频道") }
         else -> {
             val showSwitchVeil = !liveState.firstFrameRendered && (
                 liveState.previewPhase == LivePreviewPhase.SWITCHING ||
@@ -456,39 +427,13 @@ fun LiveScreen(
                                 end = 16.dp,
                             ),
                     ) {
-                        LiveGroupColumn(
-                            groups = visibleGroups,
-                            selectedName = selectedGroup.name,
-                            listState = groupListState,
-                            itemShape = itemShape,
-                            firstFocusRequester = groupFocus,
-                            onSelectGroup = { selectGroup(it, playDefaultChannel = true) },
-                            onFocused = { group ->
-                                focusColumn = LiveFocusColumn.GROUP
-                                // Focus on a group commits Selected so the channel list matches the highlight.
-                                if (selectedGroupName != group.name) {
-                                    selectedGroupName = group.name
-                                }
-                            },
-                            onBackToSidebar = { runCatching { sidebarLiveFocus.requestFocus() } },
-                            modifier = Modifier
-                                .width(168.dp)
-                                .fillMaxHeight()
-                                .background(PanelScrim, itemShape)
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
-                        )
-
                         LiveChannelColumn(
-                            channels = selectedGroup.channels,
+                            channels = browseChannels,
                             listState = channelListState,
                             itemShape = itemShape,
-                            focusedChannelId = liveState.focusedChannelId,
                             playingChannelId = liveState.playingChannelId,
                             focusRequesterFor = ::requesterFor,
-                            onChannelFocused = {
-                                focusColumn = LiveFocusColumn.CHANNEL
-                                schedulePreview(it)
-                            },
+                            onChannelFocused = { schedulePreview(it) },
                             onChannelConfirmed = { channel ->
                                 previewJob?.cancel()
                                 if (!controller.alreadyShowing(channel.id, 0)) {
@@ -496,14 +441,10 @@ fun LiveScreen(
                                 }
                                 enterWatch()
                             },
-                            onBackToGroup = {
-                                focusColumn = LiveFocusColumn.GROUP
-                                runCatching { groupFocus.requestFocus() }
-                            },
+                            onBackToSidebar = { runCatching { sidebarLiveFocus.requestFocus() } },
                             modifier = Modifier
                                 .width(280.dp)
                                 .fillMaxHeight()
-                                .padding(start = 12.dp)
                                 .background(PanelScrim, itemShape)
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
                         )
@@ -577,73 +518,15 @@ private fun LivePlayerSurface(player: ExoPlayer) {
 }
 
 @Composable
-private fun LiveGroupColumn(
-    groups: List<LiveGroup>,
-    selectedName: String,
-    listState: androidx.compose.foundation.lazy.LazyListState,
-    itemShape: RoundedCornerShape,
-    firstFocusRequester: FocusRequester,
-    onSelectGroup: (LiveGroup) -> Unit,
-    onFocused: (LiveGroup) -> Unit,
-    onBackToSidebar: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LazyColumn(
-        state = listState,
-        modifier = modifier,
-        contentPadding = PaddingValues(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        itemsIndexed(groups, key = { _, group -> group.name }) { index, group ->
-            val selected = group.name == selectedName
-            Surface(
-                onClick = { onSelectGroup(group) },
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = if (selected) AppTheme.accent.copy(alpha = 0.45f) else Color.Transparent,
-                    contentColor = if (selected) AppTheme.textPrimary else AppTheme.textSecondary,
-                    focusedContainerColor = AppTheme.accent,
-                    focusedContentColor = Color.Black,
-                ),
-                shape = ClickableSurfaceDefaults.shape(shape = itemShape),
-                scale = ClickableSurfaceScale.None,
-                border = ClickableSurfaceDefaults.border(
-                    focusedBorder = Border(border = BorderStroke(2.dp, AppTheme.accent), shape = itemShape),
-                ),
-                modifier = Modifier
-                    .fillParentMaxWidth()
-                    .then(if (index == 0) Modifier.focusRequester(firstFocusRequester) else Modifier)
-                    .onFocusChanged { if (it.isFocused) onFocused(group) }
-                    .onPreviewKeyEvent { event ->
-                        if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
-                            onBackToSidebar()
-                            true
-                        } else {
-                            false
-                        }
-                    },
-            ) {
-                Text(
-                    group.name,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun LiveChannelColumn(
     channels: List<LiveChannel>,
     listState: androidx.compose.foundation.lazy.LazyListState,
     itemShape: RoundedCornerShape,
-    focusedChannelId: String?,
     playingChannelId: String?,
     focusRequesterFor: (String) -> FocusRequester,
     onChannelFocused: (LiveChannel) -> Unit,
     onChannelConfirmed: (LiveChannel) -> Unit,
-    onBackToGroup: () -> Unit,
+    onBackToSidebar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -675,7 +558,7 @@ private fun LiveChannelColumn(
                     }
                     .onPreviewKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
-                            onBackToGroup()
+                            onBackToSidebar()
                             true
                         } else {
                             false

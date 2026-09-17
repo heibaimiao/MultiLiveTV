@@ -288,11 +288,18 @@ final class DownloadManager: ObservableObject {
 
         do {
             let parsed = try await parser.parsePlay(sourceId: record.sourceId, url: record.originalURL)
-            if deleteRequested.remove(id) != nil { return }
-            if pauseRequested.remove(id) != nil {
+            switch DownloadEnqueuePolicy.actionAfterResolve(
+                deleteRequested: deleteRequested.remove(id) != nil,
+                pauseRequested: pauseRequested.remove(id) != nil
+            ) {
+            case .discard:
+                return
+            case .pause:
                 update(id) { $0.status = .paused }
                 persist()
                 return
+            case .proceed:
+                break
             }
 
             let kind = DownloadMediaClassifier.classify(parsed.url)
@@ -353,19 +360,25 @@ final class DownloadManager: ObservableObject {
         } catch is CancellationError {
             handleCancel(id)
         } catch {
-            if deleteRequested.remove(id) != nil { return }
-            if pauseRequested.remove(id) != nil {
+            switch DownloadEnqueuePolicy.actionAfterResolve(
+                deleteRequested: deleteRequested.remove(id) != nil,
+                pauseRequested: pauseRequested.remove(id) != nil
+            ) {
+            case .discard:
+                return
+            case .pause:
                 update(id) { $0.status = .paused }
                 persist()
                 return
-            }
-            fail(
-                id,
-                message: PlaybackSupport.userFacingError(
-                    for: parsedURL(for: id) ?? record.originalURL,
-                    underlying: error.localizedDescription
+            case .proceed:
+                fail(
+                    id,
+                    message: PlaybackSupport.userFacingError(
+                        for: parsedURL(for: id) ?? record.originalURL,
+                        underlying: error.localizedDescription
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -388,13 +401,19 @@ final class DownloadManager: ObservableObject {
         } catch is CancellationError {
             handleCancel(record.id)
         } catch {
-            if deleteRequested.remove(record.id) != nil { return }
-            if pauseRequested.remove(record.id) != nil {
+            switch DownloadEnqueuePolicy.actionAfterResolve(
+                deleteRequested: deleteRequested.remove(record.id) != nil,
+                pauseRequested: pauseRequested.remove(record.id) != nil
+            ) {
+            case .discard:
+                return
+            case .pause:
                 update(record.id) { $0.status = .paused }
                 persist()
                 return
+            case .proceed:
+                fail(record.id, message: error.localizedDescription)
             }
-            fail(record.id, message: error.localizedDescription)
         }
     }
 

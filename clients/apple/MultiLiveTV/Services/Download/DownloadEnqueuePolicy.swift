@@ -13,6 +13,12 @@ enum DownloadFinishAction: Equatable {
     case discard
 }
 
+enum DownloadResolveAction: Equatable {
+    case proceed
+    case discard
+    case pause
+}
+
 enum DownloadEnqueuePolicy {
     static let minimumFreeBytes: Int64 = 1_000_000_000
 
@@ -60,6 +66,12 @@ enum DownloadEnqueuePolicy {
 
     static func actionAfterEngineSuccess(deleteRequested: Bool, pauseRequested _: Bool) -> DownloadFinishAction {
         deleteRequested ? .discard : .complete
+    }
+
+    static func actionAfterResolve(deleteRequested: Bool, pauseRequested: Bool) -> DownloadResolveAction {
+        if deleteRequested { return .discard }
+        if pauseRequested { return .pause }
+        return .proceed
     }
 
     private static func requireDisk(_ freeDiskBytes: Int64) -> DownloadEnqueueOutcome? {

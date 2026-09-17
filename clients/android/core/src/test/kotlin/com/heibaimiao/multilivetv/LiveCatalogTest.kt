@@ -66,6 +66,34 @@ class LiveCatalogTest {
         assertTrue(LiveCatalog.visibleGroups(listOf(LiveGroup("空", emptyList()))).isEmpty())
     }
 
+    @Test
+    fun flatChannelsKeepsGroupOrder() {
+        val sports = LiveGroup("体育", listOf(channel("A", "https://a.example/a.m3u8")))
+        val satellite = LiveGroup(
+            "卫视",
+            listOf(
+                channel("B", "https://b.example/b.m3u8"),
+                channel("C", "https://c.example/c.m3u8"),
+            ),
+        )
+        assertEquals(listOf("A", "B", "C"), LiveCatalog.flatChannels(listOf(sports, satellite)).map { it.name })
+    }
+
+    @Test
+    fun flatChannelsIsEmptyWhenNoGroups() {
+        assertTrue(LiveCatalog.flatChannels(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun firstPlayableStreamSkipsEmptyAndInvalid() {
+        assertNull(LiveCatalog.firstPlayableStream(channel("无地址", streams = emptyList())))
+        assertNull(LiveCatalog.firstPlayableStream(channel("无效", "")))
+        assertEquals(
+            "https://a.example/ok.m3u8",
+            LiveCatalog.firstPlayableStream(channel("纬来", "https://a.example/ok.m3u8"))?.url,
+        )
+    }
+
     private fun channel(
         name: String,
         url: String = "https://a.example/${name}.m3u8",

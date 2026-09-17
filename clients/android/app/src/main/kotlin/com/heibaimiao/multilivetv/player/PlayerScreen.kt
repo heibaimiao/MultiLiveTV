@@ -88,7 +88,7 @@ fun PlayerScreen(
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
-                val next = VodPlaybackFailover.nextIndex(index, candidates.size)
+                val next = VodPlaybackFailover.nextIndex(indexState.value, candidates.size)
                 if (next != null) {
                     index = next
                 } else {
@@ -200,27 +200,60 @@ fun PlayerScreen(
 @Composable
 fun LivePlayerScreen(url: String, headers: Map<String, String>, title: String, onClose: () -> Unit) {
     val context = LocalContext.current
+    var failed by remember { mutableStateOf<String?>(null) }
     val player = remember {
         ExoPlayer.Builder(context).build()
     }
     DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                failed = PlaybackSupport.userFacingError(url, error.message)
+            }
+        }
+        player.addListener(listener)
         val httpFactory = OkHttpDataSource.Factory(HttpClient.okHttp)
             .setUserAgent(headers["User-Agent"] ?: NetworkConfig.USER_AGENT)
             .setDefaultRequestProperties(headers.ifEmpty { mapOf("User-Agent" to NetworkConfig.USER_AGENT) })
         player.setMediaSource(DefaultMediaSourceFactory(httpFactory).createMediaSource(MediaItem.fromUri(url)))
         player.prepare()
         player.playWhenReady = true
-        onDispose { player.release() }
+        onDispose {
+            player.removeListener(listener)
+            player.release()
+        }
     }
-    PlayerChrome(
-        player = player,
-        ready = true,
-        status = title,
-        title = title.ifBlank { "直播" },
-        subtitle = null,
-        isLive = true,
-        onClose = onClose,
-    )
+    if (failed != null) {
+        Box(Modifier.fillMaxSize().background(Color.Black)) {
+            Column(
+                Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(failed!!, color = AppTheme.textSecondary, modifier = Modifier.padding(16.dp))
+            }
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(4.dp),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "关闭",
+                    tint = Color.White,
+                )
+            }
+        }
+    } else {
+        PlayerChrome(
+            player = player,
+            ready = true,
+            status = title,
+            title = title.ifBlank { "直播" },
+            subtitle = null,
+            isLive = true,
+            onClose = onClose,
+        )
+    }
 }
 
 @Composable
